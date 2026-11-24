@@ -7,62 +7,54 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Prompt user for the Visio file path.
-        Console.Write("Enter the path to the Visio file: ");
-        string inputPath = Console.ReadLine();
-
-        // Guard: ensure the file exists.
-        if (string.IsNullOrWhiteSpace(inputPath) || !File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Error: The specified Visio file does not exist.");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath> <PageIndex (0‑based)>");
             return;
         }
 
-        // Prompt user for the page index (0‑based).
-        Console.Write("Enter the page index (0‑based) to export shapes from: ");
-        string pageIndexInput = Console.ReadLine();
-        if (!int.TryParse(pageIndexInput, out int pageIndex) || pageIndex < 0)
+        string visioPath = args[0];
+        string pageIndexArg = args[1];
+
+        // Guard: ensure the Visio file exists.
+        if (!File.Exists(visioPath))
         {
-            Console.Error.WriteLine("Error: Invalid page index.");
+            Console.Error.WriteLine($"Error: File not found – {visioPath}");
             return;
         }
 
-        // Prepare output directory.
-        string outputDir = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "SvgOutput");
+        // Guard: parse page index.
+        if (!int.TryParse(pageIndexArg, out int pageIndex) || pageIndex < 0)
+        {
+            Console.Error.WriteLine("Error: Page index must be a non‑negative integer.");
+            return;
+        }
+
         try
         {
-            Directory.CreateDirectory(outputDir);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error: Unable to create output directory. {ex.Message}");
-            return;
-        }
-
-        // Load the diagram inside a using block as required.
-        try
-        {
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the diagram inside a using block (required pattern).
+            using (Diagram diagram = new Diagram(visioPath))
             {
-                // Validate page index range.
+                // Guard: ensure the requested page exists.
                 if (pageIndex >= diagram.Pages.Count)
                 {
-                    Console.Error.WriteLine("Error: Page index exceeds the number of pages in the document.");
+                    Console.Error.WriteLine($"Error: Page index {pageIndex} is out of range. Diagram contains {diagram.Pages.Count} pages.");
                     return;
                 }
 
-                // Retrieve the target page.
+                // Retrieve the specific page.
                 Page page = diagram.Pages[pageIndex];
 
-                // Configure SVG save options (common for all shapes).
-                SVGSaveOptions svgOptions = new SVGSaveOptions
-                {
-                    // These properties are of type bool, not Aspose BOOL.
-                    SVGFitToViewPort = true,          // Fit SVG to viewport.
-                    ExportGuideShapes = false,        // Do not export guide shapes.
-                    IsExportComments = false,         // Do not export comments.
-                    SaveFormat = SaveFileFormat.Svg   // Explicitly set format.
-                };
+                // Prepare SVG save options (common for all shapes).
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
+                svgOptions.ExportHiddenPage = false;
+                svgOptions.ExportGuideShapes = false;
+                svgOptions.SVGFitToViewPort = true;
+
+                // Output directory: create a subfolder named after the page index.
+                string outputDir = Path.Combine(Path.GetDirectoryName(visioPath) ?? "", $"Page_{pageIndex}_SVG");
+                Directory.CreateDirectory(outputDir);
 
                 // Iterate over all shapes on the page.
                 foreach (Shape shape in page.Shapes)
@@ -73,27 +65,26 @@ class Program
 
                     // Build a unique file name for each shape.
                     string shapeFileName = $"Shape_{shape.ID}.svg";
-                    string shapeFilePath = Path.Combine(outputDir, shapeFileName);
+                    string outputPath = Path.Combine(outputDir, shapeFileName);
 
                     try
                     {
-                        // Export the shape to SVG using the ToSvg method.
-                        shape.ToSvg(shapeFilePath, svgOptions);
-                        Console.WriteLine($"Exported shape ID {shape.ID} to {shapeFileName}");
+                        // Export the shape to an individual SVG file.
+                        shape.ToSvg(outputPath, svgOptions);
+                        Console.WriteLine($"Exported shape ID {shape.ID} to {outputPath}");
                     }
                     catch (Exception exShape)
                     {
+                        // Log shape‑specific errors but continue processing other shapes.
                         Console.Error.WriteLine($"Error exporting shape ID {shape.ID}: {exShape.Message}");
-                        // Continue with next shape.
                     }
                 }
-
-                Console.WriteLine("Batch SVG export completed.");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Log any errors that occur during diagram loading or processing.
+            Console.Error.WriteLine($"Unexpected error: {ex.Message}");
         }
     }
 }

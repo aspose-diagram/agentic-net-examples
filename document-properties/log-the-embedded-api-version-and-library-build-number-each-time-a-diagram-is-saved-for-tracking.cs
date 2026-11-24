@@ -7,48 +7,75 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input diagram path and output diagram path
+        // Validate input arguments
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDirectory>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        string outputDir = args[1];
 
-        // Guard: ensure the input file exists
+        // Guard: check input file existence
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
+        // Guard: check output directory existence
+        if (!Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Load diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Log API version and build number before any save operation
+                LogMetadata(diagram, "Initial load");
 
-            // Log the embedded API version
-            Console.WriteLine($"Diagram API Version: {diagram.Version}");
+                // Example modification: change the title property (optional)
+                diagram.DocumentProps.Title = "Processed Diagram";
 
-            // Log the library build numbers (created and edited)
-            Console.WriteLine($"Build Number Created: {diagram.DocumentProps.BuildNumberCreated}");
-            Console.WriteLine($"Build Number Edited (before save): {diagram.DocumentProps.BuildNumberEdited}");
+                // Save as VSDX
+                string vsdxPath = Path.Combine(outputDir, "output.vsdx");
+                diagram.Save(vsdxPath, SaveFileFormat.Vsdx);
+                LogMetadata(diagram, $"Saved VSDX to {vsdxPath}");
 
-            // Save the diagram to the specified output path using VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            // After saving, log the edited build number again to track changes
-            Console.WriteLine($"Build Number Edited (after save): {diagram.DocumentProps.BuildNumberEdited}");
-
-            // Clean up resources
-            diagram.Dispose();
+                // Save as PDF using PdfSaveOptions
+                string pdfPath = Path.Combine(outputDir, "output.pdf");
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Optional: set default font for PDF export
+                pdfOptions.DefaultFont = "Arial";
+                diagram.Save(pdfPath, pdfOptions);
+                LogMetadata(diagram, $"Saved PDF to {pdfPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
+            // Log any Aspose or IO errors
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Logs the diagram's API version and build number with a custom message.
+    /// </summary>
+    /// <param name="diagram">The loaded Diagram instance.</param>
+    /// <param name="context">Description of the operation being logged.</param>
+    private static void LogMetadata(Diagram diagram, string context)
+    {
+        // diagram.Version returns a string representing the Visio version used to create the file
+        string version = diagram.Version;
+
+        // BuildNumberCreated may be an integer or string; convert to string for safe logging
+        string buildNumber = diagram.DocumentProps.BuildNumberCreated?.ToString() ?? "N/A";
+
+        Console.WriteLine($"[{DateTime.Now}] {context}: Version = {version}, BuildNumberCreated = {buildNumber}");
     }
 }

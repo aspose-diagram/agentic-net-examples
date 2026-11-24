@@ -1,11 +1,11 @@
 {
   "category": "working-with-images",
   "display_name": "Working With Images",
-  "version": "26.10.0",
+  "version": "26.11.0",
   "framework": "net8.0",
   "total": 38,
   "pass_rate": 100.0,
-  "generated": "2026-10-26",
+  "generated": "2026-11-24",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -89,6 +89,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Drawing",
         "System",
         "System.Collections.Generic",
         "System.IO"
@@ -98,7 +99,7 @@
         "ImageSaveOptions",
         "Pages",
         "Save",
-        "Shapes"
+        "diagram"
       ]
     },
     {
@@ -108,6 +109,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Drawing",
+        "Aspose.Drawing.Imaging",
         "System",
         "System.IO"
       ],
@@ -154,7 +157,6 @@
       "key_apis": [
         "Diagram",
         "ImageSaveOptions",
-        "Pages",
         "Save",
         "diagram"
       ]
@@ -182,6 +184,7 @@
       "task": "Batch replace a specific placeholder image across multiple vsdx files using a single source png",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -275,10 +278,10 @@
       ],
       "key_apis": [
         "Diagram",
-        "ImageSaveOptions",
         "Pages",
         "PdfSaveOptions",
-        "Save"
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -397,6 +400,7 @@
       "task": "Extract all embedded images from a vdx file and save each to a designated output directory",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -453,6 +457,7 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "Aspose.Drawing",
+        "Aspose.Drawing.Drawing2D",
         "Aspose.Drawing.Imaging",
         "System",
         "System.Collections.Generic",
@@ -545,7 +550,6 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
-        "Aspose.Drawing.Imaging",
         "System",
         "System.IO"
       ],
@@ -565,7 +569,6 @@
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -617,6 +620,7 @@
       "task": "Resize an imported bitmap image within a visio shape to fit the shape s dimensions proportionally",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "Aspose.Drawing",
         "Aspose.Drawing.Drawing2D",
         "Aspose.Drawing.Imaging",

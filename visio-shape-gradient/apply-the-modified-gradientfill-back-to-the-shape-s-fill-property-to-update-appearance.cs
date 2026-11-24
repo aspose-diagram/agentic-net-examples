@@ -16,7 +16,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -28,65 +28,63 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Retrieve the first page (index 0). Adjust as needed.
+            // Retrieve the first page (or any specific page as needed).
+            // Here we use the first page in the collection.
             if (diagram.Pages.Count == 0)
             {
                 Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
+
             Page page = diagram.Pages[0];
 
-            // Retrieve a shape by its ID (example uses ID = 1).
-            // Ensure the shape exists before proceeding.
+            // Retrieve a shape by its ID. Adjust the ID as required.
+            // For demonstration we use shape ID 1.
             Shape shape = page.Shapes.GetShape(1);
             if (shape == null)
             {
-                Console.Error.WriteLine("Shape with ID 1 not found on the first page.");
+                Console.Error.WriteLine("Shape with ID 1 not found on the page.");
                 return;
             }
 
-            // -----------------------------------------------------------------
+            // ------------------------------------------------------------
             // Begin gradient fill modification.
-            // -----------------------------------------------------------------
+            // ------------------------------------------------------------
 
-            // Set the fill pattern to gradient (value 25 corresponds to gradient fill).
-            shape.Fill.FillPattern.Value = 25;
+            // Ensure the shape uses a gradient fill pattern.
+            shape.Fill.FillPattern.Value = 25; // 25 = gradient fill.
 
             // Enable the gradient.
             shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-            // Set gradient direction (0 = horizontal, 1 = vertical, etc.).
+            // Set gradient direction (0 = left‑to‑right, adjust as needed).
             shape.Fill.GradientFill.GradientDir.Value = 0;
-
-            // Set gradient angle (in degrees).
-            shape.Fill.GradientFill.GradientAngle.Value = 45;
 
             // Clear any existing gradient stops.
             shape.Fill.GradientFill.GradientStops.Clear();
 
-            // Add a start stop at position 0 with red color.
+            // Add a new gradient stop at position 0 (start) with red color.
             shape.Fill.GradientFill.GradientStops.Add(
                 new DoubleValue(0, MeasureConst.NUM),
                 new ColorValue("#FF0000", MeasureConst.Undefined));
 
-            // Add an end stop at position 1 with blue color.
+            // Add a second gradient stop at position 1 (end) with blue color.
             shape.Fill.GradientFill.GradientStops.Add(
                 new DoubleValue(1, MeasureConst.NUM),
                 new ColorValue("#0000FF", MeasureConst.Undefined));
 
-            // -----------------------------------------------------------------
-            // Gradient modifications are applied directly to the shape's Fill.
-            // No additional assignment back to the Fill property is required.
-            // -----------------------------------------------------------------
+            // ------------------------------------------------------------
+            // Gradient modifications are now applied directly to the shape.
+            // ------------------------------------------------------------
 
-            // Save the modified diagram to the specified output path in VSDX format.
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

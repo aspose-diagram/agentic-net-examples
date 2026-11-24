@@ -9,77 +9,68 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 1)
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
+        string outputPath = args[1];
+
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Determine output path. If not supplied, create a new file name with suffix "_cleaned".
-        string outputPath;
-        if (args.Length >= 2)
-        {
-            outputPath = args[1];
-        }
-        else
-        {
-            string directory = Path.GetDirectoryName(inputPath) ?? "";
-            string filenameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
-            outputPath = Path.Combine(directory, filenameWithoutExt + "_cleaned.vsdx");
-        }
-
+        // Load the Visio diagram inside a using block as required.
         try
         {
-            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages.
+                // Iterate over all pages.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page.
+                    // Iterate over all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip logically deleted shapes.
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Collect user‑defined cells that have empty values.
-                        List<User> usersToRemove = new List<User>();
-                        foreach (User user in shape.Users)
+                        // Collect indices of user‑defined cells that have empty values.
+                        List<int> indicesToRemove = new List<int>();
+                        for (int i = 0; i < shape.Users.Count; i++)
                         {
-                            // Guard against null Value and treat whitespace as empty.
-                            string cellValue = user.Value?.Val;
-                            if (string.IsNullOrWhiteSpace(cellValue))
+                            User userCell = shape.Users[i];
+                            // Treat null or whitespace as empty.
+                            if (string.IsNullOrWhiteSpace(userCell?.Value?.Val))
                             {
-                                usersToRemove.Add(user);
+                                indicesToRemove.Add(i);
                             }
                         }
 
-                        // Remove the collected empty user‑defined cells.
-                        foreach (User userToRemove in usersToRemove)
+                        // Remove the identified cells in reverse order to keep indices valid.
+                        for (int i = indicesToRemove.Count - 1; i >= 0; i--)
                         {
-                            shape.Users.Remove(userToRemove);
+                            shape.Users.RemoveAt(indicesToRemove[i]);
                         }
                     }
                 }
 
-                // Save the modified diagram to the output file.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Successfully saved cleaned diagram to \"{outputPath}\".");
+                // Save the modified diagram to the specified output path.
+                try
+                {
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                    Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                }
+                catch (Exception saveEx)
+                {
+                    Console.Error.WriteLine($"Error saving diagram: {saveEx.Message}");
+                }
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error loading or processing diagram: {ex.Message}");
         }
     }
 }

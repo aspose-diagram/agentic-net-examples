@@ -7,52 +7,73 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define output file path
-        string outputPath = "PentagonWithLabel.vsdx";
-
-        // Guard: ensure we can write to the output directory
-        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
-        if (!Directory.Exists(outputDir))
+        // Validate arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Iterate through pages to find the pentagon shape
+                bool pentagonFound = false;
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Check if the shape uses the "Pentagon" master
+                        if (shape.Master != null && string.Equals(shape.Master.Name, "Pentagon", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Clear any existing text
+                            shape.Text.Value.Clear();
 
-            // Add a new page to the diagram
-            diagram.Pages.Add(new Page());
+                            // Add the centered label text
+                            shape.Text.Value.Add(new Txt("Annotation"));
 
-            // Use the first (and only) page as the active page
-            Page page = diagram.ActivePage;
+                            // Center the text vertically within the shape
+                            shape.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
 
-            // Define position for the pentagon (center of the page can be adjusted as needed)
-            double pinX = 5.0;
-            double pinY = 5.0;
+                            // Align the text block to the shape's center and size
+                            shape.TextXForm.TxtPinX.Value = shape.XForm.PinX.Value;
+                            shape.TextXForm.TxtPinY.Value = shape.XForm.PinY.Value;
+                            shape.TextXForm.TxtWidth.Value = shape.XForm.Width.Value;
+                            shape.TextXForm.TxtHeight.Value = shape.XForm.Height.Value;
 
-            // Add a pentagon shape to the page; the fourth argument isCalculate is set to false
-            long pentagonId = page.AddShape(pinX, pinY, "Pentagon", false);
+                            pentagonFound = true;
+                            break; // Assuming only one pentagon needs labeling
+                        }
+                    }
+                    if (pentagonFound) break;
+                }
 
-            // Retrieve the newly added pentagon shape
-            Shape pentagon = page.Shapes.GetShape(pentagonId);
+                if (!pentagonFound)
+                {
+                    Console.Error.WriteLine("No pentagon shape was found in the diagram.");
+                }
 
-            // Clear any existing text (if any) and add a centered label
-            pentagon.Text.Value.Clear();
-            pentagon.Text.Value.Add(new Txt("Annotation"));
-
-            // Set vertical alignment to middle to center the text vertically within the shape
-            pentagon.TextBlock.VerticalAlign.Value = VerticalAlignValue.Middle;
-
-            // Save the diagram to VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Save the modified diagram to the specified output path in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

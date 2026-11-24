@@ -31,40 +31,47 @@ class Program
                 // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each shape on the page
-                    foreach (Shape shape in page.Shapes)
+                    // Dictionary to collect connections per connector shape ID
+                    Dictionary<long, List<long>> connectorMap = new Dictionary<long, List<long>>();
+
+                    // Iterate over all connections on the current page
+                    foreach (Connect connect in page.Connects)
                     {
-                        // Identify connector shapes (1‑D shapes). OneD returns a native bool.
-                        if (shape.OneD)
+                        // Attempt to retrieve the shape that is the source of the connection (FromSheet)
+                        Shape fromShape = null;
+                        try
                         {
-                            long connectorId = shape.ID;
-
-                            // Collect IDs of shapes that are glued to this connector (ends of the connector)
-                            List<long> endShapeIds = new List<long>();
-                            foreach (Connect conn in page.Connects)
-                            {
-                                // In the Connect collection, ToSheet is the connector shape ID.
-                                if (conn.ToSheet == connectorId)
-                                {
-                                    endShapeIds.Add(conn.FromSheet);
-                                }
-                            }
-
-                            // Output the connector information
-                            if (endShapeIds.Count >= 2)
-                            {
-                                // Assume first two entries are the source and target ends
-                                Console.WriteLine($"Connector ID: {connectorId}, Source Shape ID: {endShapeIds[0]}, Target Shape ID: {endShapeIds[1]}");
-                            }
-                            else if (endShapeIds.Count == 1)
-                            {
-                                Console.WriteLine($"Connector ID: {connectorId}, Single connected Shape ID: {endShapeIds[0]} (incomplete connection)");
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Connector ID: {connectorId} has no connections.");
-                            }
+                            fromShape = page.Shapes.GetShape(connect.FromSheet);
                         }
+                        catch
+                        {
+                            // If the shape cannot be retrieved, skip this connection
+                            continue;
+                        }
+
+                        // Filter only 1‑D connector shapes that are not deleted
+                        if (fromShape != null && fromShape.OneD && fromShape.Del == BOOL.False)
+                        {
+                            // Ensure an entry exists for this connector ID
+                            if (!connectorMap.ContainsKey(connect.FromSheet))
+                                connectorMap[connect.FromSheet] = new List<long>();
+
+                            // Store the target shape ID (ToSheet) for this connector
+                            connectorMap[connect.FromSheet].Add(connect.ToSheet);
+                        }
+                    }
+
+                    // Output the collected connector information
+                    foreach (var kvp in connectorMap)
+                    {
+                        long connectorId = kvp.Key;
+                        List<long> targets = kvp.Value;
+
+                        // Determine source and target IDs (if available)
+                        string sourceId = targets.Count > 0 ? targets[0].ToString() : "N/A";
+                        string targetId = targets.Count > 1 ? targets[1].ToString() : "N/A";
+
+                        Console.WriteLine($"Connector Shape ID: {connectorId}, Source Shape ID: {sourceId}, Target Shape ID: {targetId}");
                     }
                 }
             }
@@ -72,7 +79,7 @@ class Program
         catch (Exception ex)
         {
             // Write any errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

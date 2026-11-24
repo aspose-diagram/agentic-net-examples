@@ -6,28 +6,20 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect two arguments: input diagram path and output VSDX path.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputVsdxPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard: ensure the input file exists before proceeding.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
-            return;
-        }
-
-        // Guard: ensure the output directory exists (if specified).
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -36,16 +28,15 @@ class Program
             // Load the diagram inside a using block as required by the API.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Export the (potentially modified) diagram to a new .vsdx file,
-                // preserving all original content.
+                // Export (save) the diagram to a new VSDX file, preserving original content.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+            Console.WriteLine($"Diagram successfully exported to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any errors that occur during loading or saving to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

@@ -6,73 +6,55 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments.
-        if (args.Length < 1)
+        // Expect the input Visio file path as the first argument.
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <input-diagram-path> [output-diagram-path]");
+            Console.Error.WriteLine("Error: No input file path provided.");
             return;
         }
 
         string inputPath = args[0];
-        // Guard: ensure the input file exists.
+
+        // Guard: verify the file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
-
-        // Determine output path (optional). If not provided, create a new file name.
-        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
-            Path.GetDirectoryName(inputPath) ?? "",
-            Path.GetFileNameWithoutExtension(inputPath) + "_scaled.vsdx");
 
         try
         {
             // Load the diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram has at least one page.
+            // Ensure the diagram contains at least one page.
             if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
+                Console.Error.WriteLine("Error: The diagram contains no pages.");
                 return;
             }
 
             // Access the first page.
             Page page = diagram.Pages[0];
 
-            // Store the original ScaleX value for later comparison.
+            // Store the original ScaleX value.
             double originalScaleX = page.PageSheet.PrintProps.ScaleX.Value;
 
-            // -----------------------------------------------------------------
-            // Step 1: Apply a custom scaling factor (e.g., 0.5) to the page.
-            // -----------------------------------------------------------------
+            // Apply a different scaling factor (e.g., 0.5).
             page.PageSheet.PrintProps.ScaleX.Value = 0.5;
-            Console.WriteLine($"ScaleX set to 0.5 (original was {originalScaleX}).");
 
-            // -----------------------------------------------------------------
-            // Step 2: Reset ScaleX back to 1.0 (original size).
-            // -----------------------------------------------------------------
+            // Now reset ScaleX to 1.0.
             page.PageSheet.PrintProps.ScaleX.Value = 1.0;
-            Console.WriteLine("ScaleX reset to 1.0.");
 
-            // -----------------------------------------------------------------
-            // Validation: Verify that ScaleX is now back to its original value.
-            // -----------------------------------------------------------------
-            double currentScaleX = page.PageSheet.PrintProps.ScaleX.Value;
-            const double tolerance = 0.0001;
-            if (Math.Abs(currentScaleX - originalScaleX) > tolerance)
+            // Validate that resetting restores the original value.
+            double resetScaleX = page.PageSheet.PrintProps.ScaleX.Value;
+
+            if (Math.Abs(resetScaleX - originalScaleX) > 1e-6)
             {
-                throw new Exception($"ScaleX validation failed. Expected {originalScaleX}, but got {currentScaleX}.");
-            }
-            else
-            {
-                Console.WriteLine($"ScaleX validation succeeded. Current ScaleX = {currentScaleX}");
+                throw new Exception($"Validation failed: ScaleX after reset ({resetScaleX}) does not match original ({originalScaleX}).");
             }
 
-            // Optional: Save the modified diagram to verify changes persist.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to: {outputPath}");
+            Console.WriteLine("Validation succeeded: ScaleX reset to original size.");
         }
         catch (Exception ex)
         {

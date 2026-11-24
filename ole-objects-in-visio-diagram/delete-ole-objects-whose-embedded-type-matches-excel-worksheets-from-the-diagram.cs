@@ -1,77 +1,75 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (use defaults if not provided)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            return;
+        }
 
-        // Guard against missing input file
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Collect shapes that need to be removed to avoid modifying the collection during iteration
-                List<Shape> shapesToRemove = new List<Shape>();
-
-                // Iterate through each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                // Iterate through each page in the diagram.
+                foreach (Aspose.Diagram.Page page in diagram.Pages)
                 {
-                    // Ensure the shape is not already deleted
-                    if (shape.Del != BOOL.False)
-                        continue;
-
-                    // Check if the shape contains foreign (OLE) data
-                    if (shape.ForeignData == null)
-                        continue;
-
-                    // Verify the foreign object is an embedded OLE object
-                    if (shape.ForeignData.ObjectType != ObjectType.EmbeddedObject)
-                        continue;
-
-                    // Get the source name of the embedded object (e.g., file name with extension)
-                    string sourceName = shape.ForeignData.ObjectSourceFullName;
-                    if (string.IsNullOrEmpty(sourceName))
-                        continue;
-
-                    // Determine if the embedded object is an Excel worksheet based on file extension
-                    if (sourceName.EndsWith(".xls", StringComparison.OrdinalIgnoreCase) ||
-                        sourceName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase) ||
-                        sourceName.EndsWith(".xlsm", StringComparison.OrdinalIgnoreCase))
+                    // Iterate backwards over the shapes collection to allow safe removal.
+                    for (int i = page.Shapes.Count - 1; i >= 0; i--)
                     {
-                        // Mark this shape for removal
-                        shapesToRemove.Add(shape);
+                        // Retrieve the shape at the current index.
+                        Aspose.Diagram.Shape shape = page.Shapes[i];
+
+                        // Verify the shape is a foreign (OLE) shape and contains object data.
+                        if (shape.Type == TypeValue.Foreign &&
+                            shape.ForeignData != null &&
+                            shape.ForeignData.ForeignType == ForeignType.Object &&
+                            shape.ForeignData.ObjectData != null &&
+                            shape.ForeignData.ObjectData.Length > 0)
+                        {
+                            // Detect the embedded object's file format using Aspose.Diagram utilities.
+                            // NOTE: DetectFileFormat expects a Stream, so wrap the byte[] in a MemoryStream.
+                            Aspose.Diagram.FileFormatInfo formatInfo =
+                                Aspose.Diagram.FileFormatUtil.DetectFileFormat(new MemoryStream(shape.ForeignData.ObjectData));
+
+                            // Determine if the OLE object is an Excel worksheet.
+                            bool isExcel = formatInfo.FileFormatType == Aspose.Diagram.FileFormatType.Xlsx ||
+                                           formatInfo.FileFormatType == Aspose.Diagram.FileFormatType.Excel97To2003 ||
+                                           formatInfo.FileFormatType == Aspose.Diagram.FileFormatType.Xlsm;
+
+                            // If it is an Excel OLE object, remove the shape from the page.
+                            if (isExcel)
+                            {
+                                page.Shapes.Remove(shape);
+                            }
+                        }
                     }
                 }
 
-                // Remove the identified OLE shapes from the page
-                foreach (Shape shape in shapesToRemove)
-                {
-                    page.Shapes.Remove(shape);
-                }
+                // Save the modified diagram to the specified output path in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            // Save the modified diagram to the specified output path
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

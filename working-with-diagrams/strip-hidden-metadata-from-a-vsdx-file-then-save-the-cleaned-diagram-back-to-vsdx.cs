@@ -16,7 +16,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard: ensure the input file exists before proceeding.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,13 +25,14 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load the Visio diagram inside a using block as required by the API.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Combine hidden‑information flags to remove shapes, masters, and styles.
-                int hiddenInfoFlags = (int)(RemoveHiddenInfoItem.Shapes |
-                                            RemoveHiddenInfoItem.Masters |
-                                            RemoveHiddenInfoItem.Styles);
+                // Combine the desired hidden‑information flags (Shapes, Masters, Styles).
+                int hiddenInfoFlags = (int)(
+                    RemoveHiddenInfoItem.Shapes |
+                    RemoveHiddenInfoItem.Masters |
+                    RemoveHiddenInfoItem.Styles);
 
                 // Remove hidden metadata from the diagram.
                 diagram.RemoveHiddenInformation(hiddenInfoFlags);
@@ -39,6 +40,8 @@ class Program
                 // Save the cleaned diagram back to VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            Console.WriteLine($"Diagram cleaned and saved to: {outputPath}");
         }
         catch (Exception ex)
         {

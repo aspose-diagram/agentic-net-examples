@@ -7,17 +7,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments.
+        // Validate arguments: expect diagram file path and parent shape name
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <parentShapeName>");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <parentShapeNameU>");
             return;
         }
 
         string diagramPath = args[0];
-        string parentShapeName = args[1];
+        string parentShapeNameU = args[1];
 
-        // Guard: ensure the diagram file exists.
+        // Guard: check if the diagram file exists
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Error: File not found - {diagramPath}");
@@ -26,16 +26,16 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Locate the parent shape by its NameU.
+            // Locate the parent shape by its NameU (case-sensitive)
             Shape parentShape = null;
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    if (shape.NameU != null && shape.NameU.Equals(parentShapeName, StringComparison.OrdinalIgnoreCase))
+                    if (shape.NameU == parentShapeNameU)
                     {
                         parentShape = shape;
                         break;
@@ -46,19 +46,19 @@ class Program
 
             if (parentShape == null)
             {
-                Console.Error.WriteLine($"Error: Parent shape with name '{parentShapeName}' not found.");
+                Console.Error.WriteLine($"Error: Parent shape with NameU '{parentShapeNameU}' not found.");
                 return;
             }
 
             long parentId = parentShape.ID;
 
-            // Collect IDs of child shapes whose ParentShape matches the found parent.
+            // Collect IDs of child shapes (shapes whose ParentShape.ID matches the parent ID)
             List<long> childShapeIds = new List<long>();
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the shape has a parent and compare IDs.
+                    // Ensure the shape has a parent and compare IDs
                     if (shape.ParentShape != null && shape.ParentShape.ID == parentId)
                     {
                         childShapeIds.Add(shape.ID);
@@ -66,24 +66,23 @@ class Program
                 }
             }
 
-            // Output the list of child shape IDs.
-            Console.WriteLine($"Parent Shape ID: {parentId}");
-            Console.WriteLine("Child Shape IDs:");
+            // Output the result
             if (childShapeIds.Count == 0)
             {
-                Console.WriteLine("  (none)");
+                Console.WriteLine($"No child shapes found for parent shape '{parentShapeNameU}' (ID: {parentId}).");
             }
             else
             {
-                foreach (long childId in childShapeIds)
+                Console.WriteLine($"Child shape IDs for parent shape '{parentShapeNameU}' (ID: {parentId}):");
+                foreach (long id in childShapeIds)
                 {
-                    Console.WriteLine($"  {childId}");
+                    Console.WriteLine(id);
                 }
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
+            // Write any Aspose or runtime errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

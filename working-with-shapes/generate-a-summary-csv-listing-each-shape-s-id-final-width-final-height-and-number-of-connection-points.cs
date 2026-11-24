@@ -7,9 +7,9 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 2)
+        if (args == null || args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputCsvFile>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputCsvPath>");
             return;
         }
 
@@ -19,7 +19,7 @@ class Program
         // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -32,22 +32,22 @@ class Program
             using (StreamWriter writer = new StreamWriter(outputPath))
             {
                 // Write CSV header.
-                writer.WriteLine("ShapeID,Width,Height,ConnectionCount");
+                writer.WriteLine("ShapeID,Width,Height,ConnectionPoints");
 
-                // Iterate through all pages.
+                // Iterate through each page in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page.
+                    // Iterate through each shape on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
                         // Retrieve shape identifier.
                         long shapeId = shape.ID;
 
-                        // Retrieve final width and height from the shape's XForm cell values.
+                        // Retrieve final width and height (values are stored in the XForm cell collection).
                         double width = shape.XForm.Width.Value;
                         double height = shape.XForm.Height.Value;
 
-                        // Count how many connections involve this shape (as source or target).
+                        // Count how many connections involve this shape.
                         int connectionCount = 0;
                         foreach (Connect conn in page.Connects)
                         {
@@ -63,11 +63,11 @@ class Program
                 }
             }
 
-            Console.WriteLine($"Summary CSV has been saved to \"{outputPath}\".");
+            Console.WriteLine($"Summary CSV has been created at: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Capture any errors from Aspose.Diagram operations or file I/O.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

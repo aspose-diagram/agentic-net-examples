@@ -8,60 +8,59 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 1)
+        // Expect input diagram path and output text file path as arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputTextFile]");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputTextPath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args.Length >= 2 ? args[1] : "extracted_text.txt";
+        string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: verify the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
                 var sb = new StringBuilder();
 
-                // Iterate through all pages.
+                // Iterate through all pages and shapes to collect plain text
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve the plain text of the shape.
-                        string text = shape.Text?.Value?.Text ?? string.Empty;
-
-                        // Skip empty or whitespace‑only text.
-                        if (string.IsNullOrWhiteSpace(text))
+                        // Retrieve the plain text of the shape; skip if null or empty
+                        string rawText = shape.Text?.Value?.Text;
+                        if (string.IsNullOrWhiteSpace(rawText))
                             continue;
 
-                        // Filter out numeric strings (e.g., "12345").
-                        if (Regex.IsMatch(text.Trim(), @"^\d+$"))
+                        // Remove any HTML tags that might be present
+                        string cleanedText = Regex.Replace(rawText, "<.*?>", string.Empty).Trim();
+
+                        // Filter out strings that consist only of digits
+                        if (Regex.IsMatch(cleanedText, @"^\d+$"))
                             continue;
 
-                        // Append the cleaned text to the result.
-                        sb.AppendLine(text.Trim());
+                        // Append the cleaned, non‑numeric text to the result
+                        sb.AppendLine(cleanedText);
                     }
                 }
 
-                // Write the aggregated text to the output file.
-                File.WriteAllText(outputPath, sb.ToString(), Encoding.UTF8);
-                Console.WriteLine($"Extracted text saved to: {outputPath}");
+                // Write the aggregated text to the specified output file
+                File.WriteAllText(outputPath, sb.ToString());
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
+            // Report any errors that occur during processing
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

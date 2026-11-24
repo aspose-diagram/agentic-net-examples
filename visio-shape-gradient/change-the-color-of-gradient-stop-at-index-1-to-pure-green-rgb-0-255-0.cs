@@ -16,10 +16,10 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: verify the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -28,50 +28,49 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Get the first page (index 0). Adjust as needed for specific pages.
+            // Ensure the diagram has at least one page.
             if (diagram.Pages.Count == 0)
             {
                 Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
+
+            // Get the first page (index 0). Adjust as needed.
             Page page = diagram.Pages[0];
 
-            // Get shape with ID 1 on the page. Adjust the ID if a different shape is required.
+            // Retrieve a shape by its ID. Here we use shape ID 1 as an example.
             Shape shape = page.Shapes.GetShape(1);
             if (shape == null)
             {
-                Console.Error.WriteLine("Shape with ID 1 was not found on the first page.");
+                Console.Error.WriteLine("Shape with ID 1 not found on the first page.");
                 return;
             }
 
-            // Ensure gradient fill is enabled.
+            // Enable gradient fill on the shape.
+            shape.Fill.FillPattern.Value = 25;                     // Gradient fill pattern.
             shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
 
-            // Retrieve existing gradient stops.
-            var gradientStops = shape.Fill.GradientFill.GradientStops;
-            if (gradientStops.Count == 0)
+            // Access the gradient stops collection.
+            GradientStopCollection stops = shape.Fill.GradientFill.GradientStops;
+            if (stops.Count == 0)
             {
-                Console.Error.WriteLine("The shape does not have any gradient stops.");
+                Console.Error.WriteLine("The shape does not contain any gradient stops.");
                 return;
             }
 
-            // Store positions and colors of existing stops.
-            var positions = new double[gradientStops.Count];
-            var colors = new string[gradientStops.Count];
-
-            for (int i = 0; i < gradientStops.Count; i++)
+            // Copy existing stops to a temporary list for modification.
+            var stopList = new System.Collections.Generic.List<GradientStop>();
+            foreach (GradientStop stop in stops)
             {
-                GradientStop stop = gradientStops[i];
-                // Position is a DoubleValue; its numeric value is stored in .Value.
-                positions[i] = stop.Position.Value;
-                // Color is a ColorValue; its hex string is stored in .Value.
-                colors[i] = stop.Color.Value;
+                stopList.Add(stop);
             }
 
             // Modify the color of the stop at index 1 (second stop) to pure green.
-            if (gradientStops.Count > 1)
+            if (stopList.Count > 1)
             {
-                colors[1] = "#00FF00"; // RGB(0,255,0)
+                GradientStop targetStop = stopList[1];
+                // Assign a new ColorValue representing pure green.
+                targetStop.Color = new ColorValue("#00FF00", MeasureConst.Undefined);
             }
             else
             {
@@ -79,25 +78,20 @@ class Program
                 return;
             }
 
-            // Clear existing stops.
-            gradientStops.Clear();
-
-            // Re‑add stops with the updated color for index 1.
-            for (int i = 0; i < positions.Length; i++)
+            // Clear existing stops and re‑add them with the updated color.
+            shape.Fill.GradientFill.GradientStops.Clear();
+            foreach (GradientStop stop in stopList)
             {
-                // Use MeasureConst.NUM for position units and MeasureConst.Undefined for color units.
-                gradientStops.Add(
-                    new DoubleValue(positions[i], MeasureConst.NUM),
-                    new ColorValue(colors[i], MeasureConst.Undefined));
+                shape.Fill.GradientFill.GradientStops.Add(stop.Position, stop.Color);
             }
 
-            // Save the modified diagram to the specified output path in VSDX format.
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

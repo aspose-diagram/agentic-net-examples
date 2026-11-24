@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <DiagramPath1> <DiagramPath2>");
@@ -16,7 +16,7 @@ class Program
         string diagramPath1 = args[0];
         string diagramPath2 = args[1];
 
-        // Guard against missing files
+        // Guard against missing files.
         if (!File.Exists(diagramPath1))
         {
             Console.Error.WriteLine($"File not found: {diagramPath1}");
@@ -30,61 +30,58 @@ class Program
 
         try
         {
-            // Load first diagram inside a using block
+            // Load the first diagram inside a using block.
             using (Diagram diagram1 = new Diagram(diagramPath1))
-            // Load second diagram inside a using block
-            using (Diagram diagram2 = new Diagram(diagramPath2))
             {
-                // Retrieve global protection settings from both diagrams
-                BOOL protectBkgnds1 = diagram1.DocumentSettings.ProtectBkgnds;
-                BOOL protectBkgnds2 = diagram2.DocumentSettings.ProtectBkgnds;
-
-                BOOL protectMasters1 = diagram1.DocumentSettings.ProtectMasters;
-                BOOL protectMasters2 = diagram2.DocumentSettings.ProtectMasters;
-
-                BOOL protectShapes1 = diagram1.DocumentSettings.ProtectShapes;
-                BOOL protectShapes2 = diagram2.DocumentSettings.ProtectShapes;
-
-                BOOL protectStyles1 = diagram1.DocumentSettings.ProtectStyles;
-                BOOL protectStyles2 = diagram2.DocumentSettings.ProtectStyles;
-
-                bool anyDifference = false;
-
-                // Compare each protection flag and report inconsistencies
-                if (protectBkgnds1 != protectBkgnds2)
+                // Load the second diagram inside a nested using block.
+                using (Diagram diagram2 = new Diagram(diagramPath2))
                 {
-                    anyDifference = true;
-                    Console.WriteLine($"ProtectBkgnds differs: Diagram1 = {protectBkgnds1}, Diagram2 = {protectBkgnds2}");
-                }
+                    // Retrieve global protection settings from both diagrams.
+                    BOOL protectBkgnds1 = diagram1.DocumentSettings.ProtectBkgnds;
+                    BOOL protectBkgnds2 = diagram2.DocumentSettings.ProtectBkgnds;
 
-                if (protectMasters1 != protectMasters2)
-                {
-                    anyDifference = true;
-                    Console.WriteLine($"ProtectMasters differs: Diagram1 = {protectMasters1}, Diagram2 = {protectMasters2}");
-                }
+                    BOOL protectMasters1 = diagram1.DocumentSettings.ProtectMasters;
+                    BOOL protectMasters2 = diagram2.DocumentSettings.ProtectMasters;
 
-                if (protectShapes1 != protectShapes2)
-                {
-                    anyDifference = true;
-                    Console.WriteLine($"ProtectShapes differs: Diagram1 = {protectShapes1}, Diagram2 = {protectShapes2}");
-                }
+                    BOOL protectShapes1 = diagram1.DocumentSettings.ProtectShapes;
+                    BOOL protectShapes2 = diagram2.DocumentSettings.ProtectShapes;
 
-                if (protectStyles1 != protectStyles2)
-                {
-                    anyDifference = true;
-                    Console.WriteLine($"ProtectStyles differs: Diagram1 = {protectStyles1}, Diagram2 = {protectStyles2}");
-                }
+                    BOOL protectStyles1 = diagram1.DocumentSettings.ProtectStyles;
+                    BOOL protectStyles2 = diagram2.DocumentSettings.ProtectStyles;
 
-                if (!anyDifference)
-                {
-                    Console.WriteLine("All global protection settings are consistent between the two diagrams.");
+                    bool anyMismatch = false;
+
+                    // Compare each protection flag and report mismatches.
+                    anyMismatch |= ReportMismatch("ProtectBkgnds", protectBkgnds1, protectBkgnds2);
+                    anyMismatch |= ReportMismatch("ProtectMasters", protectMasters1, protectMasters2);
+                    anyMismatch |= ReportMismatch("ProtectShapes", protectShapes1, protectShapes2);
+                    anyMismatch |= ReportMismatch("ProtectStyles", protectStyles1, protectStyles2);
+
+                    if (!anyMismatch)
+                    {
+                        Console.WriteLine("All global protection settings match between the two diagrams.");
+                    }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagrams: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Compares two BOOL protection values and writes a message if they differ.
+    /// Returns true if a mismatch was found.
+    /// </summary>
+    private static bool ReportMismatch(string settingName, BOOL value1, BOOL value2)
+    {
+        if (value1 != value2)
+        {
+            Console.WriteLine($"Mismatch in {settingName}: Diagram1 = {value1}, Diagram2 = {value2}");
+            return true;
+        }
+        return false;
     }
 }

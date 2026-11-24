@@ -8,115 +8,103 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: expect input Visio file and output folder
+        // Validate arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputFolder>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputRepositoryPath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputFolder = args[1];
+        string outputRepoPath = args[1];
 
-        // Guard against missing input file
+        // Guard: check input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Guard against missing output folder (create if necessary)
-        if (!Directory.Exists(outputFolder))
+        // Guard: ensure output directory exists or create it.
+        try
         {
-            try
-            {
-                Directory.CreateDirectory(outputFolder);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
-                return;
-            }
+            if (!Directory.Exists(outputRepoPath))
+                Directory.CreateDirectory(outputRepoPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to create output directory '{outputRepoPath}': {ex.Message}");
+            return;
         }
 
-        // Load the Visio diagram inside a using block as required
+        // Load the Visio diagram inside a using block as required.
         try
         {
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page in the diagram
+                // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each shape on the current page
+                    // Iterate through all shapes on the page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes
+                        // Skip deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Prepare SVG save options for the current shape
-                        SVGSaveOptions svgOptions = new SVGSaveOptions();
-                        svgOptions.SaveFormat = SaveFileFormat.Svg;
-                        svgOptions.SVGFitToViewPort = true;          // Fit SVG to viewport (changed from BOOL.True)
-                        svgOptions.ExportGuideShapes = false;        // Do not export guide shapes (changed from BOOL.False)
-                        svgOptions.IsExportComments = false;        // Do not export comments (changed from BOOL.False)
-                        svgOptions.PageIndex = page.ID;              // Export the current page
-                        // svgOptions.PageCount = 1;                 // Removed: property does not exist
+                        // Prepare SVG file path for the current shape.
+                        string svgFileName = $"shape_{shape.ID}.svg";
+                        string svgFullPath = Path.Combine(outputRepoPath, svgFileName);
 
-                        // Build output file name: Page_<PageId>_Shape_<ShapeId>.svg
-                        string outputFileName = $"Page_{page.ID}_Shape_{shape.ID}.svg";
-                        string outputPath = Path.Combine(outputFolder, outputFileName);
-
-                        // Export the shape to SVG using the shape's ToSvg method
+                        // Export the shape to SVG using ImageSaveOptions.
                         try
                         {
-                            shape.ToSvg(outputPath, svgOptions);
+                            ImageSaveOptions svgOptions = new ImageSaveOptions(SaveFileFormat.Svg);
+                            shape.ToImage(svgFullPath, svgOptions);
                         }
                         catch (Exception ex)
                         {
-                            Console.Error.WriteLine($"Failed to export shape ID {shape.ID} on page {page.ID}: {ex.Message}");
+                            Console.Error.WriteLine($"Failed to export shape ID {shape.ID} to SVG: {ex.Message}");
                             continue;
                         }
 
-                        // Embed shape custom properties as metadata attributes in the SVG
+                        // Embed shape custom properties as metadata into the SVG file.
                         try
                         {
                             XmlDocument svgDoc = new XmlDocument();
-                            svgDoc.Load(outputPath);
+                            svgDoc.Load(svgFullPath);
 
-                            // The root element is typically <svg>
-                            XmlElement root = svgDoc.DocumentElement;
-                            if (root != null && shape.Props != null)
+                            XmlElement root = svgDoc.DocumentElement; // <svg>
+                            if (root == null)
+                                throw new Exception("Invalid SVG format: missing root element.");
+
+                            // Create <metadata> element.
+                            XmlElement metadataElem = svgDoc.CreateElement("metadata");
+
+                            // Add each custom property as a <customProp> element.
+                            foreach (Prop prop in shape.Props)
                             {
-                                foreach (Prop prop in shape.Props)
-                                {
-                                    // Ensure property name is a valid XML attribute name
-                                    string attrName = prop.Name;
-                                    string attrValue = prop.Value?.Val ?? string.Empty; // Use Prop.Value.Val safely
-                                    if (!string.IsNullOrEmpty(attrName))
-                                    {
-                                        // Add or update the attribute on the <svg> element
-                                        if (root.HasAttribute(attrName))
-                                            root.SetAttribute(attrName, attrValue);
-                                        else
-                                            root.SetAttribute(attrName, attrValue);
-                                    }
-                                }
+                                XmlElement propElem = svgDoc.CreateElement("customProp");
+                                propElem.SetAttribute("name", prop.Name);
+                                propElem.SetAttribute("value", prop.Value?.Val ?? string.Empty);
+                                metadataElem.AppendChild(propElem);
                             }
 
-                            // Save the modified SVG back to disk
-                            svgDoc.Save(outputPath);
+                            // Append metadata to the SVG root.
+                            root.AppendChild(metadataElem);
+
+                            // Save the modified SVG back to disk.
+                            svgDoc.Save(svgFullPath);
                         }
                         catch (Exception ex)
                         {
-                            Console.Error.WriteLine($"Failed to embed metadata for shape ID {shape.ID} on page {page.ID}: {ex.Message}");
-                            // Continue processing other shapes even if metadata embedding fails
+                            Console.Error.WriteLine($"Failed to embed metadata for shape ID {shape.ID}: {ex.Message}");
                         }
                     }
                 }
 
-                // TODO: Add version‑control repository handling (e.g., git add/commit) here if required.
-                // This placeholder is intentional because external VCS tools are not part of the Aspose.Diagram API.
+                // Optionally, save the diagram back (e.g., after any modifications).
+                // Here we just keep the original diagram unchanged.
             }
         }
         catch (Exception ex)

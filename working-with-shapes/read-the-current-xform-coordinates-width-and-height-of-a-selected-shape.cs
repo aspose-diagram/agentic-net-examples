@@ -6,74 +6,75 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Prompt for diagram file path
-        Console.Write("Enter the path to the Visio diagram file: ");
-        string diagramPath = Console.ReadLine();
-
-        // Guard: ensure the file exists
-        if (string.IsNullOrWhiteSpace(diagramPath) || !File.Exists(diagramPath))
+        // Expect two arguments: diagram file path and shape ID
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Error: Diagram file not found.");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId>");
             return;
         }
 
-        // Prompt for the shape ID to inspect
-        Console.Write("Enter the Shape ID (numeric) to read XForm data: ");
-        string shapeIdInput = Console.ReadLine();
+        string diagramPath = args[0];
+        string shapeIdArg = args[1];
 
-        if (!long.TryParse(shapeIdInput, out long targetShapeId))
+        // Guard: check diagram file existence
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine("Error: Invalid Shape ID.");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
+
+        // Parse shape ID (must be a long)
+        if (!long.TryParse(shapeIdArg, out long targetShapeId))
+        {
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'. Must be a numeric value.");
             return;
         }
 
         try
         {
-            // Load the diagram
+            // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Search for the shape with the specified ID across all pages
-            Shape targetShape = null;
+            Shape foundShape = null;
+
+            // Iterate through all pages to locate the shape with the specified ID
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip logically deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    if (shape.ID == targetShapeId)
+                    // Ensure the shape is not deleted
+                    if (shape.Del == BOOL.False && shape.ID == targetShapeId)
                     {
-                        targetShape = shape;
+                        foundShape = shape;
                         break;
                     }
                 }
-                if (targetShape != null)
+                if (foundShape != null)
                     break;
             }
 
-            if (targetShape == null)
+            if (foundShape == null)
             {
-                Console.Error.WriteLine($"Error: Shape with ID {targetShapeId} not found.");
+                Console.Error.WriteLine($"Error: Shape with ID {targetShapeId} not found in the diagram.");
                 return;
             }
 
-            // Read XForm properties
-            double pinX = targetShape.XForm.PinX.Value;
-            double pinY = targetShape.XForm.PinY.Value;
-            double width = targetShape.XForm.Width.Value;
-            double height = targetShape.XForm.Height.Value;
+            // Read XForm properties: PinX, PinY, Width, Height
+            double pinX = foundShape.XForm.PinX.Value;
+            double pinY = foundShape.XForm.PinY.Value;
+            double width = foundShape.XForm.Width.Value;
+            double height = foundShape.XForm.Height.Value;
 
             // Output the retrieved values
-            Console.WriteLine("Shape XForm Data:");
-            Console.WriteLine($"  PinX   : {pinX}");
-            Console.WriteLine($"  PinY   : {pinY}");
-            Console.WriteLine($"  Width  : {width}");
-            Console.WriteLine($"  Height : {height}");
+            Console.WriteLine($"Shape ID: {targetShapeId}");
+            Console.WriteLine($"PinX: {pinX}");
+            Console.WriteLine($"PinY: {pinY}");
+            Console.WriteLine($"Width: {width}");
+            Console.WriteLine($"Height: {height}");
         }
         catch (Exception ex)
         {
-            // Log any Aspose or runtime errors
+            // Write any Aspose or runtime errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

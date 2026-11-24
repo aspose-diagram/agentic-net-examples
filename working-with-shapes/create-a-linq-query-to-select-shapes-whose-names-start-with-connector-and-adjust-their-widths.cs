@@ -17,7 +17,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -35,8 +35,7 @@ class Program
                 // LINQ query to select shapes whose Name starts with "Connector"
                 var connectorShapes = page.Shapes
                     .Cast<Shape>()
-                    .Where(s => !string.IsNullOrEmpty(s.Name) && s.Name.StartsWith("Connector"))
-                    .ToList();
+                    .Where(s => !string.IsNullOrEmpty(s.Name) && s.Name.StartsWith("Connector", StringComparison.Ordinal));
 
                 // Adjust the width of each selected shape
                 foreach (Shape shape in connectorShapes)
@@ -48,11 +47,10 @@ class Program
 
             // Save the modified diagram to the output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any errors that occur during processing to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

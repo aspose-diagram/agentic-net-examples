@@ -6,50 +6,66 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (adjust as needed)
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
             return;
         }
-        string outputPath = "output.vsdx";
 
-        // Guard against missing input file
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Determine output path (optional argument or default)
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output.vsdx");
+
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes to find a triangle shape
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Access the first page (or you can select by name if needed)
+                if (diagram.Pages.Count == 0)
                 {
-                    // Check if the shape uses the "Triangle" master
-                    if (shape.Master != null && shape.Master.Name == "Triangle")
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
+
+                Page page = diagram.Pages[0];
+
+                // Find the first shape whose master name is "Triangle"
+                Shape triangleShape = null;
+                for (int i = 0; i < page.Shapes.Count; i++)
+                {
+                    Shape shp = page.Shapes[i];
+                    if (shp.Master != null && string.Equals(shp.Master.Name, "Triangle", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Ensure solid fill pattern
-                        shape.Fill.FillPattern.Value = 1;
-
-                        // Set the foreground fill color to blue (#0000FF)
-                        shape.Fill.FillForegnd.Value = "#0000FF";
-
-                        // Optional: make fill fully opaque
-                        shape.Fill.FillForegndTrans.Value = 0.0;
+                        triangleShape = shp;
+                        break;
                     }
                 }
-            }
 
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+                if (triangleShape == null)
+                {
+                    Console.Error.WriteLine("No triangle shape found in the diagram.");
+                    return;
+                }
+
+                // Set solid fill pattern
+                triangleShape.Fill.FillPattern.Value = 1; // 1 = solid
+
+                // Set the foreground fill color to blue (hex code)
+                triangleShape.Fill.FillForegnd.Value = "#0000FF";
+
+                // Save the modified diagram to the output file in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {

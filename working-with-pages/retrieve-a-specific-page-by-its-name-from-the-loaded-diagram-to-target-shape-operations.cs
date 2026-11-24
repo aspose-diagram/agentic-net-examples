@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate command‑line arguments: expect diagram path and target page name.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <diagramPath> <pageName>");
@@ -16,10 +16,10 @@ class Program
         string diagramPath = args[0];
         string targetPageName = args[1];
 
-        // Guard against missing input file.
+        // Guard against missing file.
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
             return;
         }
 
@@ -29,38 +29,45 @@ class Program
             Diagram diagram = new Diagram(diagramPath);
 
             // Retrieve the page by its name.
+            // The GetPage(string) method returns null if the page does not exist.
             Page page = diagram.Pages.GetPage(targetPageName);
             if (page == null)
             {
-                Console.Error.WriteLine($"Page with name '{targetPageName}' not found.");
+                Console.Error.WriteLine($"Error: No page named '{targetPageName}' was found in the diagram.");
                 return;
             }
 
-            // Output basic information about the page.
-            Console.WriteLine($"Page '{targetPageName}' found. It contains {page.Shapes.Count} shape(s).");
+            Console.WriteLine($"Page '{targetPageName}' retrieved successfully. Shape count: {page.Shapes.Count}");
 
-            // Iterate through all shapes on the retrieved page.
+            // Example shape operation: list all shapes on the page.
             for (int i = 0; i < page.Shapes.Count; i++)
             {
+                // Retrieve shape by index.
                 Shape shape = page.Shapes[i];
-
-                // Display shape details: ID, universal name, and master name (if any).
-                string masterName = shape.Master != null ? shape.Master.Name : "None";
-                Console.WriteLine($"Shape ID: {shape.ID}, NameU: {shape.NameU}, Master: {masterName}");
+                // Output basic shape information.
+                string shapeName = shape.NameU ?? "<no NameU>";
+                Console.WriteLine($"Shape ID: {shape.ID}, NameU: {shapeName}, Master: {(shape.Master != null ? shape.Master.Name : "<none>")}");
             }
 
-            // Save the diagram unchanged to a new file (optional demonstration).
-            string outputPath = Path.Combine(
-                Path.GetDirectoryName(diagramPath) ?? string.Empty,
-                Path.GetFileNameWithoutExtension(diagramPath) + "_out.vsdx");
+            // Example modification: if there is at least one shape, change its width to 2.0 inches.
+            if (page.Shapes.Count > 0)
+            {
+                Shape firstShape = page.Shapes[0];
+                // Width is stored in shape.XForm.Width.Value (in inches).
+                firstShape.XForm.Width.Value = 2.0;
+                Console.WriteLine($"Modified first shape (ID {firstShape.ID}) width to 2.0 inches.");
+            }
 
+            // Save the modified diagram to a new file (optional).
+            string outputPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? "", 
+                                            Path.GetFileNameWithoutExtension(diagramPath) + "_modified.vsdx");
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to: {outputPath}");
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Capture any Aspose.Diagram or I/O errors.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

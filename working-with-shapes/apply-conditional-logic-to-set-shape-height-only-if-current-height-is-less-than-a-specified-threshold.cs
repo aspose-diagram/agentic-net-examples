@@ -6,65 +6,64 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: input file, output file, height threshold
-        if (args.Length < 3)
+        // Validate command line arguments: input and output file paths
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> <heightThreshold>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> [heightThreshold]");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        string thresholdArg = args[2];
+
+        // Optional height threshold argument; default to 2.0 inches if not provided
+        double heightThreshold = 2.0;
+        if (args.Length >= 3 && double.TryParse(args[2], out double parsedThreshold))
+        {
+            heightThreshold = parsedThreshold;
+        }
 
         // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
-            return;
-        }
-
-        // Parse the height threshold
-        if (!double.TryParse(thresholdArg, out double heightThreshold))
-        {
-            Console.Error.WriteLine($"Invalid height threshold: {thresholdArg}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages
+            // Iterate through all pages and shapes
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
                     // Skip logically deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Retrieve the current height (in inches)
+                    // Retrieve the current height of the shape (in inches)
                     double currentHeight = shape.XForm.Height.Value;
 
-                    // Apply conditional logic: set new height only if current height is less than the threshold
+                    // Apply conditional logic: set height only if it's less than the threshold
                     if (currentHeight < heightThreshold)
                     {
-                        // Example: increase height to the threshold value
+                        // Set the new height using the SetHeight method
                         shape.SetHeight(heightThreshold);
                     }
                 }
             }
 
-            // Save the modified diagram using a valid overload (requires SaveFileFormat)
+            // Save the modified diagram to the output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

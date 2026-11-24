@@ -1,60 +1,60 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define input and output file paths
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
-        string outputPath = "output_modified.vsdx";
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block
+            // Load the Visio diagram inside a using block (mandatory pattern).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure there is at least one window; add a default one if none exist
+                // Ensure there is at least one window to modify.
                 if (diagram.Windows.Count == 0)
                 {
-                    Window defaultWindow = new Window();
-                    defaultWindow.WindowType = WindowTypeValue.Drawing;
-                    // Use cast to zero for normal state as Normal is not defined
-                    defaultWindow.WindowState = (WindowStateValue)0;
-                    diagram.Windows.Add(defaultWindow);
+                    Console.Error.WriteLine("The diagram contains no windows to modify.");
+                    return;
                 }
 
-                // Update visibility properties for each window in the diagram
-                foreach (Window win in diagram.Windows)
+                // Update visibility properties for each window.
+                foreach (Window window in diagram.Windows)
                 {
-                    win.ShowGrid = BOOL.True;
-                    win.ShowGuides = BOOL.True;
-                    win.ShowRulers = BOOL.True;
-                    win.ShowPageBreaks = BOOL.True;
+                    // Show grid, guides, rulers and page breaks.
+                    window.ShowGrid = BOOL.True;
+                    window.ShowGuides = BOOL.True;
+                    window.ShowRulers = BOOL.True;
+                    window.ShowPageBreaks = BOOL.True;
                 }
 
-                // Save the modified diagram to a new file in VSDX format
+                // Save the modified diagram to the specified output file.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

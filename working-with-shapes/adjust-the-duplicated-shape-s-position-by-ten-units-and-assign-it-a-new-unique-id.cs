@@ -15,7 +15,7 @@ class Program
         }
         string outputPath = "output.vsdx";
 
-        // Guard to ensure the input file exists
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -27,62 +27,75 @@ class Program
             // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Access the first page of the diagram
-                Page page = diagram.Pages[0];
+                // Find the first non-deleted shape to duplicate
+                Shape sourceShape = null;
+                Page sourcePage = null;
 
-                // Locate the first non-deleted shape to duplicate
-                Shape originalShape = null;
-                foreach (Shape s in page.Shapes)
+                foreach (Page page in diagram.Pages)
                 {
-                    if (s.Del == BOOL.False)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        originalShape = s;
+                        // Skip logically deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        sourceShape = shape;
+                        sourcePage = page;
                         break;
                     }
+
+                    if (sourceShape != null)
+                        break;
                 }
 
-                if (originalShape == null)
+                if (sourceShape == null || sourcePage == null)
                 {
-                    Console.Error.WriteLine("No shape found to duplicate.");
+                    Console.Error.WriteLine("No suitable shape found to duplicate.");
                     return;
                 }
 
-                // Retrieve the master name associated with the original shape
-                string masterName = originalShape.Master != null ? originalShape.Master.NameU : null;
+                // Retrieve the master name of the source shape (required for AddShape)
+                string masterName = sourceShape.Master?.Name;
                 if (string.IsNullOrEmpty(masterName))
                 {
-                    Console.Error.WriteLine("Original shape does not have an associated master.");
+                    Console.Error.WriteLine("Source shape does not have an associated master; cannot duplicate.");
                     return;
                 }
 
-                // Calculate new position (move 10 units to the right)
-                double newPinX = originalShape.XForm.PinX.Value + 10;
-                double newPinY = originalShape.XForm.PinY.Value;
+                // Get original position and size
+                double origPinX = sourceShape.XForm.PinX.Value;
+                double origPinY = sourceShape.XForm.PinY.Value;
+                double width = sourceShape.XForm.Width.Value;
+                double height = sourceShape.XForm.Height.Value;
 
-                // Add a new shape based on the same master; AddShape returns a long ID
-                long newShapeId = diagram.AddShape(
-                    newPinX,
-                    newPinY,
-                    originalShape.XForm.Width.Value,
-                    originalShape.XForm.Height.Value,
-                    masterName,
-                    0); // page index 0 for the first page
+                // Calculate new position (offset by 10 units on X axis)
+                double newPinX = origPinX + 10.0;
+                double newPinY = origPinY; // Y remains the same
 
-                // Retrieve the newly added shape using its ID
-                Shape newShape = page.Shapes.GetShape((int)newShapeId);
+                // Add the duplicated shape to the same page
+                // The overload returns a long representing the new shape's structural ID
+                long newShapeId = sourcePage.AddShape(newPinX, newPinY, width, height, masterName, false);
 
-                // Output the IDs to confirm uniqueness
-                Console.WriteLine($"Original Shape ID: {originalShape.ID}");
-                Console.WriteLine($"Duplicated Shape ID: {newShape.ID}");
+                // Retrieve the newly added shape object
+                Shape newShape = sourcePage.Shapes.GetShape(newShapeId);
+                if (newShape == null)
+                {
+                    Console.Error.WriteLine("Failed to retrieve the newly added shape.");
+                    return;
+                }
 
-                // Save the modified diagram to the output path
+                // Assign the new unique ID (the ID returned by AddShape is already unique)
+                newShape.ID = newShapeId;
+
+                // Save the modified diagram to the output file
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

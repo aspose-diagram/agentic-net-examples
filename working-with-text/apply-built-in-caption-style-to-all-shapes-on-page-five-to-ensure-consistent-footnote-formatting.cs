@@ -28,21 +28,18 @@ class Program
             // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram has at least five pages (zero‑based index 4).
+                // Ensure the document has at least five pages.
                 if (diagram.Pages.Count < 5)
                 {
                     Console.Error.WriteLine("The diagram does not contain a page five (index 4).");
                     return;
                 }
 
-                // Retrieve page five (index 4).
-                Page pageFive = diagram.Pages[4];
-
-                // Locate the built‑in style sheet named "Caption".
+                // Locate the built‑in 'Caption' style sheet.
                 StyleSheet captionStyle = null;
                 foreach (StyleSheet ss in diagram.StyleSheets)
                 {
-                    // NameU holds the universal name of the style.
+                    // StyleSheet.NameU holds the universal name of the style.
                     if (ss.NameU == "Caption")
                     {
                         captionStyle = ss;
@@ -52,9 +49,12 @@ class Program
 
                 if (captionStyle == null)
                 {
-                    Console.Error.WriteLine("Style sheet 'Caption' was not found in the document.");
+                    Console.Error.WriteLine("The 'Caption' style was not found in the document's style sheets.");
                     return;
                 }
+
+                // Retrieve page five (zero‑based index 4).
+                Page pageFive = diagram.Pages[4];
 
                 // Apply the 'Caption' style to every non‑deleted shape on page five.
                 foreach (Shape shape in pageFive.Shapes)
@@ -63,7 +63,7 @@ class Program
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Assign the style to text, fill, and line categories.
+                    // Apply the style by assigning the StyleSheet to the shape's style properties.
                     shape.TextStyle = captionStyle;
                     shape.FillStyle = captionStyle;
                     shape.LineStyle = captionStyle;

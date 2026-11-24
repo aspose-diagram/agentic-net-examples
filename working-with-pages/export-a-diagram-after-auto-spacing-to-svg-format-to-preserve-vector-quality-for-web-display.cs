@@ -8,68 +8,67 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputSvgFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputSvgPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram (Diagram does not implement IDisposable)
-            Diagram diagram = new Diagram(inputPath);
-
-            // ------------------------------------------------------------
-            // Apply auto‑spacing to each page in the diagram
-            // ------------------------------------------------------------
-            AutoSpaceOptions autoSpaceOpts = new AutoSpaceOptions
+            // Load the Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                DistanceInHorizontal = 2,
-                DistanceInVertical = 2
-            };
+                // ------------------------------------------------------------
+                // Perform auto‑spacing on each page before exporting.
+                // ------------------------------------------------------------
+                AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions();
+                // Example spacing values; adjust as needed.
+                autoSpaceOptions.DistanceInHorizontal = 0.5;
+                autoSpaceOptions.DistanceInVertical = 0.5;
 
-            // Iterate through all pages and auto‑space their shapes
-            foreach (Page page in diagram.Pages)
-            {
-                page.AutoSpaceShapes(page.Shapes, autoSpaceOpts);
+                // Iterate through all pages and apply auto‑spacing.
+                foreach (Page page in diagram.Pages)
+                {
+                    // AutoSpaceShapes expects the shape collection and options.
+                    page.AutoSpaceShapes(page.Shapes, autoSpaceOptions);
+                }
+
+                // ------------------------------------------------------------
+                // Configure SVG save options.
+                // ------------------------------------------------------------
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
+                // Ensure the correct format is tracked (optional but explicit).
+                svgOptions.SaveFormat = SaveFileFormat.Svg;
+                // Example: do not export hidden pages.
+                svgOptions.ExportHiddenPage = false;
+                // Example: do not export guide shapes.
+                svgOptions.ExportGuideShapes = false;
+                // Fit the SVG to the viewport (preserves viewbox).
+                svgOptions.SVGFitToViewPort = true;
+
+                // ------------------------------------------------------------
+                // Save the diagram as SVG.
+                // ------------------------------------------------------------
+                diagram.Save(outputPath, svgOptions);
+                Console.WriteLine($"Diagram successfully exported to SVG: {outputPath}");
             }
-
-            // ------------------------------------------------------------
-            // Configure SVG save options
-            // ------------------------------------------------------------
-            SVGSaveOptions svgOpts = new SVGSaveOptions
-            {
-                // Preserve the viewbox by fitting the SVG to the viewport
-                SVGFitToViewPort = true,
-                // Do not export guide shapes
-                ExportGuideShapes = false,
-                // Do not export comments
-                IsExportComments = false,
-                // Export only the first page (adjust if needed)
-                PageIndex = 0
-                // PageCount property is not available in this version; omitted
-                // SaveFormat is optional; the Save method infers from options
-            };
-
-            // Save the diagram as SVG using the configured options
-            diagram.Save(outputPath, svgOpts);
-            Console.WriteLine($"Diagram successfully exported to SVG: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Capture any Aspose or I/O errors.
+            Console.Error.WriteLine($"Error during processing: {ex.Message}");
         }
     }
 }

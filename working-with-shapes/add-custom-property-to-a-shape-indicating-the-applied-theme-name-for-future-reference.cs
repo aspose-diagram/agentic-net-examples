@@ -6,20 +6,21 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
-        if (args.Length < 2)
+        // Validate arguments: input file, output file, theme name
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <themeName>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
+        string themeName = args[2];
 
-        // Guard: ensure input file exists
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -35,41 +36,47 @@ class Program
                 return;
             }
 
-            Page page = diagram.Pages[0];
-            if (page.Shapes.Count == 0)
+            Page firstPage = diagram.Pages[0];
+            if (firstPage.Shapes.Count == 0)
             {
                 Console.Error.WriteLine("The first page contains no shapes.");
                 return;
             }
 
-            // Get the first shape on the first page
-            Shape shape = page.Shapes[0];
+            // Retrieve the first non-deleted shape
+            Shape targetShape = null;
+            foreach (Shape shp in firstPage.Shapes)
+            {
+                if (shp.Del != BOOL.True)
+                {
+                    targetShape = shp;
+                    break;
+                }
+            }
 
-            // Define the theme name to apply (example value)
-            string themeName = "MyCustomTheme";
-
-            // Apply a preset theme to the shape (write‑only property)
-            // Note: PresetTheme is write‑only; we cannot read it back.
-            // The actual enum/value depends on the Visio theme you want.
-            // Here we simply demonstrate setting a theme identifier.
-            // shape.PresetTheme = PresetThemeValue.Theme1; // Uncomment and set appropriate enum if needed
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine("No visible shape found on the first page.");
+                return;
+            }
 
             // Add a custom property to store the applied theme name
+            // Property name: "AppliedTheme", Label: "Applied Theme", Value: themeName
             Prop customProp = new Prop();
-            customProp.Name = "AppliedTheme";               // Property name
-            customProp.Value.Val = themeName;               // Property value (the theme name)
-            customProp.Label.Value = "Applied Theme";       // Human‑readable label
-            customProp.Type.Value = TypePropValue.String;  // Data type of the property
+            customProp.Name = "AppliedTheme";
+            customProp.Label.Value = "Applied Theme";
+            customProp.Value.Val = themeName;
+            customProp.Type.Value = TypePropValue.String;
 
-            // Add the custom property to the shape's property collection
-            shape.Props.Add(customProp);
+            // Add the property to the shape's custom properties collection
+            targetShape.Props.Add(customProp);
 
             // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console
+            // Write any Aspose or runtime errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

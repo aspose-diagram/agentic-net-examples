@@ -17,7 +17,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -36,11 +36,17 @@ class Program
                     foreach (Shape shape in page.Shapes)
                     {
                         // Compare the shape's line color with its inherited line color.
-                        // If they differ, line inheritance is disabled (custom line color is set).
-                        if (shape.Line.LineColor.Value != shape.InheritLine.LineColor.Value)
+                        // If they differ, line inheritance is disabled for this shape.
+                        string explicitLineColor = shape.Line.LineColor.Value;
+                        string inheritedLineColor = shape.InheritLine.LineColor.Value;
+
+                        if (!string.Equals(explicitLineColor, inheritedLineColor, StringComparison.OrdinalIgnoreCase))
                         {
-                            // Highlight the shape by setting a distinct custom line color (red).
+                            // Highlight the shape by setting a custom line color (red).
                             shape.Line.LineColor.Value = "#FF0000";
+
+                            // Optionally, make the line thicker for better visibility.
+                            shape.Line.LineWeight.Value = 0.03;
                         }
                     }
                 }
@@ -53,8 +59,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

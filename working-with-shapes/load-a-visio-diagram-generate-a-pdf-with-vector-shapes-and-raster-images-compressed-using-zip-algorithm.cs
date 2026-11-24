@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define input Visio file and output PDF file paths
+        // Define input and output file paths
         string inputPath = "input.vsdx";
         if (!System.IO.File.Exists(inputPath))
         {
@@ -16,7 +16,7 @@ class Program
         }
         string outputPath = "output.pdf";
 
-        // Guard: ensure the input file exists
+        // Guard: ensure the input Visio file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,7 +25,7 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block
+            // Load the Visio diagram inside a using block (ensures proper disposal)
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Configure PDF save options
@@ -34,19 +34,24 @@ class Program
                 // Explicitly set the format tracker
                 pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Apply ZIP (Flate) compression to text streams within the PDF
+                // Compress textual elements using Flate (ZIP) compression
                 pdfOptions.TextCompression = PdfTextCompression.Flate;
 
-                // Save the diagram as a PDF with the configured options
-                diagram.Save(outputPath, pdfOptions);
-            }
+                // Set high resolution and maximum JPEG quality for raster images
+                pdfOptions.HorizontalResolution = 300;
+                pdfOptions.VerticalResolution = 300;
+                pdfOptions.JpegQuality = 100;
 
-            Console.WriteLine($"PDF generated successfully at: {outputPath}");
+                // Export the diagram to PDF with the configured options
+                diagram.Save(outputPath, pdfOptions);
+
+                Console.WriteLine($"PDF successfully saved to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
         }
     }
 }

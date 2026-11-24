@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Drawing.Text;
@@ -9,81 +8,69 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Expect three arguments: input diagram path, output PNG path, fallback font name
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputPngPath> [fallbackFontName]");
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <outputPngPath> <fallbackFontName>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        string fallbackFont = args.Length >= 3 ? args[2] : "Arial";
+        string fallbackFontName = args[2];
 
-        // Guard: ensure the input Visio file exists.
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Validate that the fallback font is installed on the system.
+        // Validate that the fallback font is installed on the system
         try
         {
             InstalledFontCollection fontCollection = new InstalledFontCollection();
-            bool fontExists = fontCollection.Families.Any(f => string.Equals(f.Name, fallbackFont, StringComparison.OrdinalIgnoreCase));
-
-            if (!fontExists)
+            bool fontFound = false;
+            foreach (var family in fontCollection.Families)
             {
-                Console.Error.WriteLine($"Warning: Fallback font \"{fallbackFont}\" is not installed on this system. Rendering may use another substitute.");
+                if (string.Equals(family.Name, fallbackFontName, StringComparison.OrdinalIgnoreCase))
+                {
+                    fontFound = true;
+                    break;
+                }
+            }
+
+            if (!fontFound)
+            {
+                Console.Error.WriteLine($"Warning: Fallback font \"{fallbackFontName}\" is not installed on this system. It will be used as a fallback, but missing glyphs may still appear.");
             }
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Error while checking installed fonts: {ex.Message}");
-            // Continue execution; fallback font will still be set.
-        }
-
-        // Configure global font settings before loading the diagram.
-        // This ensures Aspose.Diagram uses the specified fallback font for missing glyphs.
-        FontConfigs.DefaultFontName = fallbackFont;
-
-        // Load the diagram and render to PNG.
-        Diagram diagram = null;
-        try
-        {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
+            // Continue execution; fallback font will still be set
         }
 
         try
         {
-            // Prepare image save options for PNG export.
-            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png)
-            {
-                // Force the fallback font for any missing characters.
-                DefaultFont = fallbackFont,
-                // Export the first page only (optional, adjust as needed).
-                PageIndex = 0,
-                PageCount = 1
-            };
+            // Configure global fallback font for Aspose.Diagram rendering
+            FontConfigs.DefaultFontName = fallbackFontName;
 
-            // Save the diagram as PNG using the configured options.
-            diagram.Save(outputPath, pngOptions);
-            Console.WriteLine($"Diagram successfully rendered to PNG: {outputPath}");
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Prepare PNG save options with the specified fallback font
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            saveOptions.DefaultFont = fallbackFontName;
+
+            // Save the diagram as PNG
+            diagram.Save(outputPath, saveOptions);
+
+            Console.WriteLine($"Diagram successfully rendered to PNG at: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error during PNG export: {ex.Message}");
-        }
-        finally
-        {
-            // Ensure resources are released.
-            diagram?.Dispose();
+            Console.Error.WriteLine($"Error during diagram processing: {ex.Message}");
         }
     }
 }

@@ -1,52 +1,47 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Determine the input VSDX file path (first command‑line argument)
-        string inputPath;
-        if (args.Length > 0)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            inputPath = args[0];
-        }
-        else
-        {
-            Console.Error.WriteLine("Error: No input file path provided. Pass the VSDX file path as the first argument.");
+            Console.Error.WriteLine("Usage: Program <inputVsdxPath> <defaultFontName>");
             return;
         }
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string defaultFontName = args[1];
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found – '{inputPath}'.");
             return;
         }
 
-        // Set a custom default font for rendering before loading the diagram.
-        // This font will be used whenever a required font is missing in the diagram.
-        FontConfigs.DefaultFontName = "Calibri";
-
-        // Optional: add an additional font folder if your custom fonts are stored elsewhere.
-        // FontConfigs.SetFontFolder(@"C:\MyCustomFonts", true);
+        // Apply the custom default font before loading the diagram.
+        // This ensures the font setting is considered during rendering.
+        FontConfigs.DefaultFontName = defaultFontName;
 
         try
         {
-            // Load the Visio diagram from the specified VSDX file
+            // Load the Visio diagram from the specified VSDX file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Save the diagram to a new file to confirm that the custom font setting is applied
-            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "output_with_custom_font.vsdx");
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            // Optional: output basic information to confirm successful load.
+            Console.WriteLine($"Diagram loaded successfully. Pages count: {diagram.Pages.Count}");
+
+            // The diagram is now ready for rendering operations (e.g., image or PDF export)
+            // and will use the specified default font when required.
         }
         catch (Exception ex)
         {
-            // Write any Aspose.Diagram errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose.Diagram errors to the error stream.
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

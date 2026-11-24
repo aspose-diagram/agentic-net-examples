@@ -14,79 +14,91 @@ class Program
             return;
         }
 
-        string visioPath = args[0];
+        string inputPath = args[0];
 
         // Guard: ensure the file exists
-        if (!File.Exists(visioPath))
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {visioPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(visioPath);
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                // Build a lookup dictionary for fonts defined in the diagram
+                var diagramFonts = new Dictionary<string, Font>(StringComparer.OrdinalIgnoreCase);
+                foreach (Font font in diagram.Fonts)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Check if the shape contains visible text
-                    if (shape.Text != null && !string.IsNullOrWhiteSpace(shape.Text.Value.Text))
+                    // Font.Name uniquely identifies a font in the diagram
+                    if (!string.IsNullOrEmpty(font.Name))
                     {
-                        Console.WriteLine($"Shape ID: {shape.ID}, Name: {shape.Name}");
+                        diagramFonts[font.Name] = font;
+                    }
+                }
 
-                        // Use a HashSet to avoid duplicate font entries per shape
-                        HashSet<string> processedFonts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
+                {
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip shapes that are marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        // Iterate through each character formatting run in the shape
-                        foreach (Aspose.Diagram.Char ch in shape.Chars)
+                        // Check if the shape contains any text
+                        if (shape.Text == null || string.IsNullOrWhiteSpace(shape.Text.Value.Text))
                         {
-                            // Retrieve the font name used by this character
-                            string fontName = ch.FontName?.Value ?? "Unknown";
-
-                            // If this font has already been reported for the current shape, skip it
-                            if (processedFonts.Contains(fontName))
-                                continue;
-
-                            processedFonts.Add(fontName);
-
-                            // Font style and version are not exposed by Aspose.Diagram.Font
-                            string fontStyle = "N/A";
-                            string fontVersion = "N/A";
-
-                            // Verify if the font exists in the diagram's font resources
-                            bool fontFoundInDiagram = false;
-                            foreach (Font font in diagram.Fonts)
-                            {
-                                if (string.Equals(font.Name, fontName, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    fontFoundInDiagram = true;
-                                    break;
-                                }
-                            }
-
-                            Console.WriteLine($"  Font Name: {fontName}");
-                            Console.WriteLine($"    Style: {fontStyle}");
-                            Console.WriteLine($"    Version: {fontVersion}");
-                            Console.WriteLine($"    Present in diagram fonts: {(fontFoundInDiagram ? "Yes" : "No")}");
+                            continue; // No text to process
                         }
 
-                        Console.WriteLine(); // Blank line for readability between shapes
+                        // Collect font names and their first encountered style from character runs
+                        var fontStyles = new Dictionary<string, StyleValue>(StringComparer.OrdinalIgnoreCase);
+                        foreach (Aspose.Diagram.Char ch in shape.Chars)
+                        {
+                            string fontName = ch.FontName?.Value;
+                            if (string.IsNullOrEmpty(fontName))
+                                continue;
+
+                            // Record the style if this font hasn't been seen yet for this shape
+                            if (!fontStyles.ContainsKey(fontName))
+                            {
+                                // Style may be undefined; use the cell's value if present
+                                StyleValue style = ch.Style?.Value ?? StyleValue.Undefined;
+                                fontStyles[fontName] = style;
+                            }
+                        }
+
+                        // If no character-level font information is found, note it
+                        if (fontStyles.Count == 0)
+                        {
+                            Console.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, Shape Name: {shape.Name}");
+                            Console.WriteLine("  No character-level font information found.");
+                            continue;
+                        }
+
+                        // Output font metadata for each font used by this shape
+                        foreach (KeyValuePair<string, StyleValue> kvp in fontStyles)
+                        {
+                            string fontName = kvp.Key;
+                            StyleValue style = kvp.Value;
+
+                            Console.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, Shape Name: {shape.Name}");
+                            Console.WriteLine($"  Font Family: {fontName}");
+                            Console.WriteLine($"  Style: {style}");
+                            // Aspose.Diagram does not expose a version property for fonts
+                            Console.WriteLine($"  Version: N/A");
+                        }
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

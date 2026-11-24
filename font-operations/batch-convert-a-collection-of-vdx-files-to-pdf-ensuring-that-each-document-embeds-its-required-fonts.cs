@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Aspose.Diagram;
@@ -11,132 +10,139 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect input and output directories as command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: BatchConvertVdxToPdf <inputFolder> <outputFolder>");
+            Console.WriteLine("Usage: <program> <inputDir> <outputDir>");
             return;
         }
 
-        string inputFolder = args[0];
-        string outputFolder = args[1];
+        string inputDir = args[0];
+        string outputDir = args[1];
 
-        // Verify input folder exists.
-        if (!Directory.Exists(inputFolder))
+        // Guard against missing input directory.
+        if (!Directory.Exists(inputDir))
         {
-            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
+            Console.Error.WriteLine($"Input directory does not exist: {inputDir}");
             return;
         }
 
-        // Ensure output folder exists (create if necessary).
-        if (!Directory.Exists(outputFolder))
+        // Ensure the output directory exists.
+        if (!Directory.Exists(outputDir))
         {
             try
             {
-                Directory.CreateDirectory(outputFolder);
+                Directory.CreateDirectory(outputDir);
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
+                Console.Error.WriteLine($"Failed to create output directory '{outputDir}': {ex.Message}");
                 return;
             }
         }
 
-        // Gather all .vdx files in the input folder (non‑recursive).
-        string[] vdxFiles = Directory.GetFiles(inputFolder, "*.vdx");
+        // Prepare system font folder configuration (must be set before loading diagrams).
+        try
+        {
+            // Add the OS fonts folder to Aspose's font search paths.
+            string systemFontFolder = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
+            // The second argument indicates recursive search.
+            FontConfigs.SetFontFolder(systemFontFolder, true);
+            // Set a generic fallback font name.
+            FontConfigs.DefaultFontName = "Arial";
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to configure font folders: {ex.Message}");
+            // Continue; font configuration failure will be reported per file.
+        }
+
+        // Enumerate VDX files in the input directory.
+        string[] vdxFiles = Directory.GetFiles(inputDir, "*.vdx", SearchOption.TopDirectoryOnly);
         if (vdxFiles.Length == 0)
         {
-            Console.WriteLine("No VDX files found in the specified input folder.");
+            Console.WriteLine("No VDX files found in the specified input directory.");
             return;
         }
 
-        // Prepare system‑installed font collection for validation.
-        InstalledFontCollection systemFonts = new InstalledFontCollection();
-
-        // Register the system font directory with Aspose.Diagram so that fonts can be embedded if supported.
-        // Retrieve the default font directory from a temporary diagram instance.
+        // Build a set of installed font names for validation.
+        HashSet<string> installedFontNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         try
         {
-            // Use a dummy diagram to obtain the default font directory.
-            Diagram dummy = new Diagram();
-            // GetDefaultFontDir returns an ArrayList of directories; use the first entry.
-            ArrayList fontDirs = dummy.GetDefaultFontDir();
-            if (fontDirs != null && fontDirs.Count > 0)
+            InstalledFontCollection installedFonts = new InstalledFontCollection();
+            // Families may not expose a strongly typed FontFamily; use dynamic access.
+            foreach (var family in installedFonts.Families)
             {
-                string defaultFontDir = fontDirs[0] as string;
-                if (!string.IsNullOrEmpty(defaultFontDir))
+                // Use reflection‑safe approach to get the name property.
+                var nameProp = family.GetType().GetProperty("Name");
+                if (nameProp != null)
                 {
-                    // Register the directory (recursive = true).
-                    FontConfigs.SetFontFolder(defaultFontDir, true);
+                    string name = nameProp.GetValue(family) as string;
+                    if (!string.IsNullOrEmpty(name))
+                    {
+                        installedFontNames.Add(name);
+                    }
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to configure font folder: {ex.Message}");
-            // Continue; font configuration may still work without explicit registration.
+            Console.Error.WriteLine($"Failed to enumerate installed fonts: {ex.Message}");
+            // Proceed without validation if enumeration fails.
         }
 
-        // Set a fallback default font for rendering.
-        FontConfigs.DefaultFontName = "Arial";
-
+        // Process each VDX file.
         foreach (string vdxPath in vdxFiles)
         {
-            // Guard against missing file (should not happen after GetFiles, but keep for safety).
+            // Guard against missing file (should not happen after GetFiles, but required by rules).
             if (!File.Exists(vdxPath))
             {
-                Console.Error.WriteLine($"File not found, skipping: {vdxPath}");
+                Console.Error.WriteLine($"File not found: {vdxPath}");
                 continue;
             }
 
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(vdxPath);
+            string pdfPath = Path.Combine(outputDir, fileNameWithoutExt + ".pdf");
+
             try
             {
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(vdxPath);
-
-                // Validate that every font used in the diagram is installed on the system.
-                List<string> missingFonts = new List<string>();
-                foreach (Font font in diagram.Fonts)
+                // Load the diagram inside a using block as mandated.
+                using (Diagram diagram = new Diagram(vdxPath))
                 {
-                    bool isInstalled = systemFonts.Families.Any(f => string.Equals(f.Name, font.Name, StringComparison.OrdinalIgnoreCase));
-                    if (!isInstalled)
+                    // Validate that all fonts used in the diagram are installed.
+                    List<string> missingFonts = new List<string>();
+                    foreach (Font font in diagram.Fonts)
                     {
-                        missingFonts.Add(font.Name);
+                        if (!installedFontNames.Contains(font.Name))
+                        {
+                            missingFonts.Add(font.Name);
+                        }
                     }
+
+                    if (missingFonts.Count > 0)
+                    {
+                        Console.WriteLine($"Warning: Diagram '{fileNameWithoutExt}' uses fonts not installed on the system:");
+                        foreach (string missing in missingFonts)
+                        {
+                            Console.WriteLine($"  - {missing}");
+                        }
+                        // The DefaultFont set in PdfSaveOptions will be used as fallback.
+                    }
+
+                    // Configure PDF save options.
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                    pdfOptions.DefaultFont = "Arial";          // Fallback font.
+                    pdfOptions.ExportHiddenPage = false;       // Plain bool, not BOOL.
+
+                    // Save the diagram as PDF.
+                    diagram.Save(pdfPath, pdfOptions);
                 }
 
-                if (missingFonts.Count > 0)
-                {
-                    Console.WriteLine($"Warning: The following fonts used in '{Path.GetFileName(vdxPath)}' are not installed on the system:");
-                    foreach (string fName in missingFonts)
-                    {
-                        Console.WriteLine($"  - {fName}");
-                    }
-                    Console.WriteLine("The conversion will use the default fallback font where necessary.");
-                }
-
-                // Configure PDF save options.
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    // Use a fallback font when a required font is missing.
-                    DefaultFont = "Arial",
-                    // Do not export hidden pages.
-                    ExportHiddenPage = false
-                };
-
-                // Determine output PDF path.
-                string outputFileName = Path.GetFileNameWithoutExtension(vdxPath) + ".pdf";
-                string outputPath = Path.Combine(outputFolder, outputFileName);
-
-                // Save the diagram as PDF.
-                diagram.Save(outputPath, pdfOptions);
-
-                Console.WriteLine($"Successfully converted '{Path.GetFileName(vdxPath)}' to PDF.");
+                Console.WriteLine($"Successfully converted '{vdxPath}' to PDF at '{pdfPath}'.");
             }
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Error processing file '{vdxPath}': {ex.Message}");
-                // Continue with next file.
             }
         }
     }

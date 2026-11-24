@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Drawing.Text;
@@ -9,85 +8,81 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input diagram path, output image path, font name
-        if (args.Length < 3)
+        // Prompt user for the diagram file path
+        Console.Write("Enter diagram file path: ");
+        string inputPath = Console.ReadLine();
+        if (string.IsNullOrWhiteSpace(inputPath) || !File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <outputImagePath> <fontName>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-        string fontName = args[2];
-
-        // Guard against missing input file
-        if (!File.Exists(inputPath))
+        // Prompt user for the output preview image path
+        Console.Write("Enter output image path (e.g., preview.png): ");
+        string outputPath = Console.ReadLine();
+        if (string.IsNullOrWhiteSpace(outputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine("Output path cannot be empty.");
+            return;
+        }
+
+        // Prompt user for the font name to apply
+        Console.Write("Enter font name to apply to all captions: ");
+        string fontName = Console.ReadLine();
+        if (string.IsNullOrWhiteSpace(fontName))
+        {
+            Console.Error.WriteLine("Font name cannot be empty.");
             return;
         }
 
         // Validate that the requested font is installed on the system
-        try
+        var installedFonts = new InstalledFontCollection();
+        bool fontFound = false;
+        foreach (var family in installedFonts.Families)
         {
-            var fontCollection = new InstalledFontCollection();
-            bool fontExists = fontCollection.Families.Any(f => f.Name.Equals(fontName, StringComparison.OrdinalIgnoreCase));
-            if (!fontExists)
+            if (string.Equals(family.Name, fontName, StringComparison.OrdinalIgnoreCase))
             {
-                Console.Error.WriteLine($"Warning: Font \"{fontName}\" is not installed on this system. Rendering will fall back to the default font.");
+                fontFound = true;
+                break;
             }
         }
-        catch (Exception ex)
+
+        if (!fontFound)
         {
-            Console.Error.WriteLine($"Error while checking installed fonts: {ex.Message}");
-            // Continue execution; fallback will be handled by Aspose
+            Console.Error.WriteLine($"Warning: Font '{fontName}' is not installed on this system. Aspose will use its fallback mechanism.");
         }
+
+        // Set the default font for Aspose.Diagram rendering
+        FontConfigs.DefaultFontName = fontName;
 
         try
         {
-            // Set the default font for Aspose.Diagram rendering
-            FontConfigs.DefaultFontName = fontName;
-
-            // Load the diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Apply the specified font to all characters in all shapes (captions)
-            // Note: Char.FontName property may not exist; using Font.Value as a fallback is not required.
-            // The default font setting above ensures rendering uses the requested font when possible.
-            // If explicit per-character font assignment is needed, uncomment and adjust the following block
-            /*
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (Shape shape in page.Shapes)
+                // Iterate over all pages and shapes to apply the font to every character run
+                foreach (Page page in diagram.Pages)
                 {
-                    // Only process shapes that contain text
-                    if (shape.Chars != null && shape.Chars.Count > 0)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        foreach (Char ch in shape.Chars)
+                        // Apply the font to each character in the shape
+                        for (int i = 0; i < shape.Chars.Count; i++)
                         {
-                            // Attempt to set the font name; if the property differs, adjust accordingly.
-                            // ch.FontName = fontName; // Placeholder – actual property may vary.
+                            shape.Chars[i].FontName.Value = fontName;
                         }
                     }
                 }
+
+                // Configure image save options for a PNG preview of the first page
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                saveOptions.PageIndex = 0;   // Export the first page
+                saveOptions.PageCount = 1;   // Only one page in the preview
+
+                // Save the preview image
+                diagram.Save(outputPath, saveOptions);
             }
-            */
 
-            // Configure image save options for a preview (first page only)
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
-            {
-                PageIndex = 0,          // First page
-                PageCount = 1,          // Export only one page
-                Resolution = 150f       // Reasonable resolution for preview
-            };
-
-            // Save the preview image
-            diagram.Save(outputPath, saveOptions);
-
-            // Clean up
-            diagram.Dispose();
-
-            Console.WriteLine($"Preview image saved to: {outputPath}");
+            Console.WriteLine($"Preview image successfully saved to: {outputPath}");
         }
         catch (Exception ex)
         {

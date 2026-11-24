@@ -1,11 +1,11 @@
 {
   "category": "font-operations",
   "display_name": "Font Operations",
-  "version": "26.10.0",
+  "version": "26.11.0",
   "framework": "net8.0",
   "total": 30,
   "pass_rate": 100.0,
-  "generated": "2026-10-26",
+  "generated": "2026-11-24",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,6 +14,7 @@
       "task": "Apply a bold style to all text shapes that use a particular font within the diagram",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -70,7 +71,6 @@
         "Aspose.Diagram.Saving",
         "Aspose.Drawing.Text",
         "System",
-        "System.Collections",
         "System.Collections.Generic",
         "System.IO",
         "System.Linq"
@@ -89,15 +89,14 @@
       "task": "Batch process multiple vsd files substituting a deprecated font with a modern equivalent in each",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.IO",
-        "System.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Fonts",
+        "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -107,6 +106,8 @@
       "task": "Configure a custom font folder path to load additional truetype fonts for diagram processing",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
+        "Aspose.Drawing.Text",
         "System",
         "System.IO"
       ],
@@ -162,7 +163,8 @@
         "Aspose.Drawing.Text",
         "System",
         "System.Collections.Generic",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
@@ -181,13 +183,14 @@
         "Aspose.Drawing.Text",
         "System",
         "System.Collections.Generic",
-        "System.IO",
-        "System.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Fonts",
-        "diagram"
+        "Pages",
+        "Shapes",
+        "diagram",
+        "page"
       ]
     },
     {
@@ -199,10 +202,12 @@
         "Aspose.Diagram.Saving",
         "Aspose.Drawing.Text",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
+        "Fonts",
         "PdfSaveOptions",
         "Save",
         "diagram"
@@ -224,8 +229,8 @@
         "Diagram",
         "Fonts",
         "HTMLSaveOptions",
-        "Save",
-        "diagram"
+        "Pages",
+        "Save"
       ]
     },
     {
@@ -288,8 +293,7 @@
         "Aspose.Diagram.Saving",
         "Aspose.Drawing.Text",
         "System",
-        "System.IO",
-        "System.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -348,6 +352,7 @@
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -357,7 +362,6 @@
       "task": "Load a diagram set the line spacing for all paragraphs using a specific font and save as docx",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Drawing.Text",
         "System",
         "System.IO"
       ],
@@ -375,13 +379,12 @@
       "task": "Load a visio diagram from a vsdx file and set a custom default font for rendering",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
-        "Save",
+        "Pages",
         "diagram"
       ]
     },
@@ -414,8 +417,7 @@
         "Aspose.Diagram.Saving",
         "Aspose.Drawing.Text",
         "System",
-        "System.IO",
-        "System.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
@@ -431,15 +433,17 @@
       "namespaces": [
         "Aspose.Diagram",
         "Aspose.Diagram.Saving",
+        "Aspose.Drawing.Text",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
-        "Fonts",
         "Pages",
         "Save",
-        "Shapes"
+        "Shapes",
+        "diagram"
       ]
     },
     {
@@ -448,15 +452,17 @@
       "task": "Replace unicode characters in text shapes with equivalent glyphs from a fallback font to avoid missing symbols",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Drawing.Text",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Linq"
       ],
       "key_apis": [
         "Diagram",
+        "Fonts",
         "Pages",
         "Save",
-        "Shapes",
-        "diagram"
+        "Shapes"
       ]
     },
     {
@@ -488,6 +494,7 @@
       ],
       "key_apis": [
         "Diagram",
+        "Page",
         "Pages",
         "Save",
         "diagram"
@@ -516,18 +523,14 @@
       "task": "Validate that all fonts used in a loaded diagram are available on the system before rendering",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "Aspose.Drawing.Text",
         "System",
         "System.Collections.Generic",
-        "System.IO",
-        "System.Linq"
+        "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Fonts",
-        "ImageSaveOptions",
-        "Save",
         "diagram"
       ]
     },

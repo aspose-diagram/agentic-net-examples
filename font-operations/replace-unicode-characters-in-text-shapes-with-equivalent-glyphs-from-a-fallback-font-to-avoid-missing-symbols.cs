@@ -1,20 +1,24 @@
 using System;
 using System.IO;
+using System.Linq;
 using Aspose.Diagram;
+using Aspose.Drawing.Text;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Expect at least input and output file paths
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> [fallbackFontName]");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
+        // Optional fallback font name; default to a common Unicode font
+        string fallbackFontName = args.Length >= 3 ? args[2] : "Arial Unicode MS";
 
         // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
@@ -23,75 +27,76 @@ class Program
             return;
         }
 
+        // Verify that the fallback font is installed on the system (optional)
         try
         {
-            // Set fallback font to handle missing Unicode glyphs
-            // This font will be used when a character is not found in the original fonts.
-            FontConfigs.DefaultFontName = "Arial Unicode MS";
+            InstalledFontCollection installedFonts = new InstalledFontCollection();
+            bool fontFound = installedFonts.Families.Any(f =>
+                string.Equals(f.Name, fallbackFontName, StringComparison.OrdinalIgnoreCase));
 
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages
-            foreach (Page page in diagram.Pages)
+            if (!fontFound)
             {
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Ensure the shape has text
-                    if (shape.Text == null || shape.Text.Value == null)
-                        continue;
-
-                    // Iterate through each text segment (FormatTxt) in the shape
-                    foreach (FormatTxt fmt in shape.Text.Value)
-                    {
-                        // Cast to Txt to access the actual text string
-                        Txt txt = fmt as Txt;
-                        if (txt == null)
-                            continue;
-
-                        // Replace non-ASCII Unicode characters with a placeholder '?'
-                        string original = txt.Text;
-                        string replaced = ReplaceNonAscii(original);
-
-                        // Update the text only if a change was made
-                        if (!original.Equals(replaced))
-                        {
-                            txt.Text = replaced;
-                        }
-                    }
-                }
+                Console.Error.WriteLine($"Warning: Fallback font \"{fallbackFontName}\" is not installed on this machine.");
             }
-
-            // Save the modified diagram to the specified output path
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"Error while checking installed fonts: {ex.Message}");
         }
-    }
 
-    /// <summary>
-    /// Replaces characters with Unicode code points greater than 127 with a '?' placeholder.
-    /// </summary>
-    /// <param name="input">The original text.</param>
-    /// <returns>The text with non-ASCII characters replaced.</returns>
-    private static string ReplaceNonAscii(string input)
-    {
-        if (string.IsNullOrEmpty(input))
-            return input;
-
-        char[] chars = input.ToCharArray();
-        for (int i = 0; i < chars.Length; i++)
+        try
         {
-            if (chars[i] > 127)
+            // Load the Visio diagram inside a using block (required pattern)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                chars[i] = '?';
+                // Set the global default font for missing glyphs
+                FontConfigs.DefaultFontName = fallbackFontName;
+
+                // Ensure the fallback font exists in the diagram's font collection
+                int fallbackFontIndex = -1;
+                for (int i = 0; i < diagram.Fonts.Count; i++)
+                {
+                    if (string.Equals(diagram.Fonts[i].Name, fallbackFontName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        fallbackFontIndex = i;
+                        break;
+                    }
+                }
+
+                if (fallbackFontIndex == -1)
+                {
+                    // Add the fallback font to the diagram's font collection
+                    Font fallbackFont = new Font();
+                    fallbackFont.Name = fallbackFontName;
+                    diagram.Fonts.Add(fallbackFont);
+                    fallbackFontIndex = diagram.Fonts.Count - 1;
+                }
+
+                // Iterate through all pages and shapes
+                foreach (Page page in diagram.Pages)
+                {
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Process only shapes that contain text
+                        if (shape.Text != null && !string.IsNullOrEmpty(shape.Text.Value.Text))
+                        {
+                            // Assign the fallback font to each character run
+                            for (int i = 0; i < shape.Chars.Count; i++)
+                            {
+                                shape.Chars[i].Font.Value = fallbackFontIndex;
+                            }
+                        }
+                    }
+                }
+
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
             }
         }
-        return new string(chars);
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
     }
 }

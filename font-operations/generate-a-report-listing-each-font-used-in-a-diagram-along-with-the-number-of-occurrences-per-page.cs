@@ -10,76 +10,72 @@ class Program
         // Validate input arguments
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <input-diagram-path>");
+            Console.Error.WriteLine("Please provide the path to the Visio diagram file as an argument.");
             return;
         }
 
         string diagramPath = args[0];
 
-        // Guard: check if the diagram file exists
+        // Guard: check if the file exists
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the diagram
             Diagram diagram = new Diagram(diagramPath);
 
             // Iterate over each page in the diagram
-            int pageNumber = 1;
             foreach (Page page in diagram.Pages)
             {
-                // Dictionary to hold font usage counts for the current page (case‑insensitive)
-                Dictionary<string, int> fontUsage = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                // Dictionary to hold font usage counts for the current page
+                Dictionary<string, int> fontCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-                // Iterate over each shape on the page
+                // Iterate over all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Iterate over each character in the shape's text
-                    foreach (Aspose.Diagram.Char ch in shape.Chars)
+                    // Iterate over character runs within the shape
+                    for (int i = 0; i < shape.Chars.Count; i++)
                     {
-                        // Retrieve the font name used by the character
-                        string fontName = ch.FontName.Value;
+                        // Use fully qualified type to avoid ambiguity with System.Char
+                        Aspose.Diagram.Char ch = shape.Chars[i];
 
-                        // If the font name is valid, update the count
+                        // Retrieve the font name from the character's FontName cell
+                        string fontName = ch.FontName?.Value;
+
                         if (!string.IsNullOrEmpty(fontName))
                         {
-                            if (fontUsage.ContainsKey(fontName))
-                                fontUsage[fontName]++;
+                            if (fontCounts.ContainsKey(fontName))
+                                fontCounts[fontName]++;
                             else
-                                fontUsage[fontName] = 1;
+                                fontCounts[fontName] = 1;
                         }
                     }
                 }
 
                 // Output the report for the current page
-                Console.WriteLine($"Page {pageNumber}:");
-                if (fontUsage.Count == 0)
+                Console.WriteLine($"Page ID: {page.ID}, Name: {page.Name}");
+                if (fontCounts.Count == 0)
                 {
                     Console.WriteLine("  No fonts found on this page.");
                 }
                 else
                 {
-                    foreach (KeyValuePair<string, int> entry in fontUsage)
+                    foreach (KeyValuePair<string, int> kvp in fontCounts)
                     {
-                        Console.WriteLine($"  Font: {entry.Key}, Occurrences: {entry.Value}");
+                        Console.WriteLine($"  Font: {kvp.Key}, Occurrences: {kvp.Value}");
                     }
                 }
 
                 Console.WriteLine(); // Blank line between pages
-                pageNumber++;
             }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
+            // Write any errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

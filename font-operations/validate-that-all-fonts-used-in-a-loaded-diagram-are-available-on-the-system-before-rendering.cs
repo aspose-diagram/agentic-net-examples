@@ -1,9 +1,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Linq;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 using Aspose.Drawing.Text;
 
 class Program
@@ -13,85 +11,70 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputImagePath]");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args.Length >= 2 ? args[1] : "output.png";
 
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Retrieve the list of font names used in the diagram.
-            List<string> diagramFontNames = new List<string>();
-            foreach (Font font in diagram.Fonts) // explicit type as required
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                diagramFontNames.Add(font.Name);
-            }
+                // Retrieve the collection of installed system fonts using Aspose.Drawing.Text.
+                InstalledFontCollection installedFontCollection = new InstalledFontCollection();
 
-            // Enumerate installed system fonts using Aspose.Drawing.Text.
-            InstalledFontCollection installedFonts = new InstalledFontCollection();
-            HashSet<string> installedFontNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var family in installedFonts.Families) // implicit typing per guidelines
-            {
-                // The family object provides a Name property.
-                installedFontNames.Add(family.Name);
-            }
-
-            // Determine which diagram fonts are missing on the system.
-            List<string> missingFonts = diagramFontNames
-                .Where(name => !installedFontNames.Contains(name))
-                .Distinct()
-                .ToList();
-
-            if (missingFonts.Count > 0)
-            {
-                Console.Error.WriteLine("The following fonts required by the diagram are NOT installed on this system:");
-                foreach (string missing in missingFonts)
+                // Build a hash set of installed font family names for fast lookup (case‑insensitive).
+                HashSet<string> installedFontNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var family in installedFontCollection.Families)
                 {
-                    Console.Error.WriteLine($"- {missing}");
+                    // The family object exposes a Name property.
+                    installedFontNames.Add(family.Name);
                 }
 
-                // Choose a fallback font that is guaranteed to exist (e.g., Arial).
-                const string fallbackFont = "Arial";
-                if (installedFontNames.Contains(fallbackFont))
+                // Flag to track whether all diagram fonts are available.
+                bool allFontsAvailable = true;
+
+                // Iterate over fonts used in the diagram.
+                foreach (Font font in diagram.Fonts)
                 {
-                    Console.WriteLine($"Setting fallback font to \"{fallbackFont}\".");
-                    FontConfigs.DefaultFontName = fallbackFont;
+                    // Font.Name holds the font name as stored in the Visio file.
+                    string fontName = font.Name;
+
+                    // Check if the font is installed on the system.
+                    if (!installedFontNames.Contains(fontName))
+                    {
+                        Console.WriteLine($"Missing font: {fontName}");
+                        allFontsAvailable = false;
+                    }
+                }
+
+                if (allFontsAvailable)
+                {
+                    Console.WriteLine("All fonts used in the diagram are available on this system.");
                 }
                 else
                 {
-                    Console.Error.WriteLine("No suitable fallback font found. Rendering aborted.");
-                    return;
+                    // Configure a fallback font to avoid rendering issues.
+                    FontConfigs.DefaultFontName = "Arial";
+                    Console.WriteLine("Fallback font set to Arial for missing fonts.");
                 }
-            }
-            else
-            {
-                Console.WriteLine("All fonts used in the diagram are available on the system.");
-            }
 
-            // Proceed with rendering the first page to PNG.
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
-            {
-                PageIndex = 0,
-                PageCount = 1
-            };
-
-            diagram.Save(outputPath, saveOptions);
-            Console.WriteLine($"Diagram rendered successfully to \"{outputPath}\".");
+                // At this point you could proceed with rendering/exporting the diagram,
+                // knowing that font availability has been validated.
+            }
         }
         catch (Exception ex)
         {
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

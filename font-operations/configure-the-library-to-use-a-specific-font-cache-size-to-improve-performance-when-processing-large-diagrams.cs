@@ -6,55 +6,46 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input diagram path and desired font cache size (not supported).
+        // Expect input and output file paths as command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <fontCacheSize>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
             return;
         }
 
         string inputPath = args[0];
-        string cacheSizeArg = args[1];
+        string outputPath = args[1];
 
-        // Guard: verify input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
-            return;
-        }
-
-        // Parse cache size (just for demonstration; not used because API does not support it).
-        if (!int.TryParse(cacheSizeArg, out int cacheSize) || cacheSize <= 0)
-        {
-            Console.Error.WriteLine("Error: Font cache size must be a positive integer.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram.
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // TODO: Configure font cache size.
-            // Aspose.Diagram does not provide an API to set the font cache size.
-            // If future versions add this capability, it can be set here using the appropriate property.
-
-            // Example: set a default fallback font to ensure rendering succeeds.
+            // -----------------------------------------------------------------
+            // Font configuration (example: set a default fallback font).
+            // -----------------------------------------------------------------
             FontConfigs.DefaultFontName = "Arial";
 
-            // Define output path.
-            string outputPath = Path.Combine(
-                Path.GetDirectoryName(inputPath) ?? "",
-                Path.GetFileNameWithoutExtension(inputPath) + "_processed.vsdx");
+            // -----------------------------------------------------------------
+            // TODO: Configure font cache size.
+            // The Aspose.Diagram API does not expose a FontCacheSize property
+            // or related setting. If future versions add such capability,
+            // it should be configured here before any rendering or saving.
+            // -----------------------------------------------------------------
 
-            // Save the diagram after (potential) configuration.
+            // Save the diagram to a new file (preserving the original format).
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Diagram processed and saved to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -6,93 +6,113 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
+    // Simulated audit logger. Replace with real ADO.NET code as needed.
+    private static class AuditLogger
+    {
+        private static readonly DataTable _logTable = CreateLogTable();
+
+        private static DataTable CreateLogTable()
+        {
+            var table = new DataTable("PageAudit");
+            table.Columns.Add("PageIndex", typeof(int));
+            table.Columns.Add("PageCount", typeof(int));
+            table.Columns.Add("Timestamp", typeof(DateTime));
+            return table;
+        }
+
+        public static void Log(int pageIndex, int pageCount)
+        {
+            // Add a new row to the in‑memory table.
+            var row = _logTable.NewRow();
+            row["PageIndex"] = pageIndex;
+            row["PageCount"] = pageCount;
+            row["Timestamp"] = DateTime.UtcNow;
+            _logTable.Rows.Add(row);
+
+            // Real database insertion example (commented out):
+            // using (var connection = new SqlConnection("your-connection-string"))
+            // {
+            //     connection.Open();
+            //     using (var command = new SqlCommand(
+            //         "INSERT INTO PageAudit (PageIndex, PageCount, Timestamp) VALUES (@PageIndex, @PageCount, @Timestamp)", connection))
+            //     {
+            //         command.Parameters.AddWithValue("@PageIndex", pageIndex);
+            //         command.Parameters.AddWithValue("@PageCount", pageCount);
+            //         command.Parameters.AddWithValue("@Timestamp", DateTime.UtcNow);
+            //         command.ExecuteNonQuery();
+            //     }
+            // }
+        }
+
+        // For demonstration purposes: display the logged rows.
+        public static void PrintLog()
+        {
+            Console.WriteLine("Audit Log:");
+            foreach (DataRow row in _logTable.Rows)
+            {
+                Console.WriteLine($"Page {row["PageIndex"]} of {row["PageCount"]} logged at {row["Timestamp"]}");
+            }
+        }
+    }
+
+    // Custom callback to capture page saving events.
+    private class PageSavingCallback : IPageSavingCallback
+    {
+        public void PageStartSaving(PageStartSavingArgs args)
+        {
+            // Log the start of a page save.
+            Console.WriteLine($"Start saving page index {args.PageIndex} of pages {args.PageCount}");
+            // Optionally, log to the audit table here as well.
+        }
+
+        public void PageEndSaving(PageEndSavingArgs args)
+        {
+            // Log the end of a page save.
+            Console.WriteLine($"End saving page index {args.PageIndex} of pages {args.PageCount}");
+            // Record the page index and total page count to the audit log.
+            AuditLogger.Log(args.PageIndex, args.PageCount);
+        }
+    }
+
     static void Main(string[] args)
     {
-        // Expect the input Visio file path as the first argument.
+        // Expect the first argument to be the path of the Visio file.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the path to the Visio file as an argument.");
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
             return;
         }
 
-        string inputPath = args[0];
-        // Guard: ensure the input file exists.
-        if (!File.Exists(inputPath))
+        string visioPath = args[0];
+
+        // Guard against missing file.
+        if (!File.Exists(visioPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"File not found: {visioPath}");
             return;
         }
-
-        // Prepare the output PDF path in the same directory.
-        string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", Path.GetFileNameWithoutExtension(inputPath) + ".pdf");
-
-        // Create an in‑memory DataTable to simulate the audit log.
-        DataTable auditLog = new DataTable("AuditLog");
-        auditLog.Columns.Add("PageIndex", typeof(int));
-        auditLog.Columns.Add("PageCount", typeof(int));
-        auditLog.Columns.Add("Timestamp", typeof(DateTime));
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the diagram.
+            Diagram diagram = new Diagram(visioPath);
 
-            // Configure PDF save options and assign the custom page‑saving callback.
+            // Prepare PDF save options with the custom callback.
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.PageSavingCallback = new AuditCallback(auditLog);
+            pdfOptions.PageSavingCallback = new PageSavingCallback();
 
-            // Save the diagram to PDF using the configured options.
-            diagram.Save(outputPath, pdfOptions);
+            // Define output PDF path.
+            string outputPdf = Path.ChangeExtension(visioPath, ".pdf");
+
+            // Save the diagram to PDF, triggering the callback for each page.
+            diagram.Save(outputPdf, pdfOptions);
+
+            // After saving, display the audit log.
+            AuditLogger.PrintLog();
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-            return;
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
-
-        // After saving, display the audit log entries.
-        Console.WriteLine("Audit Log:");
-        foreach (DataRow row in auditLog.Rows)
-        {
-            int pageIndex = (int)row["PageIndex"];
-            int pageCount = (int)row["PageCount"];
-            DateTime timestamp = (DateTime)row["Timestamp"];
-            Console.WriteLine($"Page {pageIndex + 1} of {pageCount} saved at {timestamp:O}");
-        }
-    }
-}
-
-// Custom callback to log page start/end events during PDF export.
-class AuditCallback : IPageSavingCallback
-{
-    private readonly DataTable _logTable;
-
-    public AuditCallback(DataTable logTable)
-    {
-        _logTable = logTable;
-    }
-
-    // Called before a page starts saving.
-    public void PageStartSaving(PageStartSavingArgs args)
-    {
-        Console.WriteLine($"Start saving page {args.PageIndex + 1} of {args.PageCount}");
-        AddLogEntry(args.PageIndex, args.PageCount);
-    }
-
-    // Called after a page has finished saving.
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        Console.WriteLine($"End saving page {args.PageIndex + 1} of {args.PageCount}");
-        // No additional action needed; the start event already logged the entry.
-    }
-
-    // Helper to insert a row into the audit DataTable.
-    private void AddLogEntry(int pageIndex, int pageCount)
-    {
-        DataRow row = _logTable.NewRow();
-        row["PageIndex"] = pageIndex;
-        row["PageCount"] = pageCount;
-        row["Timestamp"] = DateTime.Now;
-        _logTable.Rows.Add(row);
     }
 }

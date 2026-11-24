@@ -7,78 +7,78 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Expect three arguments: input Visio file, shape ID, output PNG path
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath> <ShapeId>");
+            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <shapeId> <outputPngPath>");
             return;
         }
 
-        string visioPath = args[0];
+        string inputPath = args[0];
         string shapeIdArg = args[1];
+        string outputPath = args[2];
 
-        // Guard: ensure the Visio file exists.
-        if (!File.Exists(visioPath))
+        // Guard: verify input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found – {visioPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Parse the shape ID (expected to be a numeric value).
+        // Guard: parse shape ID
         if (!long.TryParse(shapeIdArg, out long shapeId))
         {
-            Console.Error.WriteLine($"Error: Invalid shape ID – {shapeIdArg}");
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(visioPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Locate the shape with the specified ID across all pages.
+            // Locate the shape with the specified ID across all pages
             Shape targetShape = null;
             foreach (Page page in diagram.Pages)
             {
-                try
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Attempt to retrieve the shape by its structural ID.
-                    Shape shape = page.Shapes.GetShape(shapeId);
-                    if (shape != null && shape.Del == BOOL.False)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    if (shape.ID == shapeId)
                     {
                         targetShape = shape;
                         break;
                     }
                 }
-                catch
-                {
-                    // GetShape throws if the ID is not present on this page; ignore and continue.
-                }
+                if (targetShape != null)
+                    break;
             }
 
             if (targetShape == null)
             {
-                Console.Error.WriteLine($"Error: Shape with ID {shapeId} not found in the document.");
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found in the diagram.");
                 return;
             }
 
-            // Configure image export options: PNG format with 300 DPI resolution.
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            saveOptions.Resolution = 300f; // DPI
+            // Configure image save options for PNG with 300 DPI
+            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
+            {
+                // Set resolution (DPI)
+                Resolution = 300f
+            };
 
-            // Determine output file path.
-            string outputDirectory = Path.GetDirectoryName(visioPath) ?? Directory.GetCurrentDirectory();
-            string outputPath = Path.Combine(outputDirectory, $"shape_{shapeId}.png");
-
-            // Export the shape to PNG.
+            // Export the shape to PNG
             targetShape.ToImage(outputPath, saveOptions);
 
-            Console.WriteLine($"Shape {shapeId} exported successfully to: {outputPath}");
+            Console.WriteLine($"Shape {shapeId} exported successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

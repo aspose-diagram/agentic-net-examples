@@ -6,35 +6,46 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Validate arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> [outputVisioPath]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input file exists.
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
+        }
+
+        // Determine output path
+        string outputPath;
+        if (args.Length >= 2)
+        {
+            outputPath = args[1];
+        }
+        else
+        {
+            string dir = Path.GetDirectoryName(inputPath) ?? "";
+            string nameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+            outputPath = Path.Combine(dir, $"{nameWithoutExt}_reordered.vsdx");
         }
 
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages in the document.
+                // Iterate through each page to reorder layers
                 foreach (Page page in diagram.Pages)
                 {
-                    // Access the layer collection of the current page.
+                    // Access the layer collection via the page's PageSheet
                     LayerCollection layers = page.PageSheet.Layers;
 
-                    // Locate the layer named "Background".
+                    // Find the layer named "Background"
                     Layer backgroundLayer = null;
                     foreach (Layer layer in layers)
                     {
@@ -45,13 +56,11 @@ class Program
                         }
                     }
 
-                    // If there is no background layer on this page, skip it.
+                    // If no background layer found, continue to next page
                     if (backgroundLayer == null)
                         continue;
 
-                    // ------------------------------------------------------------
-                    // Create a copy of the background layer to place at the bottom.
-                    // ------------------------------------------------------------
+                    // Create a copy of the background layer with the same properties
                     Layer newLayer = new Layer();
                     newLayer.Name.Value = backgroundLayer.Name.Value;
                     newLayer.Visible.Value = backgroundLayer.Visible.Value;
@@ -60,66 +69,32 @@ class Program
                     newLayer.IsColorChecked = backgroundLayer.IsColorChecked;
                     newLayer.Color.Value = backgroundLayer.Color.Value;
 
-                    // Add the new layer to the collection.
+                    // Add the new layer to the collection
                     layers.Add(newLayer);
 
-                    // Attempt to set the new layer's index to 0 (bottom of the stack).
+                    // Attempt to set the new layer's index to 0 (bottom of stack)
                     try
                     {
                         newLayer.IX = 0;
                     }
                     catch (Exception ex)
                     {
-                        Console.Error.WriteLine($"Failed to set new layer index: {ex.Message}");
+                        // If setting IX fails, log but continue
+                        Console.Error.WriteLine($"Failed to set layer index for page '{page.Name}': {ex.Message}");
                     }
 
-                    // ------------------------------------------------------------
-                    // Move shapes that belong to the original background layer
-                    // to the newly created layer.
-                    // ------------------------------------------------------------
-                    int originalIX = backgroundLayer.IX;
-                    int newIX = newLayer.IX;
-
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip logically deleted shapes.
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        var layerMember = shape.LayerMem?.LayerMember?.Value;
-                        if (string.IsNullOrEmpty(layerMember))
-                            continue;
-
-                        string[] parts = layerMember.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-                        bool changed = false;
-                        for (int i = 0; i < parts.Length; i++)
-                        {
-                            if (parts[i].Trim() == originalIX.ToString())
-                            {
-                                parts[i] = newIX.ToString();
-                                changed = true;
-                            }
-                        }
-
-                        if (changed)
-                        {
-                            // Update the shape's layer membership.
-                            shape.LayerMem.LayerMember.Value = string.Join(",", parts);
-                            // Ensure the shape stays behind other content.
-                            shape.SendToBack();
-                        }
-                    }
-
-                    // Hide the original background layer so it no longer affects rendering.
+                    // Hide the original background layer
                     backgroundLayer.Visible.Value = BOOL.False;
                 }
 
-                // Save the modified diagram to the specified output file.
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
+            // Log any Aspose or IO errors
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

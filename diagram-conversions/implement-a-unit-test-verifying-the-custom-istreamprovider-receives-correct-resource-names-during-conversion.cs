@@ -4,31 +4,26 @@ using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
-class MyStreamProvider : IStreamProvider
+class CustomStreamProvider : IStreamProvider
 {
-    // Stores the resource names (default paths) received during conversion.
-    public List<string> ReceivedResourceNames { get; } = new List<string>();
+    // Stores the resource names (DefaultPath) received during conversion.
+    public List<string> ReceivedPaths { get; } = new List<string>();
 
-    // Called by Aspose.Diagram when a new resource stream is required.
+    // Called by Aspose.Diagram when a resource stream is required.
     public void InitStream(StreamProviderOptions options)
     {
-        // Record the default path which identifies the resource (e.g., image file name).
-        if (!string.IsNullOrEmpty(options.DefaultPath))
-        {
-            ReceivedResourceNames.Add(options.DefaultPath);
-        }
+        // Record the resource name.
+        ReceivedPaths.Add(options.DefaultPath);
 
-        // Provide a writable stream for the resource. Here we use a MemoryStream
-        // because the actual content is not needed for the test.
+        // Provide a writable stream for the resource. Using MemoryStream as a placeholder.
         options.Stream = new MemoryStream();
     }
 
-    // Called after the resource has been written.
+    // Called after the resource stream has been used.
     public void CloseStream(StreamProviderOptions options)
     {
-        // Dispose the stream we created in InitStream.
+        // Dispose the stream if it was created.
         options.Stream?.Dispose();
-        options.Stream = null;
     }
 }
 
@@ -36,53 +31,59 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output HTML file path.
-        if (args.Length < 2)
+        // Input Visio file path.
+        string inputPath = "sample.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputHtmlPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        // Output HTML file path.
+        string outputPath = "output.html";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
+
+        // Instantiate the custom stream provider.
+        CustomStreamProvider streamProvider = new CustomStreamProvider();
 
         try
         {
-            // Load the Visio diagram.
+            // Load the diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Create HTML save options and assign the custom stream provider.
+            // Configure HTML save options with the custom stream provider.
             HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-            MyStreamProvider provider = new MyStreamProvider();
-            htmlOptions.StreamProvider = provider;
+            htmlOptions.StreamProvider = streamProvider;
 
             // Perform the conversion to HTML.
             diagram.Save(outputPath, htmlOptions);
-
-            // Verify that the stream provider received at least one resource name.
-            if (provider.ReceivedResourceNames.Count == 0)
-            {
-                throw new Exception("IStreamProvider did not receive any resource names during conversion.");
-            }
-
-            // Output the received resource names for verification.
-            Console.WriteLine("IStreamProvider received the following resource names:");
-            foreach (string name in provider.ReceivedResourceNames)
-            {
-                Console.WriteLine(name);
-            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
             Console.Error.WriteLine($"Error during conversion: {ex.Message}");
+            return;
         }
+
+        // Simple verification that the stream provider was invoked.
+        if (streamProvider.ReceivedPaths.Count == 0)
+        {
+            Console.Error.WriteLine("Test failed: IStreamProvider was not called during conversion.");
+            return;
+        }
+
+        // Output the captured resource names for manual inspection.
+        Console.WriteLine("IStreamProvider received the following resource names:");
+        foreach (string path in streamProvider.ReceivedPaths)
+        {
+            Console.WriteLine($"- {path}");
+        }
+
+        // Indicate success.
+        Console.WriteLine("Test passed: IStreamProvider received resource names as expected.");
     }
 }

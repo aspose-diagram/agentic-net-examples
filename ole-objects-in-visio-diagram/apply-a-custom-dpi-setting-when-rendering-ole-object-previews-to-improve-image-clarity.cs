@@ -7,85 +7,81 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input Visio file, output folder, desired DPI (integer)
-        if (args.Length < 3)
+        // Validate arguments: input Visio file, output folder, optional DPI
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputFolder> <dpi>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputFolder> [dpi]");
             return;
         }
 
         string inputPath = args[0];
         string outputFolder = args[1];
-        string dpiArg = args[2];
+        int dpi = 300; // default DPI
 
-        // Validate input file
+        if (args.Length >= 3 && !int.TryParse(args[2], out dpi))
+        {
+            Console.Error.WriteLine("Invalid DPI value. Using default 300.");
+            dpi = 300;
+        }
+
+        // Guard input file existence
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Validate output folder
+        // Guard output folder existence (create if missing)
         if (!Directory.Exists(outputFolder))
         {
-            Console.Error.WriteLine($"Output folder does not exist: {outputFolder}");
-            return;
-        }
-
-        // Parse DPI value
-        if (!int.TryParse(dpiArg, out int dpi) || dpi <= 0)
-        {
-            Console.Error.WriteLine($"Invalid DPI value: {dpiArg}");
-            return;
+            try
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
+                return;
+            }
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through pages using index to avoid non‑existent Page.Index property
-            for (int pageIdx = 0; pageIdx < diagram.Pages.Count; pageIdx++)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Page page = diagram.Pages[pageIdx];
-
-                // Determine if the page contains any OLE (foreign) shapes
-                bool containsOle = false;
-                foreach (Shape shape in page.Shapes)
+                // Iterate through pages with index
+                for (int pageIdx = 0; pageIdx < diagram.Pages.Count; pageIdx++)
                 {
-                    // Verify shape is a foreign OLE object and has embedded data
-                    if (shape.Type == TypeValue.Foreign &&
-                        shape.ForeignData != null &&
-                        shape.ForeignData.ObjectData != null &&
-                        shape.ForeignData.ObjectData.Length > 0)
+                    Page page = diagram.Pages[pageIdx];
+
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        containsOle = true;
-                        break;
+                        // Identify OLE (foreign) objects
+                        if (shape.Type == TypeValue.Foreign &&
+                            shape.ForeignData != null &&
+                            shape.ForeignData.ObjectData != null &&
+                            shape.ForeignData.ObjectData.Length > 0)
+                        {
+                            // Prepare image save options with custom DPI (Resolution)
+                            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                            imgOptions.Resolution = (float)dpi;
+                            imgOptions.ExportHiddenPage = false; // plain bool for non-BOOL property
+
+                            // Build output file name: pageIndex_shapeId.png
+                            string imageFileName = $"Page{pageIdx + 1}_Shape{shape.ID}.png";
+                            string imagePath = Path.Combine(outputFolder, imageFileName);
+
+                            // Render OLE object preview to image file
+                            shape.ToImage(imagePath, imgOptions);
+
+                            Console.WriteLine($"Rendered OLE preview: {imagePath}");
+                        }
                     }
                 }
 
-                if (!containsOle)
-                {
-                    // Skip pages without OLE objects
-                    continue;
-                }
-
-                // Prepare image save options with custom DPI (Resolution)
-                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                // Set the DPI – higher DPI yields clearer preview
-                saveOptions.Resolution = dpi;
-                // Render only the current page
-                saveOptions.PageIndex = pageIdx;
-                saveOptions.PageCount = 1;
-
-                // Build output file name for the page image
-                string fileName = $"Page{pageIdx + 1}_OLEPreview.png";
-                string outputPath = Path.Combine(outputFolder, fileName);
-
-                // Save the page as an image with the specified DPI
-                diagram.Save(outputPath, saveOptions);
-
-                Console.WriteLine($"Saved OLE preview for page {pageIdx + 1}: {outputPath}");
+                Console.WriteLine("Processing completed.");
             }
         }
         catch (Exception ex)

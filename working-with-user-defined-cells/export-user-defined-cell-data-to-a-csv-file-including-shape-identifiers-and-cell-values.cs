@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputCsvFile>");
@@ -16,65 +16,64 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: check input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Open a StreamWriter for the CSV output.
-            using (StreamWriter writer = new StreamWriter(outputPath))
+            // Prepare CSV writer
+            using (StreamWriter writer = new StreamWriter(outputPath, false))
             {
-                // Write CSV header.
-                writer.WriteLine("ShapeID,ShapeNameU,UserNameU,UserValue,UserPrompt");
+                // Write CSV header
+                writer.WriteLine("ShapeId,ShapeName,UserName,UserValue,UserPrompt");
 
-                // Local function to escape CSV fields.
-                string Escape(string s)
-                {
-                    if (s == null) return "";
-                    if (s.Contains("\"") || s.Contains(",") || s.Contains("\n") || s.Contains("\r"))
-                    {
-                        s = s.Replace("\"", "\"\"");
-                        return $"\"{s}\"";
-                    }
-                    return s;
-                }
-
-                // Iterate through all pages and shapes.
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve shape identifier and name.
-                        long shapeId = shape.ID;
-                        string shapeNameU = shape.NameU ?? "";
-
-                        // Iterate over user‑defined cells.
+                        // Iterate through all user-defined cells of the shape
                         foreach (User user in shape.Users)
                         {
-                            string userNameU = user.NameU ?? "";
-                            string userValue = user.Value?.Val ?? "";
-                            string userPrompt = user.Prompt?.Value ?? "";
+                            // Retrieve required values
+                            string shapeId = shape.ID.ToString();
+                            string shapeName = shape.NameU ?? string.Empty;
+                            string userName = user.NameU ?? string.Empty;
+                            string userValue = user.Value?.Val ?? string.Empty;
+                            string userPrompt = user.Prompt?.Value ?? string.Empty;
 
-                            // Write a CSV line for each user‑defined cell.
-                            writer.WriteLine($"{shapeId},{Escape(shapeNameU)},{Escape(userNameU)},{Escape(userValue)},{Escape(userPrompt)}");
+                            // Write a CSV line (escape commas if needed)
+                            string line = $"{Escape(shapeId)},{Escape(shapeName)},{Escape(userName)},{Escape(userValue)},{Escape(userPrompt)}";
+                            writer.WriteLine(line);
                         }
                     }
                 }
             }
 
-            Console.WriteLine($"Export completed successfully: {outputPath}");
+            Console.WriteLine($"User-defined cell data exported successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
+
+    // Simple CSV field escaper to handle commas and quotes
+    private static string Escape(string field)
+    {
+        if (field.Contains(",") || field.Contains("\"") || field.Contains("\n"))
+        {
+            field = field.Replace("\"", "\"\"");
+            return $"\"{field}\"";
+        }
+        return field;
     }
 }

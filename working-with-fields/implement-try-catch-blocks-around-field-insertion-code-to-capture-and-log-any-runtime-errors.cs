@@ -6,91 +6,79 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 1)
+        // Define input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "output.vsdx";
 
-        string inputPath = args[0];
-
-        // Guard: ensure the input file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found – {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
-
-        Diagram diagram = null;
-
-        // Load the diagram inside a try/catch to capture loading errors.
-        try
-        {
-            diagram = new Diagram(inputPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
-
-        // Ensure the diagram contains at least one page and one shape.
-        if (diagram.Pages.Count == 0)
-        {
-            Console.Error.WriteLine("Error: Diagram contains no pages.");
-            return;
-        }
-
-        var page = diagram.Pages[0];
-
-        if (page.Shapes.Count == 0)
-        {
-            Console.Error.WriteLine("Error: First page contains no shapes.");
-            return;
-        }
-
-        // Retrieve the first shape on the first page.
-        Shape shape = page.Shapes[0];
-
-        // ------------------------------
-        // Insert a new text field into the shape.
-        // ------------------------------
-        try
-        {
-            // Create a new Field object.
-            Field field = new Field();
-
-            // Set the field's displayed value.
-            field.Value.Val = "Sample Field";
-
-            // Optional: clear any formatting strings.
-            field.Format.Val = "";
-            field.Format.Ufev.F = "";
-            field.Format.Ufev.Unit = MeasureConst.Undefined;
-
-            // Add the field to the shape's field collection.
-            shape.Fields.Add(field);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error inserting field: {ex.Message}");
-            // Continue execution; the diagram may still be saved without the new field.
-        }
-
-        // ------------------------------
-        // Save the modified diagram.
-        // ------------------------------
-        string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output.vsdx");
 
         try
         {
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure the diagram has at least one page
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
+            // Add a new rectangle shape to the first page
+            // Parameters: page index (1‑based), master ID, master name, and shape ID (0 for auto‑assign)
+            long shapeId = diagram.AddShape(1, 1, "Rectangle", 0);
+            Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
+
+            // ----- Begin field insertion with error handling -----
+            try
+            {
+                // Create a new text field
+                Field field = new Field();
+
+                // Set the field's displayed value
+                field.Value.Val = "Inserted Field Text";
+
+                // Optionally, set format or type here if needed
+                // field.Format.Val = "";
+                // field.Type.Value = TypeFieldValue.Undefined; // example
+
+                // Insert the field into the shape
+                shape.Fields.Add(field);
+
+                Console.WriteLine("Field inserted successfully.");
+            }
+            catch (Exception ex)
+            {
+                // Log any runtime errors that occur during field insertion
+                Console.Error.WriteLine($"Error inserting field: {ex.Message}");
+            }
+            // ----- End field insertion -----
+
+            // Save the modified diagram
+            try
+            {
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved to: {outputPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+            }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error saving diagram: {ex.Message}");
+            // Log any unexpected errors that occur while processing the diagram
+            Console.Error.WriteLine($"Unexpected error: {ex.Message}");
         }
     }
 }

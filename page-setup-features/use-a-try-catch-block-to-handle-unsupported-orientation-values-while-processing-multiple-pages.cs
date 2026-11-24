@@ -1,87 +1,73 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Validate input arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
             return;
         }
 
-        // Output file path (second argument or default)
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        string inputPath = args[0];
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Determine output path
+        string outputPath = args.Length >= 2
+            ? args[1]
+            : Path.Combine(
+                Path.GetDirectoryName(inputPath) ?? string.Empty,
+                Path.GetFileNameWithoutExtension(inputPath) + "_modified.vsdx");
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Example orientation list for each page (can be customized)
-            // For demonstration, we alternate between Portrait, Landscape, and an invalid value
-            string[] orientations = new string[diagram.Pages.Count];
-            for (int i = 0; i < orientations.Length; i++)
+            // Load the Visio diagram inside a using block
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                if (i % 3 == 0)
-                    orientations[i] = "Portrait";
-                else if (i % 3 == 1)
-                    orientations[i] = "Landscape";
-                else
-                    orientations[i] = "InvalidOrientation";
-            }
-
-            // Process each page and apply orientation
-            for (int i = 0; i < diagram.Pages.Count; i++)
-            {
-                Page page = diagram.Pages[i];
-                string orientation = orientations[i];
-
-                try
+                // Iterate through each page in the diagram
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    // Set page dimensions based on desired orientation
-                    if (orientation.Equals("Portrait", StringComparison.OrdinalIgnoreCase))
+                    Page page = diagram.Pages[i];
+                    try
                     {
-                        // Portrait: height greater than width
-                        page.PageSheet.PageProps.PageWidth.Value = 8.5;   // inches
-                        page.PageSheet.PageProps.PageHeight.Value = 11.0; // inches
+                        // Even-indexed pages -> Portrait, odd-indexed pages -> Landscape
+                        if (i % 2 == 0)
+                        {
+                            // Set portrait orientation via print properties
+                            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Portrait;
+                        }
+                        else
+                        {
+                            // Set landscape orientation via print properties
+                            page.PageSheet.PrintProps.PrintPageOrientation.Value = PrintPageOrientationValue.Landscape;
+                        }
                     }
-                    else if (orientation.Equals("Landscape", StringComparison.OrdinalIgnoreCase))
+                    catch (Exception ex)
                     {
-                        // Landscape: width greater than height
-                        page.PageSheet.PageProps.PageWidth.Value = 11.0; // inches
-                        page.PageSheet.PageProps.PageHeight.Value = 8.5; // inches
+                        // Handle any errors that occur while setting orientation
+                        Console.Error.WriteLine($"Warning: Unable to set orientation for page {i + 1}. {ex.Message}");
                     }
-                    else
-                    {
-                        // Unsupported orientation value – throw to be caught below
-                        throw new ArgumentException($"Unsupported orientation '{orientation}' for page index {i}.");
-                    }
+                }
 
-                    Console.WriteLine($"Page {i + 1}: Orientation set to {orientation}.");
-                }
-                catch (Exception ex)
-                {
-                    // Handle unsupported orientation or any other page‑level errors
-                    Console.Error.WriteLine($"Error processing page {i + 1}: {ex.Message}");
-                    // Continue processing remaining pages
-                }
+                // Save the modified diagram to the specified output file
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Global error handling for loading, saving, or other unexpected issues
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // General error handling for loading or saving the diagram
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

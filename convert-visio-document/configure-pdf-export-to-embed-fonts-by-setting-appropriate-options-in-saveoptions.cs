@@ -7,42 +7,64 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (modify as needed)
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPdfFile>");
             return;
         }
 
-        // Output PDF file path
-        string outputPath = "output.pdf";
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Configure global font settings before loading the diagram.
+            // Set a fallback font name to be used when a required font is missing.
+            FontConfigs.DefaultFontName = "Arial";
 
-            // Configure PDF save options
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            // Optionally add a custom font folder (e.g., system fonts). Guard against missing folder.
+            string systemFontDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Fonts");
+            if (Directory.Exists(systemFontDir))
+            {
+                // The second argument indicates whether to search subfolders recursively.
+                FontConfigs.SetFontFolder(systemFontDir, true);
+            }
 
-            // Set a default fallback font (Aspose.Diagram does not support explicit font embedding)
-            pdfOptions.DefaultFont = "Arial";
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Configure PDF save options.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Export hidden pages as well
-            pdfOptions.ExportHiddenPage = true;
+                // Set the default fallback font.
+                pdfOptions.DefaultFont = "Arial";
 
-            // Optional: set PDF/A compliance
-            pdfOptions.Compliance = PdfCompliance.PdfA1b;
+                // Do not export hidden pages. Use native bool instead of Aspose.Diagram.BOOL.
+                pdfOptions.ExportHiddenPage = false; // Changed from BOOL.False to bool
 
-            // Save the diagram as PDF with the configured options
-            diagram.Save(outputPath, pdfOptions);
+                // Keep all pages in a single PDF file. Use native bool.
+                pdfOptions.SplitMultiPages = false; // Changed from BOOL.False to bool
+
+                // Set PDF/A‑1b compliance (optional, but a valid option).
+                pdfOptions.Compliance = PdfCompliance.PdfA1b;
+
+                // Save the diagram as PDF using the configured options.
+                diagram.Save(outputPath, pdfOptions);
+            }
 
             Console.WriteLine($"PDF saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
+            // Log any errors that occur during processing.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

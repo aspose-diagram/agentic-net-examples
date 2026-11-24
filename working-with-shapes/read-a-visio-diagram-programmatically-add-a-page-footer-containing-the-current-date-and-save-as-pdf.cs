@@ -20,7 +20,7 @@ class Program
         // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -29,25 +29,19 @@ class Program
             // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Prepare the footer text with the current date.
-                string currentDate = DateTime.Now.ToString("d"); // e.g., 10/21/2026
+                // Set the footer text to display the current date.
+                // Visio placeholder &d inserts the date when the document is saved.
+                diagram.HeaderFooter.FooterRight = "Created: &d";
 
-                // Set the footer (centered) for all pages.
-                diagram.HeaderFooter.FooterCenter = currentDate;
-
-                // Optionally adjust footer margin (in inches). Here we keep the default.
-
-                // Configure PDF save options.
+                // Prepare PDF save options.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-                // Explicitly set the format tracker.
+                // Explicitly set the save format tracker as mandated.
                 pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // Save the diagram as PDF using the options.
+                // Save the diagram as a PDF file.
                 diagram.Save(outputPath, pdfOptions);
             }
-
-            Console.WriteLine($"Diagram successfully saved as PDF to: {outputPath}");
         }
         catch (Exception ex)
         {

@@ -1,83 +1,76 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate arguments: expect diagram file path and shape ID
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeNameU>");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId>");
             return;
         }
 
         string diagramPath = args[0];
-        string targetShapeName = args[1];
+        string shapeIdArg = args[1];
 
-        // Guard: ensure the diagram file exists.
+        // Guard: check if the diagram file exists
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
             return;
         }
 
+        // Parse shape ID (expected to be a numeric identifier)
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'. It must be a numeric value.");
+            return;
+        }
+
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Search for the shape with the specified NameU across all pages.
-            Shape targetShape = null;
-            foreach (Page page in diagram.Pages)
+            // Retrieve the first page (or you can modify to select a specific page)
+            if (diagram.Pages.Count == 0)
             {
-                // Ensure the Shapes collection is not null.
-                if (page.Shapes == null) continue;
-
-                // Iterate through all shapes on the page.
-                for (int i = 0; i < page.Shapes.Count; i++)
-                {
-                    Shape shape = page.Shapes[i];
-                    // Guard against null shape reference.
-                    if (shape == null) continue;
-
-                    // Compare the universal name of the shape.
-                    if (string.Equals(shape.NameU, targetShapeName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        targetShape = shape;
-                        break;
-                    }
-                }
-
-                if (targetShape != null) break;
-            }
-
-            if (targetShape == null)
-            {
-                Console.Error.WriteLine($"Error: Shape with NameU '{targetShapeName}' not found in the diagram.");
+                Console.Error.WriteLine("Error: The diagram contains no pages.");
                 return;
             }
 
-            // NOTE:
-            // Aspose.Diagram does not provide a direct Shape.ToSwf method.
-            // The closest supported operation is exporting the entire diagram to SWF.
-            // Therefore, we will export the whole diagram to SWF format.
-            // If per‑shape SWF export becomes available in future versions,
-            // replace the following block with the appropriate Shape conversion call.
+            Page page = diagram.Pages[0];
 
-            string outputSwfPath = Path.Combine(
-                Path.GetDirectoryName(diagramPath) ?? string.Empty,
-                $"{Path.GetFileNameWithoutExtension(diagramPath)}_full.swf");
+            // Retrieve the shape by its ID
+            Shape shape = page.Shapes.GetShape(shapeId);
+            if (shape == null)
+            {
+                Console.Error.WriteLine($"Error: No shape found with ID {shapeId} on the first page.");
+                return;
+            }
 
-            // Export the entire diagram to SWF.
+            // -----------------------------------------------------------------
+            // NOTE: Aspose.Diagram does not provide a direct method to export a
+            // single Shape to SWF format. The SWF export is only available at the
+            // Diagram level via Diagram.Save(..., SaveFileFormat.Swf).
+            // -----------------------------------------------------------------
+            // TODO: Implement shape-to-SWF conversion if the API adds support in the future.
+            // As a fallback, the whole diagram can be saved to SWF as shown below.
+
+            string outputSwfPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? "", "output.swf");
+
+            // Save the entire diagram to SWF format
             diagram.Save(outputSwfPath, SaveFileFormat.Swf);
-            Console.WriteLine($"Diagram exported to SWF successfully: {outputSwfPath}");
+            Console.WriteLine($"Diagram saved to SWF at '{outputSwfPath}'.");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram or I/O errors.
-            Console.Error.WriteLine($"An error occurred during conversion: {ex.Message}");
+            // Handle any errors that occur during loading or saving
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

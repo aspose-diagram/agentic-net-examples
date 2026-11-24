@@ -19,57 +19,62 @@ class Program
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found – {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
-        // Determine output directory (same folder as input).
-        string outputDir = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "PdfPages");
         try
         {
-            Directory.CreateDirectory(outputDir);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error creating output directory: {ex.Message}");
-            return;
-        }
-
-        // Load the Visio diagram inside a using block as required.
-        try
-        {
+            // Load the Visio diagram inside a using block.
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Iterate over each page in the diagram.
-                int pageNumber = 1;
-                foreach (Page page in diagram.Pages)
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
+                    Page page = diagram.Pages[pageIndex];
+
                     // Apply custom border thickness to every shape on the current page.
-                    foreach (Shape shape in page.Shapes)
+                    for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
                     {
+                        Shape shape = page.Shapes[shapeIndex];
+
                         // Set line weight (border thickness) to 2.0 points.
                         shape.Line.LineWeight.Value = 2.0;
                     }
 
                     // Prepare PDF save options for the current page.
-                    PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                    pdfOptions.SaveFormat = SaveFileFormat.Pdf;   // Explicitly set format.
-                    pdfOptions.PageIndex = pageNumber - 1;        // Zero‑based page index.
-                    pdfOptions.PageCount = 1;                    // Export only this page.
+                    PdfSaveOptions pdfOptions = new PdfSaveOptions
+                    {
+                        // Export only the current page.
+                        PageIndex = pageIndex,
+                        PageCount = 1,
 
-                    // Build output file name.
-                    string outputPath = Path.Combine(outputDir, $"Page_{pageNumber}.pdf");
+                        // Ensure the format is explicitly set.
+                        SaveFormat = SaveFileFormat.Pdf,
+
+                        // Optional: improve PDF size and quality.
+                        ExportHiddenPage = false,
+                        TextCompression = PdfTextCompression.Flate,
+                        HorizontalResolution = 300,
+                        VerticalResolution = 300,
+                        JpegQuality = 100
+                    };
+
+                    // Build output file name (e.g., "output_page_1.pdf").
+                    string outputDirectory = Path.GetDirectoryName(inputPath) ?? Directory.GetCurrentDirectory();
+                    string outputFileName = $"output_page_{pageIndex + 1}.pdf";
+                    string outputPath = Path.Combine(outputDirectory, outputFileName);
 
                     // Save the current page as a PDF.
                     diagram.Save(outputPath, pdfOptions);
-
-                    pageNumber++;
+                    Console.WriteLine($"Page {pageIndex + 1} saved to {outputPath}");
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

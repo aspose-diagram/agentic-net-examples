@@ -5,97 +5,101 @@ using Aspose.Diagram;
 
 class Program
 {
+    // DTO to hold line and fill definitions
+    private class ShapeStyle
+    {
+        public string LineColor { get; set; }
+        public double LineWeight { get; set; }
+        public string LinePattern { get; set; }
+        public int BeginArrow { get; set; }
+        public int EndArrow { get; set; }
+
+        public string FillForegnd { get; set; }
+        public string FillBkgnd { get; set; }
+        public int FillPattern { get; set; }
+        public double FillForegndTrans { get; set; }
+        public double FillBkgndTrans { get; set; }
+    }
+
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 3)
-        {
-            Console.Error.WriteLine("Usage: <program> <diagramPath> <outputJsonPath> <shapeId>");
-            return;
-        }
+        // Input Visio file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Output JSON file path (second argument or default)
+        string outputPath = args.Length > 1 ? args[1] : "shapeStyle.json";
 
-        string diagramPath = args[0];
-        string outputJsonPath = args[1];
-        string shapeIdArg = args[2];
-
-        // Guard: ensure the input Visio file exists.
-        if (!File.Exists(diagramPath))
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
-            return;
-        }
-
-        // Parse shape ID.
-        if (!int.TryParse(shapeIdArg, out int shapeId) || shapeId <= 0)
-        {
-            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram has at least one page.
+            // Ensure the diagram has at least one page
             if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine("Error: Diagram contains no pages.");
+                Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Use the first page (index 0). Adjust as needed for other pages.
+            // Get the first page
             Page page = diagram.Pages[0];
 
-            // Retrieve the shape by its ID.
-            Shape shape = page.Shapes.GetShape(shapeId);
-
-            // Verify the shape is not logically deleted.
-            if (shape.Del == BOOL.True)
+            // Ensure the page has at least one shape
+            if (page.Shapes.Count == 0)
             {
-                Console.Error.WriteLine($"Error: Shape with ID {shapeId} is marked as deleted.");
+                Console.Error.WriteLine("The first page contains no shapes.");
                 return;
             }
 
-            // Extract line properties.
-            var lineInfo = new
+            // Get the first shape (ID 1 is typical, but we use the first in collection)
+            Shape shape = page.Shapes.GetShape(1);
+
+            // Extract line properties
+            string lineColor = shape.Line.LineColor.Value;
+            double lineWeight = shape.Line.LineWeight.Value;
+            string linePattern = shape.Line.LinePattern.Value.ToString();
+            int beginArrow = (int)shape.Line.BeginArrow.Value;
+            int endArrow = (int)shape.Line.EndArrow.Value;
+
+            // Extract fill properties
+            string fillForegnd = shape.Fill.FillForegnd.Value;
+            string fillBkgnd = shape.Fill.FillBkgnd.Value;
+            int fillPattern = shape.Fill.FillPattern.Value;
+            double fillForegndTrans = shape.Fill.FillForegndTrans.Value;
+            double fillBkgndTrans = shape.Fill.FillBkgndTrans.Value;
+
+            // Populate DTO
+            ShapeStyle style = new ShapeStyle
             {
-                Pattern = (int)shape.Line.LinePattern.Value,          // enum to int
-                Weight = shape.Line.LineWeight.Value,                // double (in inches)
-                Color = shape.Line.LineColor.Value,                  // string (hex or color name)
-                BeginArrow = (int)shape.Line.BeginArrow.Value,       // enum to int
-                EndArrow = (int)shape.Line.EndArrow.Value            // enum to int
+                LineColor = lineColor,
+                LineWeight = lineWeight,
+                LinePattern = linePattern,
+                BeginArrow = beginArrow,
+                EndArrow = endArrow,
+                FillForegnd = fillForegnd,
+                FillBkgnd = fillBkgnd,
+                FillPattern = fillPattern,
+                FillForegndTrans = fillForegndTrans,
+                FillBkgndTrans = fillBkgndTrans
             };
 
-            // Extract fill properties.
-            var fillInfo = new
-            {
-                Pattern = (int)shape.Fill.FillPattern.Value,         // enum to int
-                ForegroundColor = shape.Fill.FillForegnd.Value,      // string
-                BackgroundColor = shape.Fill.FillBkgnd.Value,        // string
-                ForegroundTransparency = shape.Fill.FillForegndTrans.Value, // double (0‑1)
-                BackgroundTransparency = shape.Fill.FillBkgndTrans.Value   // double (0‑1)
-            };
-
-            // Combine into a single export object.
-            var exportObject = new
-            {
-                ShapeId = shapeId,
-                Line = lineInfo,
-                Fill = fillInfo
-            };
-
-            // Serialize to JSON with indentation for readability.
+            // Serialize to JSON with indentation
             var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-            string json = JsonSerializer.Serialize(exportObject, jsonOptions);
+            string json = JsonSerializer.Serialize(style, jsonOptions);
 
-            // Write JSON to the specified output file.
-            File.WriteAllText(outputJsonPath, json);
-            Console.WriteLine($"Shape line and fill definitions exported to '{outputJsonPath}'.");
+            // Write JSON to output file
+            File.WriteAllText(outputPath, json);
+            Console.WriteLine($"Shape style exported successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram or I/O errors.
+            // Log any errors that occur during processing
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

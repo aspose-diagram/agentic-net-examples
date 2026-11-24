@@ -6,116 +6,97 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input folder path
-        string folderPath = args.Length > 0 ? args[0] : string.Empty;
-        if (string.IsNullOrWhiteSpace(folderPath))
+        // Determine the folder to process: first argument or prompt the user.
+        string folderPath;
+        if (args.Length > 0)
         {
-            Console.WriteLine("Please provide the folder path containing Visio files as the first argument.");
+            folderPath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the path to the folder containing Visio files: ");
+            folderPath = Console.ReadLine();
+        }
+
+        // Guard: ensure the folder exists.
+        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
+        {
+            Console.Error.WriteLine("Folder does not exist: " + folderPath);
             return;
         }
 
-        if (!Directory.Exists(folderPath))
+        // Define supported Visio extensions and their corresponding SaveFileFormat values.
+        var supportedExtensions = new (string Ext, SaveFileFormat Format)[]
         {
-            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
-            return;
-        }
+            (".vsdx", SaveFileFormat.Vsdx),
+            (".vsd",  SaveFileFormat.Vsd),
+            (".vsx",  SaveFileFormat.Vsx),
+            (".vtx",  SaveFileFormat.Vtx),
+            (".vssx", SaveFileFormat.Vssx),
+            (".vss",  SaveFileFormat.Vss),
+            (".vstx", SaveFileFormat.Vstx),
+            (".vst",  SaveFileFormat.Vst)
+        };
 
-        // Define supported Visio extensions
-        string[] supportedExtensions = new[] { ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx", ".vssx", ".vss", ".vstx", ".vst" };
-
-        // Process each file in the folder
-        foreach (string filePath in Directory.GetFiles(folderPath))
+        // Retrieve all files in the folder.
+        string[] allFiles = Directory.GetFiles(folderPath);
+        foreach (string filePath in allFiles)
         {
-            string extension = Path.GetExtension(filePath).ToLowerInvariant();
-            if (Array.IndexOf(supportedExtensions, extension) < 0)
+            // Guard: ensure the file still exists (it could have been removed meanwhile).
+            if (!File.Exists(filePath))
             {
-                // Skip unsupported files
+                Console.Error.WriteLine("File not found, skipping: " + filePath);
                 continue;
             }
 
-            if (!File.Exists(filePath))
+            // Determine the file extension in lower case.
+            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+
+            // Find a matching SaveFileFormat for the extension.
+            SaveFileFormat? targetFormat = null;
+            foreach (var pair in supportedExtensions)
             {
-                Console.Error.WriteLine($"File not found: {filePath}");
+                if (pair.Ext == ext)
+                {
+                    targetFormat = pair.Format;
+                    break;
+                }
+            }
+
+            // If the extension is not supported, skip the file.
+            if (targetFormat == null)
+            {
+                Console.WriteLine("Unsupported file type, skipping: " + filePath);
                 continue;
             }
 
             try
             {
-                // Load the Visio diagram
-                Diagram diagram = new Diagram(filePath);
-
-                // Determine BatchId value (using file name without extension)
-                string batchIdValue = Path.GetFileNameWithoutExtension(filePath);
-
-                // Check if the custom property already exists
-                bool propertyExists = false;
-                foreach (CustomProp existingProp in diagram.DocumentProps.CustomProps)
+                // Load the Visio diagram inside a using block to ensure proper disposal.
+                using (Diagram diagram = new Diagram(filePath))
                 {
-                    if (string.Equals(existingProp.Name, "BatchId", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Update existing property's value
-                        existingProp.CustomValue.ValueString = batchIdValue;
-                        propertyExists = true;
-                        break;
-                    }
-                }
-
-                // If not existing, create and add a new custom property
-                if (!propertyExists)
-                {
+                    // Create a new custom property named "BatchId".
                     CustomProp batchProp = new CustomProp();
                     batchProp.Name = "BatchId";
+                    // Set the property type to String.
                     batchProp.PropType = PropType.String;
-                    batchProp.CustomValue.ValueString = batchIdValue;
+                    // Assign a uniform value to the property.
+                    batchProp.CustomValue.ValueString = "Batch_001";
+
+                    // Add the custom property to the document's custom properties collection.
                     diagram.DocumentProps.CustomProps.Add(batchProp);
+
+                    // Save the diagram back to the original file, preserving its format.
+                    diagram.Save(filePath, targetFormat.Value);
                 }
 
-                // Determine appropriate SaveFileFormat based on original extension
-                SaveFileFormat format = GetSaveFileFormat(extension);
-
-                // Save the diagram, overwriting the original file
-                diagram.Save(filePath, format);
-
-                // Dispose diagram to free resources
-                diagram.Dispose();
-
-                Console.WriteLine($"Processed file: {Path.GetFileName(filePath)}");
+                Console.WriteLine("Processed file successfully: " + filePath);
             }
             catch (Exception ex)
             {
+                // Log any errors that occur during processing.
                 Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
-        }
-    }
-
-    /// <summary>
-    /// Maps a file extension to the corresponding SaveFileFormat enum value.
-    /// </summary>
-    private static SaveFileFormat GetSaveFileFormat(string extension)
-    {
-        switch (extension)
-        {
-            case ".vsdx":
-                return SaveFileFormat.Vsdx;
-            case ".vsd":
-                return SaveFileFormat.Vsd;
-            case ".vdx":
-                return SaveFileFormat.Vdx;
-            case ".vsx":
-                return SaveFileFormat.Vsx;
-            case ".vtx":
-                return SaveFileFormat.Vtx;
-            case ".vssx":
-                return SaveFileFormat.Vssx;
-            case ".vss":
-                return SaveFileFormat.Vss;
-            case ".vstx":
-                return SaveFileFormat.Vstx;
-            case ".vst":
-                return SaveFileFormat.Vst;
-            default:
-                // Default to Vsdx if unknown (should not happen due to prior filtering)
-                return SaveFileFormat.Vsdx;
         }
     }
 }

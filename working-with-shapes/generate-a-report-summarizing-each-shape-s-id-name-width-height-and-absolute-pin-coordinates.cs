@@ -6,80 +6,82 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 1)
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath>");
+            Console.Error.WriteLine("Please provide the diagram file path as a command-line argument.");
             return;
         }
 
-        string inputPath = args[0];
+        string diagramPath = args[0];
 
-        // Guard against missing input file.
-        if (!File.Exists(inputPath))
+        // Guard against missing file
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: File not found – {inputPath}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Iterate through each page in the diagram.
+            // Iterate through each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through each shape on the current page.
+                // Iterate through each shape on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve basic shape information.
-                    long shapeId = shape.ID;
-                    string shapeName = shape.NameU;
-                    double width = shape.XForm.Width.Value;
-                    double height = shape.XForm.Height.Value;
-
-                    // Compute absolute pin coordinates (handling group shapes recursively).
+                    // Compute absolute PinX and PinY (simple additive approach for nested groups)
                     double absolutePinX = GetAbsolutePinX(shape);
                     double absolutePinY = GetAbsolutePinY(shape);
 
-                    // Output the shape report line.
-                    Console.WriteLine($"ID: {shapeId}, Name: {shapeName}, Width: {width}, Height: {height}, PinX: {absolutePinX}, PinY: {absolutePinY}");
+                    // Retrieve width and height from the shape's XForm
+                    double width = shape.XForm.Width.Value;
+                    double height = shape.XForm.Height.Value;
+
+                    // Output the shape summary
+                    Console.WriteLine(
+                        $"Shape ID: {shape.ID}, " +
+                        $"Name: {shape.Name}, " +
+                        $"Width: {width}, " +
+                        $"Height: {height}, " +
+                        $"AbsPinX: {absolutePinX}, " +
+                        $"AbsPinY: {absolutePinY}");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Report any errors that occur during processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 
-    // Recursively calculates the absolute PinX for a shape, accounting for parent groups.
-    private static double GetAbsolutePinX(Shape shape)
+    // Helper method to calculate absolute PinX by traversing parent hierarchy
+    static double GetAbsolutePinX(Shape shape)
     {
-        // If the shape has no parent, its PinX is already absolute.
-        if (shape.ParentShape == null)
+        double pinX = shape.XForm.PinX.Value;
+        Shape parent = shape.ParentShape;
+        while (parent != null)
         {
-            return shape.XForm.PinX.Value;
+            pinX += parent.XForm.PinX.Value;
+            parent = parent.ParentShape;
         }
-
-        // Add the parent's absolute PinX to the shape's local PinX.
-        double parentAbsX = GetAbsolutePinX(shape.ParentShape);
-        return parentAbsX + shape.XForm.PinX.Value;
+        return pinX;
     }
 
-    // Recursively calculates the absolute PinY for a shape, accounting for parent groups.
-    private static double GetAbsolutePinY(Shape shape)
+    // Helper method to calculate absolute PinY by traversing parent hierarchy
+    static double GetAbsolutePinY(Shape shape)
     {
-        // If the shape has no parent, its PinY is already absolute.
-        if (shape.ParentShape == null)
+        double pinY = shape.XForm.PinY.Value;
+        Shape parent = shape.ParentShape;
+        while (parent != null)
         {
-            return shape.XForm.PinY.Value;
+            pinY += parent.XForm.PinY.Value;
+            parent = parent.ParentShape;
         }
-
-        // Add the parent's absolute PinY to the shape's local PinY.
-        double parentAbsY = GetAbsolutePinY(shape.ParentShape);
-        return parentAbsY + shape.XForm.PinY.Value;
+        return pinY;
     }
 }

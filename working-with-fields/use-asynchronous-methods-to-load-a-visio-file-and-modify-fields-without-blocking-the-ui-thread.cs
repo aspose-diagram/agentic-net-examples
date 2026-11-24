@@ -7,73 +7,76 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
-        string outputPath = "output.vsdx";
 
-        // Guard against missing input file
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Asynchronously load the Visio diagram
-            Diagram diagram = LoadDiagramAsync(inputPath).GetAwaiter().GetResult();
+            // Load the diagram asynchronously to avoid blocking the UI thread (simulated in console).
+            Task<Diagram> loadTask = LoadDiagramAsync(inputPath);
+            loadTask.Wait(); // Wait for the async load to complete.
+            Diagram diagram = loadTask.Result;
 
-            // Iterate through all pages and shapes to modify custom properties
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Ensure the shape has a Props collection
-                    if (shape.Props != null)
-                    {
-                        // Iterate over each custom property
-                        foreach (Prop prop in shape.Props)
-                        {
-                            // Example: update a property named "Status"
-                            if (prop.Name == "Status")
-                            {
-                                prop.Value.Val = "Updated";
-                            }
-                        }
-                    }
-                }
-            }
+            // Modify custom shape properties (Props) in the diagram.
+            ModifyShapeProperties(diagram);
 
-            // Asynchronously save the modified diagram
-            SaveDiagramAsync(diagram, outputPath).GetAwaiter().GetResult();
-
-            Console.WriteLine("Diagram processing completed successfully.");
+            // Save the modified diagram back to disk.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Log any errors that occur during loading, modification, or saving.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 
     /// <summary>
-    /// Loads a Visio diagram on a background thread to avoid blocking the UI thread.
+    /// Asynchronously loads a Visio diagram from the specified file path.
     /// </summary>
     private static Task<Diagram> LoadDiagramAsync(string path)
     {
+        // Use Task.Run to perform the potentially time‑consuming load operation on a background thread.
         return Task.Run(() => new Diagram(path));
     }
 
     /// <summary>
-    /// Saves a Visio diagram on a background thread to avoid blocking the UI thread.
+    /// Iterates through all pages and shapes, updating the first custom property (Prop) of each shape if present.
     /// </summary>
-    private static Task SaveDiagramAsync(Diagram diagram, string path)
+    private static void ModifyShapeProperties(Diagram diagram)
     {
-        return Task.Run(() => diagram.Save(path, SaveFileFormat.Vsdx));
+        // Loop over each page in the diagram.
+        foreach (Page page in diagram.Pages)
+        {
+            // Loop over each shape on the current page.
+            foreach (Shape shape in page.Shapes)
+            {
+                // Ensure the shape has a Props collection and at least one property.
+                if (shape.Props != null && shape.Props.Count > 0)
+                {
+                    // Access the first custom property.
+                    Prop prop = shape.Props[0];
+
+                    // Update the property's value.
+                    prop.Value.Val = "UpdatedValue";
+
+                    // Optionally, you could also update the label or other attributes here.
+                }
+            }
+        }
     }
 }

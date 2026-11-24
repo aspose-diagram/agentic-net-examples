@@ -1,33 +1,33 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input diagram path, output diagram path, field index to remove
-        if (args.Length < 3)
+        // Validate input arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <inputPath> <outputPath> <fieldIndex>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <fieldIndex>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-        string fieldIndexArg = args[2];
+        string fieldIndexArg = args[1];
 
-        // Guard: verify input file exists
+        // Guard: check if input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
             return;
         }
 
-        // Parse field index
+        // Parse the field index argument
         if (!int.TryParse(fieldIndexArg, out int fieldIndex) || fieldIndex < 0)
         {
-            Console.Error.WriteLine($"Invalid field index: {fieldIndexArg}");
+            Console.Error.WriteLine($"Error: Invalid field index '{fieldIndexArg}'. Must be a non‑negative integer.");
             return;
         }
 
@@ -36,38 +36,62 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram has at least one page and one shape
+            // Guard: ensure there is at least one page
             if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
+                Console.Error.WriteLine("Error: The diagram contains no pages.");
                 return;
             }
 
-            var page = diagram.Pages[0];
-            if (page.Shapes.Count == 0)
+            // Guard: ensure the first page has at least one shape
+            Page firstPage = diagram.Pages[0];
+            if (firstPage.Shapes.Count == 0)
             {
-                Console.Error.WriteLine("The first page contains no shapes.");
+                Console.Error.WriteLine("Error: The first page contains no shapes.");
                 return;
             }
 
-            // Work with the first shape on the first page
-            Shape shape = page.Shapes[0];
+            // Retrieve the first shape on the first page
+            Shape shape = firstPage.Shapes[0];
 
-            // Attempt to access the specified field; this may throw if the index is out of range
-            Field field = shape.Fields[fieldIndex];
+            // Attempt to access the specified field index
+            try
+            {
+                // Validate that the field index exists in the collection
+                if (fieldIndex >= shape.Fields.Count)
+                {
+                    throw new IndexOutOfRangeException($"Field index {fieldIndex} is out of range. Shape contains {shape.Fields.Count} field(s).");
+                }
 
-            // Remove the field from the shape
-            shape.Fields.Remove(field);
+                // Access the field
+                Field targetField = shape.Fields[fieldIndex];
 
-            // Save the modified diagram to the specified output path
+                // Example operation: update the field's value
+                targetField.Value.Val = "UpdatedValue";
+
+                Console.WriteLine($"Field at index {fieldIndex} updated successfully.");
+            }
+            catch (Exception ex) when (ex is IndexOutOfRangeException || ex is ArgumentOutOfRangeException)
+            {
+                // Log detailed error information for missing field
+                Console.Error.WriteLine("Error: Specified field does not exist.");
+                Console.Error.WriteLine($"Exception Message: {ex.Message}");
+                Console.Error.WriteLine($"Stack Trace: {ex.StackTrace}");
+                // Optionally, continue without aborting the program
+            }
+
+            // Define output path
+            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output.vsdx");
+
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Field at index {fieldIndex} removed successfully. Diagram saved to {outputPath}.");
+            Console.WriteLine($"Diagram saved to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Log detailed error information
+            // Catch any Aspose.Diagram related exceptions and log details
             Console.Error.WriteLine("An error occurred while processing the diagram:");
+            Console.Error.WriteLine($"Exception Type: {ex.GetType().FullName}");
             Console.Error.WriteLine($"Message: {ex.Message}");
             Console.Error.WriteLine($"Stack Trace: {ex.StackTrace}");
         }

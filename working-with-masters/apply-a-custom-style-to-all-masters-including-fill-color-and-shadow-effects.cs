@@ -6,8 +6,16 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input diagram path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Validate input arguments
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
+            return;
+        }
+
+        string inputPath = args[0];
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "Styled_" + Path.GetFileName(inputPath));
+
         // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
@@ -15,12 +23,9 @@ class Program
             return;
         }
 
-        // Output diagram path (second argument or default)
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
         try
         {
-            // Load the Visio diagram
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
             // Iterate over all masters in the diagram
@@ -29,25 +34,24 @@ class Program
                 // Iterate over each shape within the master
                 foreach (Shape shape in master.Shapes)
                 {
-                    // Apply a solid fill pattern
-                    shape.Fill.FillPattern.Value = 1; // 1 = solid
+                    // Apply a solid fill color (light blue) to the shape
+                    shape.Fill.FillPattern.Value = 1; // Solid fill
+                    shape.Fill.FillForegnd.Value = "#ADD8E6"; // Light blue foreground
 
-                    // Set the fill foreground color (example: orange)
-                    shape.Fill.FillForegnd.Value = "#FFCC00";
-
-                    // Configure simple drop shadow
-                    shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
-                    shape.Fill.ShdwForegnd.Value = "#000000";      // Shadow color: black
-                    shape.Fill.ShdwForegndTrans.Value = 0.3;       // 30% transparency
+                    // Apply a simple drop shadow
+                    shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple; // Drop shadow type
+                    shape.Fill.ShdwForegnd.Value = "#000000"; // Shadow color (black)
+                    shape.Fill.ShdwForegndTrans.Value = 0.3; // 30% shadow transparency
                 }
             }
 
-            // Save the modified diagram to the output file in VSDX format
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any errors that occur during processing
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

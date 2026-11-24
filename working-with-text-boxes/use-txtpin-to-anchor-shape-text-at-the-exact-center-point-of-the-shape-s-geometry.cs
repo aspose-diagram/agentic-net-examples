@@ -9,7 +9,7 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
@@ -28,52 +28,45 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there is at least one page.
-            if (diagram.Pages.Count == 0)
+            // Iterate through all pages.
+            foreach (Page page in diagram.Pages)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
+                // Iterate through all shapes on the page.
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip shapes that have no geometry (e.g., connectors without width/height).
+                    if (shape.XForm == null || shape.TextXForm == null)
+                        continue;
+
+                    // Calculate the center of the shape's geometry.
+                    double shapeCenterX = shape.XForm.Width.Value / 2.0;
+                    double shapeCenterY = shape.XForm.Height.Value / 2.0;
+
+                    // Set the text block's pin to the shape's center.
+                    shape.TextXForm.TxtPinX.Value = shapeCenterX;
+                    shape.TextXForm.TxtPinY.Value = shapeCenterY;
+
+                    // Optionally, center the text within its own text block.
+                    // This uses half of the text block's width/height as the local pin.
+                    double txtHalfWidth = shape.TextXForm.TxtWidth.Value / 2.0;
+                    double txtHalfHeight = shape.TextXForm.TxtHeight.Value / 2.0;
+
+                    shape.TextXForm.TxtLocPinX.Value = txtHalfWidth;
+                    shape.TextXForm.TxtLocPinY.Value = txtHalfHeight;
+
+                    // Refresh shape data so the changes take effect.
+                    shape.RefreshData();
+                }
             }
 
-            // Work with the first page.
-            Page page = diagram.Pages[0];
-
-            // Ensure the page has at least one shape.
-            if (page.Shapes.Count == 0)
-            {
-                Console.Error.WriteLine("The first page contains no shapes.");
-                return;
-            }
-
-            // Retrieve the first shape (you can change the ID as needed).
-            Shape shape = page.Shapes[0];
-
-            // -----------------------------------------------------------------
-            // Center the shape's text using TxtPin (TextXForm) properties.
-            // -----------------------------------------------------------------
-            // 1. Set the text block size to match the shape's size.
-            shape.TextXForm.TxtWidth.Value = shape.XForm.Width.Value;
-            shape.TextXForm.TxtHeight.Value = shape.XForm.Height.Value;
-
-            // 2. Position the text block's pin at the shape's geometric center.
-            shape.TextXForm.TxtPinX.Value = shape.XForm.PinX.Value;
-            shape.TextXForm.TxtPinY.Value = shape.XForm.PinY.Value;
-
-            // 3. Set the local pin of the text block to its center.
-            shape.TextXForm.TxtLocPinX.Value = shape.TextXForm.TxtWidth.Value / 2.0;
-            shape.TextXForm.TxtLocPinY.Value = shape.TextXForm.TxtHeight.Value / 2.0;
-
-            // Refresh the shape to apply geometry changes.
-            shape.RefreshData();
-
-            // Save the modified diagram to the specified output path.
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
             // Write any Aspose or IO errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

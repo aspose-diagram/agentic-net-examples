@@ -30,7 +30,7 @@ class Program
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Define the corporate line color (hex string).
-                const string corporateLineColor = "#0055A4";
+                const string corporateLineColor = "#1A73E8";
 
                 // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
@@ -44,10 +44,10 @@ class Program
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Process only 1‑D connector shapes.
+                        // Identify connector shapes (1‑D shapes). OneD is a bool, not BOOL.
                         if (shape.OneD)
                         {
-                            // Apply the corporate line color.
+                            // Apply the corporate line color to the connector.
                             shape.Line.LineColor.Value = corporateLineColor;
                         }
                     }
@@ -56,17 +56,21 @@ class Program
                 // Configure PDF save options.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
                 pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                // Optional: set high resolution for raster images inside PDF.
+                pdfOptions.HorizontalResolution = 300;
+                pdfOptions.VerticalResolution = 300;
+                pdfOptions.JpegQuality = 100;
 
                 // Save the modified diagram as PDF.
                 diagram.Save(outputPath, pdfOptions);
             }
 
-            Console.WriteLine($"Diagram exported successfully to: {outputPath}");
+            Console.WriteLine($"PDF exported successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
             // Write any Aspose or IO errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

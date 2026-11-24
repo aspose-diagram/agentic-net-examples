@@ -7,17 +7,16 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Define input Visio file and output PDF file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPdfFile>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "output.pdf";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input Visio file exists.
+        // Guard: ensure the input file exists before proceeding
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,68 +25,58 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block to ensure proper disposal
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Configure PDF save options and assign the page‑saving callback.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;               // Explicitly set the format.
-            pdfOptions.PageSavingCallback = new MyPageSavingCallback(); // Event‑driven processing.
+                // Explicitly set the format tracker (required for PDF export)
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-            // Save the diagram as PDF; the callback will be invoked per page.
-            diagram.Save(outputPath, pdfOptions);
+                // Enable text compression to reduce PDF size (optional)
+                pdfOptions.TextCompression = PdfTextCompression.Flate;
+
+                // Assign the custom page-saving callback to handle per-page events
+                pdfOptions.PageSavingCallback = new MyPageSavingCallback();
+
+                // Save the diagram to PDF using the configured options
+                diagram.Save(outputPath, pdfOptions);
+            }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during loading or saving.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any errors that occur during processing to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
-}
 
-/// <summary>
-/// Implements IPageSavingCallback to receive notifications before and after each page is saved.
-/// </summary>
-class MyPageSavingCallback : IPageSavingCallback
-{
-    /// <summary>
-    /// Called before a page starts saving. Here we simply log the start.
-    /// </summary>
-    /// <param name="args">Information about the page being saved.</param>
-    public void PageStartSaving(PageStartSavingArgs args)
+    // This method represents downstream processing that should occur after each page is saved
+    static void ProcessSavedPage(int pageIndex, int pageCount)
     {
-        Console.WriteLine($"Start saving page index {args.PageIndex} of {args.PageCount}");
+        // Example downstream logic: log completion and placeholder for further actions
+        Console.WriteLine($"Downstream processing for page {pageIndex + 1} of {pageCount} completed.");
+        // Additional processing (e.g., extracting page data, updating a database) can be added here
     }
 
-    /// <summary>
-    /// Called after a page has been saved. Triggers downstream processing for the saved page.
-    /// </summary>
-    /// <param name="args">Information about the page that was saved.</param>
-    public void PageEndSaving(PageEndSavingArgs args)
+    // Implementation of IPageSavingCallback to receive page save events from PdfSaveOptions
+    class MyPageSavingCallback : IPageSavingCallback
     {
-        Console.WriteLine($"End saving page index {args.PageIndex} of {args.PageCount}");
-
-        // Downstream processing: for demonstration, create a simple text file per page.
-        ProcessSavedPage(args.PageIndex);
-    }
-
-    /// <summary>
-    /// Example downstream processing logic for a saved page.
-    /// </summary>
-    /// <param name="pageIndex">Zero‑based index of the page that was saved.</param>
-    private void ProcessSavedPage(int pageIndex)
-    {
-        try
+        // Called before a page starts saving
+        public void PageStartSaving(PageStartSavingArgs args)
         {
-            // Create a marker file indicating that the page has been processed.
-            string fileName = $"Processed_Page_{pageIndex}.txt";
-            File.WriteAllText(fileName, $"Page {pageIndex} processed at {DateTime.Now}");
-            Console.WriteLine($"Downstream processing completed for page {pageIndex}, marker file created: {fileName}");
+            // Log the start of page saving
+            Console.WriteLine($"Start saving page index {args.PageIndex} of {args.PageCount}");
         }
-        catch (Exception ex)
+
+        // Called after a page has been saved
+        public void PageEndSaving(PageEndSavingArgs args)
         {
-            // Log any errors that occur during downstream processing.
-            Console.Error.WriteLine($"Error processing page {pageIndex}: {ex.Message}");
+            // Log the end of page saving
+            Console.WriteLine($"End saving page index {args.PageIndex} of {args.PageCount}");
+
+            // Trigger downstream processing for the saved page
+            Program.ProcessSavedPage(args.PageIndex, args.PageCount);
         }
     }
 }

@@ -6,8 +6,8 @@ using Aspose.Diagram.Saving;
 
 class Program
 {
-    // ISO 216 A‑series paper sizes in millimetres (width × height, portrait)
-    static readonly List<(double WidthMm, double HeightMm)> IsoASeries = new List<(double, double)>
+    // ISO 216 A series paper sizes in millimeters (width x height)
+    private static readonly (double Width, double Height)[] IsoASeries = new (double, double)[]
     {
         (841, 1189), // A0
         (594, 841),  // A1
@@ -22,14 +22,12 @@ class Program
         (26, 37)     // A10
     };
 
-    // Allowed tolerance when comparing dimensions (mm)
-    const double ToleranceMm = 1.0;
+    // Tolerance for size comparison in millimeters
+    private const double ToleranceMm = 1.0;
 
     static void Main(string[] args)
     {
-        // -----------------------------------------------------------------
-        // Validate command‑line arguments
-        // -----------------------------------------------------------------
+        // Expect two arguments: input folder and output folder
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputFolder> <outputFolder>");
@@ -39,18 +37,14 @@ class Program
         string inputFolder = args[0];
         string outputFolder = args[1];
 
-        // -----------------------------------------------------------------
-        // Guard input folder existence
-        // -----------------------------------------------------------------
+        // Guard for input folder existence
         if (!Directory.Exists(inputFolder))
         {
             Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
             return;
         }
 
-        // -----------------------------------------------------------------
-        // Ensure output folder exists (create if necessary)
-        // -----------------------------------------------------------------
+        // Guard for output folder existence; create if missing
         if (!Directory.Exists(outputFolder))
         {
             try
@@ -59,18 +53,22 @@ class Program
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
+                Console.Error.WriteLine($"Failed to create output folder: {outputFolder}. Error: {ex.Message}");
                 return;
             }
         }
 
-        // -----------------------------------------------------------------
-        // Process each Visio file (*.vsdx) in the input folder
-        // -----------------------------------------------------------------
+        // Get all Visio files (VSDX) in the input folder
         string[] files = Directory.GetFiles(inputFolder, "*.vsdx");
+        if (files.Length == 0)
+        {
+            Console.WriteLine("No Visio files found to process.");
+            return;
+        }
+
         foreach (string filePath in files)
         {
-            // Guard file existence (redundant but required by rules)
+            // Guard for file existence (redundant but safe)
             if (!File.Exists(filePath))
             {
                 Console.Error.WriteLine($"File not found: {filePath}");
@@ -82,92 +80,67 @@ class Program
                 // Load the diagram
                 Diagram diagram = new Diagram(filePath);
 
-                // Validate all pages against ISO 216 sizes
-                if (!ValidateDiagramPages(diagram))
+                // Validate each page's dimensions against ISO 216
+                bool allPagesValid = true;
+                for (int i = 0; i < diagram.Pages.Count; i++)
                 {
-                    Console.Error.WriteLine($"File '{Path.GetFileName(filePath)}' contains pages with non‑ISO dimensions. Skipping export.");
+                    Page page = diagram.Pages[i];
+
+                    // Retrieve width and height in inches
+                    double widthInches = page.PageSheet.PageProps.PageWidth.Value;
+                    double heightInches = page.PageSheet.PageProps.PageHeight.Value;
+
+                    // Convert to millimeters
+                    double widthMm = widthInches * 25.4;
+                    double heightMm = heightInches * 25.4;
+
+                    if (!IsIso216Size(widthMm, heightMm))
+                    {
+                        Console.Error.WriteLine($"File '{Path.GetFileName(filePath)}', Page {i + 1} dimensions ({widthMm:F1}mm x {heightMm:F1}mm) do not match any ISO 216 A series size.");
+                        allPagesValid = false;
+                        break; // Stop checking further pages for this file
+                    }
+                }
+
+                if (!allPagesValid)
+                {
+                    Console.Error.WriteLine($"Skipping export for '{Path.GetFileName(filePath)}' due to invalid page size.");
                     continue;
                 }
 
-                // Export each page to a separate PDF file
-                ExportDiagramPagesToPdf(diagram, filePath, outputFolder);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-            }
-        }
-    }
+                // All pages are valid – proceed with export (PDF in this example)
+                string outputFileName = Path.GetFileNameWithoutExtension(filePath) + ".pdf";
+                string outputPath = Path.Combine(outputFolder, outputFileName);
 
-    // -----------------------------------------------------------------
-    // Validates that every page in the diagram matches an ISO A‑series size
-    // -----------------------------------------------------------------
-    static bool ValidateDiagramPages(Diagram diagram)
-    {
-        foreach (Page page in diagram.Pages)
-        {
-            // Retrieve page dimensions (inches) from the PageSheet
-            double widthInches = page.PageSheet.PageProps.PageWidth.Value;
-            double heightInches = page.PageSheet.PageProps.PageHeight.Value;
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf; // Explicitly set format
+                pdfOptions.ExportHiddenPage = false; // Example setting; adjust as needed
 
-            // Convert inches to millimetres (1 inch = 25.4 mm)
-            double widthMm = widthInches * 25.4;
-            double heightMm = heightInches * 25.4;
-
-            // Normalise to portrait orientation for comparison
-            double w = Math.Min(widthMm, heightMm);
-            double h = Math.Max(widthMm, heightMm);
-
-            bool matches = false;
-            foreach (var (isoW, isoH) in IsoASeries)
-            {
-                if (Math.Abs(w - isoW) <= ToleranceMm && Math.Abs(h - isoH) <= ToleranceMm)
-                {
-                    matches = true;
-                    break;
-                }
-            }
-
-            if (!matches)
-            {
-                Console.Error.WriteLine($"Page {page.ID} dimensions ({widthMm:F1} mm × {heightMm:F1} mm) do not match any ISO A‑series size.");
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    // -----------------------------------------------------------------
-    // Exports each page of the diagram to a separate PDF file
-    // -----------------------------------------------------------------
-    static void ExportDiagramPagesToPdf(Diagram diagram, string sourceFilePath, string outputFolder)
-    {
-        string baseName = Path.GetFileNameWithoutExtension(sourceFilePath);
-
-        for (int i = 0; i < diagram.Pages.Count; i++)
-        {
-            try
-            {
-                // Configure PDF save options for a single page
-                PdfSaveOptions pdfOptions = new PdfSaveOptions
-                {
-                    SaveFormat = SaveFileFormat.Pdf,   // explicit format tracking
-                    PageIndex = i,                     // zero‑based page index
-                    PageCount = 1,                     // export only this page
-                    ExportHiddenPage = false           // do not export hidden pages (bool, not BOOL)
-                };
-
-                // Build output file path
-                string outputPath = Path.Combine(outputFolder, $"{baseName}_Page{i + 1}.pdf");
-
-                // Save the selected page as PDF
+                // Save the diagram as PDF
                 diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine($"Exported '{Path.GetFileName(filePath)}' to '{outputFileName}'.");
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Failed to export page {i + 1} of '{sourceFilePath}': {ex.Message}");
+                Console.Error.WriteLine($"Error processing file '{Path.GetFileName(filePath)}': {ex.Message}");
             }
         }
+    }
+
+    // Checks whether the given dimensions (in mm) match any ISO 216 A series size within tolerance.
+    private static bool IsIso216Size(double widthMm, double heightMm)
+    {
+        foreach (var size in IsoASeries)
+        {
+            // Direct orientation match
+            if (Math.Abs(widthMm - size.Width) <= ToleranceMm && Math.Abs(heightMm - size.Height) <= ToleranceMm)
+                return true;
+
+            // Swapped orientation match (landscape vs portrait)
+            if (Math.Abs(widthMm - size.Height) <= ToleranceMm && Math.Abs(heightMm - size.Width) <= ToleranceMm)
+                return true;
+        }
+        return false;
     }
 }

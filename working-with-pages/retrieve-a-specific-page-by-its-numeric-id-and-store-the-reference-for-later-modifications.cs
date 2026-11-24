@@ -6,56 +6,55 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: input file path and page ID.
-        if (args.Length < 2)
+        // Validate command‑line arguments: input file, page ID, output file
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <pageId> [outputVisioFile]");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <pageId> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
         string pageIdArg = args[1];
-        string outputPath = args.Length >= 3 ? args[2] : "modified_output.vsdx";
+        string outputPath = args[2];
 
-        // Guard: ensure the input file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
-        // Parse the page ID.
+        // Parse the page ID
         if (!int.TryParse(pageIdArg, out int pageId))
         {
-            Console.Error.WriteLine($"Error: Page ID \"{pageIdArg}\" is not a valid integer.");
+            Console.Error.WriteLine($"Error: Invalid page ID '{pageIdArg}'. It must be an integer.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block (mandatory pattern).
+            // Load the Visio diagram inside a using block (mandatory pattern)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Retrieve the page by its numeric ID.
-                Page page = diagram.Pages.GetPage(pageId);
-                if (page == null)
+                // Retrieve the page by its numeric ID
+                Page targetPage = diagram.Pages.GetPage(pageId);
+                if (targetPage == null)
                 {
                     Console.Error.WriteLine($"Error: No page found with ID {pageId}.");
                     return;
                 }
 
-                // Store the reference for later modifications.
-                // Example modification: change the page name.
-                page.Name = "ModifiedPage";
+                // Store the reference for later modifications (example: rename the page)
+                targetPage.Name = "ModifiedPage";
 
-                // Save the modified diagram to the specified output path.
+                // Save the modified diagram to the specified output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Page ID {pageId} retrieved and modified. Diagram saved to \"{outputPath}\".");
+                Console.WriteLine($"Page ID {pageId} retrieved and modified. Diagram saved to '{outputPath}'.");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Write any Aspose or I/O errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

@@ -7,10 +7,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
@@ -20,48 +20,48 @@ class Program
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Load the diagram and add a timestamp custom property to each shape.
         try
         {
-            // Diagram does not implement IDisposable; instantiate directly.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate over every page in the diagram.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over every shape on the current page.
-                foreach (Shape shape in page.Shapes)
+                // Iterate over every page in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Create a new custom property (Prop) for the timestamp.
-                    Prop timestampProp = new Prop();
+                    // Iterate over every shape on the current page.
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip shapes that are marked for deletion.
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // Set the internal name of the property.
-                    timestampProp.Name = "Timestamp";
+                        // Ensure the Props collection is available.
+                        if (shape.Props == null)
+                            continue;
 
-                    // Set the display label of the property.
-                    // Use .Value for Str2Value (Label) as required by the API.
-                    timestampProp.Label.Value = "Timestamp";
+                        // Create a new custom property (Prop) to hold the timestamp.
+                        Prop timestampProp = new Prop();
+                        timestampProp.Name = "Timestamp";
+                        timestampProp.Value.Val = DateTime.Now.ToString("o"); // ISO 8601 format
 
-                    // Assign the current timestamp in ISO‑8601 format.
-                    timestampProp.Value.Val = DateTime.Now.ToString("o");
-
-                    // Add the custom property to the shape's property collection.
-                    shape.Props.Add(timestampProp);
+                        // Add the property to the shape's Props collection.
+                        shape.Props.Add(timestampProp);
+                    }
                 }
-            }
 
-            // Save the modified diagram to the specified output path in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved with timestamps to: {outputPath}");
+                // Save the modified diagram to the specified output path.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved with timestamps to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

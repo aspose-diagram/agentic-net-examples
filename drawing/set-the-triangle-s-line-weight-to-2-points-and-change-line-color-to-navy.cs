@@ -6,17 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect input and output file paths as command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -28,16 +28,25 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Assume the triangle shape is the first shape on the first page.
-            // Adjust the page name or shape ID as needed for your document.
+            // Get the first page (you can adjust the page selection as needed).
             Page page = diagram.Pages[0];
+
+            // Retrieve the shape representing the triangle.
+            // Here we assume the triangle is the first shape on the page.
+            // Adjust the shape ID or selection logic according to your diagram.
             Shape triangle = page.Shapes.GetShape(1);
 
-            // Set line weight to 2 points (Visio stores line weight in inches).
-            // 1 point = 1/72 inch, so 2 points = 2/72 inches.
+            // Ensure the shape is not deleted.
+            if (triangle.Del == BOOL.True)
+            {
+                Console.Error.WriteLine("The specified shape is marked as deleted.");
+                return;
+            }
+
+            // Set line weight to 2 points (2/72 inches).
             triangle.Line.LineWeight.Value = 2.0 / 72.0;
 
-            // Set line color to navy using a hex color code.
+            // Set line color to navy (hex color #000080).
             triangle.Line.LineColor.Value = "#000080";
 
             // Save the modified diagram.
@@ -45,7 +54,8 @@ class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

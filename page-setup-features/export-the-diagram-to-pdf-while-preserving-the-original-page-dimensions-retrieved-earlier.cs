@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Drawing;
 
 class Program
 {
@@ -26,30 +27,34 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Retrieve and display original page dimensions (in inches).
-            // Page dimensions are stored in PageSheet.PageProps.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                double width = page.PageSheet.PageProps.PageWidth.Value;
-                double height = page.PageSheet.PageProps.PageHeight.Value;
-                Console.WriteLine($"Page \"{page.Name}\" - Width: {width} in, Height: {height} in");
+                // Retrieve dimensions of the first page (original page size) in inches.
+                Page firstPage = diagram.Pages[0];
+                double pageWidthInches = firstPage.PageSheet.PageProps.PageWidth.Value;
+                double pageHeightInches = firstPage.PageSheet.PageProps.PageHeight.Value;
+
+                // Convert inches to points (1 inch = 72 points) for the PDF area.
+                float widthPoints = (float)(pageWidthInches * 72);
+                float heightPoints = (float)(pageHeightInches * 72);
+
+                // Prepare PDF save options.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+
+                // Explicitly set the format tracker.
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+                // Preserve original page size by defining the export area.
+                pdfOptions.Area = new RectangleF(0, 0, widthPoints, heightPoints);
+
+                // Export hidden pages flag (plain bool, not BOOL).
+                pdfOptions.ExportHiddenPage = false;
+
+                // Save the diagram as PDF using the configured options.
+                diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine($"Diagram successfully exported to PDF: {outputPath}");
             }
-
-            // Configure PDF save options.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            // Explicitly set the format tracker as required by the API.
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-
-            // Export the diagram to PDF while preserving original page dimensions.
-            diagram.Save(outputPath, pdfOptions);
-
-            // Clean up resources.
-            diagram.Dispose();
-
-            Console.WriteLine($"Diagram successfully exported to PDF: {outputPath}");
         }
         catch (Exception ex)
         {

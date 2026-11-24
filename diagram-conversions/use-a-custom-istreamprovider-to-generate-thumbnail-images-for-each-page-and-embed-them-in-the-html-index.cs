@@ -1,152 +1,138 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
-
-class ThumbnailStreamProvider : IStreamProvider
-{
-    private readonly Diagram _diagram;
-
-    public ThumbnailStreamProvider(Diagram diagram)
-    {
-        _diagram = diagram;
-    }
-
-    // Called by Aspose when a resource stream is needed during HTML export
-    public void InitStream(StreamProviderOptions options)
-    {
-        try
-        {
-            // Determine the page index from the default file name (e.g., "page_1.png")
-            int pageIndex = 0;
-            string fileName = Path.GetFileName(options.DefaultPath);
-            Match match = Regex.Match(fileName, @"page_(\d+)\.png", RegexOptions.IgnoreCase);
-            if (match.Success)
-            {
-                // HTML export uses 1‑based naming; convert to zero‑based index
-                pageIndex = int.Parse(match.Groups[1].Value) - 1;
-                if (pageIndex < 0) pageIndex = 0;
-            }
-
-            // Generate a PNG thumbnail for the identified page
-            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            imgOptions.PageIndex = pageIndex;
-            imgOptions.PageCount = 1;
-
-            using (MemoryStream imageStream = new MemoryStream())
-            {
-                _diagram.Save(imageStream, imgOptions);
-                imageStream.Position = 0;
-                // Assign the generated stream to the provider options
-                options.Stream = imageStream;
-                // Note: Aspose will read the stream before we exit this method,
-                // so we do not dispose the stream here.
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error generating thumbnail for resource '{options.DefaultPath}': {ex.Message}");
-            // Ensure a non‑null stream to avoid downstream null reference
-            options.Stream = new MemoryStream();
-        }
-    }
-
-    // Called by Aspose after the resource has been written
-    public void CloseStream(StreamProviderOptions options)
-    {
-        if (options.Stream != null)
-        {
-            options.Stream.Dispose();
-        }
-    }
-}
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file and output folder
+        // Validate arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputFolder>");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath> <OutputDirectory>");
             return;
         }
 
-        string inputPath = args[0];
-        string outputFolder = args[1];
+        string visioPath = args[0];
+        string outputDir = args[1];
 
-        // Guard against missing input file
-        if (!File.Exists(inputPath))
+        // Guard: ensure the Visio file exists.
+        if (!File.Exists(visioPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Visio file not found at '{visioPath}'.");
             return;
         }
 
-        // Ensure the output directory exists
+        // Ensure the output directory exists.
         try
         {
-            Directory.CreateDirectory(outputFolder);
+            Directory.CreateDirectory(outputDir);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to create output directory '{outputFolder}': {ex.Message}");
+            Console.Error.WriteLine($"Error creating output directory: {ex.Message}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(visioPath);
 
-            // Process each page: generate a thumbnail PNG and an HTML file
-            for (int i = 0; i < diagram.Pages.Count; i++)
-            {
-                // ----- Generate thumbnail PNG for the index page -----
-                string thumbPath = Path.Combine(outputFolder, $"page_{i + 1}.png");
-                ImageSaveOptions imgOpts = new ImageSaveOptions(SaveFileFormat.Png);
-                imgOpts.PageIndex = i;
-                imgOpts.PageCount = 1;
-                diagram.Save(thumbPath, imgOpts);
+            // Configure HTML save options with a custom stream provider.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            htmlOptions.StreamProvider = new ThumbnailStreamProvider(diagram);
 
-                // ----- Export HTML for the current page -----
-                HTMLSaveOptions htmlOpts = new HTMLSaveOptions();
-                htmlOpts.PageIndex = i;               // Export only the current page
-                htmlOpts.PageCount = 1;
-                htmlOpts.ExportHiddenPage = false;    // bool property
-                htmlOpts.IsExportComments = false;    // bool property
-                htmlOpts.StreamProvider = new ThumbnailStreamProvider(diagram);
+            // Save the HTML index file.
+            string htmlPath = Path.Combine(outputDir, "index.html");
+            diagram.Save(htmlPath, htmlOptions);
 
-                string htmlFileName = Path.Combine(outputFolder, $"page_{i + 1}.html");
-                diagram.Save(htmlFileName, htmlOpts);
-            }
-
-            // ----- Create an index.html that embeds the thumbnails -----
-            string indexPath = Path.Combine(outputFolder, "index.html");
-            using (StreamWriter writer = new StreamWriter(indexPath))
-            {
-                writer.WriteLine("<!DOCTYPE html>");
-                writer.WriteLine("<html><head><meta charset=\"UTF-8\"><title>Diagram Thumbnails</title></head><body>");
-                writer.WriteLine("<h1>Diagram Pages</h1>");
-
-                for (int i = 0; i < diagram.Pages.Count; i++)
-                {
-                    string thumbFile = $"page_{i + 1}.png";
-                    string pageHtml = $"page_{i + 1}.html";
-                    writer.WriteLine("<div style=\"margin-bottom:20px;\">");
-                    writer.WriteLine($"<a href=\"{pageHtml}\"><img src=\"{thumbFile}\" alt=\"Page {i + 1}\" style=\"width:200px;height:auto;\"/></a>");
-                    writer.WriteLine($"<p>Page {i + 1}</p>");
-                    writer.WriteLine("</div>");
-                }
-
-                writer.WriteLine("</body></html>");
-            }
-
-            Console.WriteLine("HTML export with thumbnails completed successfully.");
+            Console.WriteLine($"HTML export completed: {htmlPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred during processing: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
+    }
+}
+
+/// <summary>
+/// Custom IStreamProvider that generates thumbnail PNG images for each page on demand
+/// and supplies them to the HTML export process.
+/// </summary>
+class ThumbnailStreamProvider : IStreamProvider
+{
+    private readonly Diagram _diagram;
+    private readonly Dictionary<string, byte[]> _cache = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+    private static readonly Regex _pageImageRegex = new Regex(@"page(\d+)_\d+\.png$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    public ThumbnailStreamProvider(Diagram diagram)
+    {
+        _diagram = diagram ?? throw new ArgumentNullException(nameof(diagram));
+    }
+
+    // Called by Aspose when a resource stream is required.
+    public void InitStream(StreamProviderOptions options)
+    {
+        if (options == null)
+            throw new ArgumentNullException(nameof(options));
+
+        string resourcePath = options.DefaultPath ?? string.Empty;
+
+        // If we have already generated this resource, reuse it.
+        if (_cache.TryGetValue(resourcePath, out byte[] cachedBytes))
+        {
+            options.Stream = new MemoryStream(cachedBytes);
+            return;
+        }
+
+        // Determine if the requested resource is a page thumbnail image.
+        Match match = _pageImageRegex.Match(resourcePath);
+        if (match.Success && int.TryParse(match.Groups[1].Value, out int pageIndex))
+        {
+            // Generate thumbnail for the requested page.
+            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            imgOptions.PageIndex = pageIndex;
+            imgOptions.PageCount = 1;
+            // Optional: set a reasonable resolution for thumbnails.
+            imgOptions.Resolution = 96f;
+
+            using (MemoryStream ms = new MemoryStream())
+            {
+                // Save the specific page as PNG into the memory stream.
+                _diagram.Save(ms, imgOptions);
+                byte[] imageBytes = ms.ToArray();
+
+                // Cache the generated image for potential reuse.
+                _cache[resourcePath] = imageBytes;
+
+                // Provide the stream to Aspose.
+                options.Stream = new MemoryStream(imageBytes);
+            }
+        }
+        else
+        {
+            // For any other resource, provide an empty stream to avoid errors.
+            options.Stream = new MemoryStream();
+        }
+    }
+
+    // Called by Aspose after the stream is no longer needed.
+    public void CloseStream(StreamProviderOptions options)
+    {
+        if (options?.Stream != null)
+        {
+            try
+            {
+                options.Stream.Dispose();
+            }
+            catch
+            {
+                // Suppress any disposal exceptions.
+            }
         }
     }
 }

@@ -8,71 +8,94 @@ class Program
     static void Main(string[] args)
     {
         // Validate input arguments
-        if (args.Length < 1)
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <diagram-file-path>");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
             return;
         }
 
         string diagramPath = args[0];
 
-        // Guard: ensure the diagram file exists
+        // Guard: ensure the Visio file exists
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
-        // Create an in‑memory DataTable to simulate a relational database table
+        // Prepare an in‑memory DataTable to simulate a relational database table
         DataTable pageDimensionsTable = new DataTable("PageDimensions");
-        pageDimensionsTable.Columns.Add("RevisionId", typeof(int));
-        pageDimensionsTable.Columns.Add("PageName", typeof(string));
-        pageDimensionsTable.Columns.Add("WidthInches", typeof(double));
-        pageDimensionsTable.Columns.Add("HeightInches", typeof(double));
-        pageDimensionsTable.Columns.Add("Timestamp", typeof(DateTime));
+        pageDimensionsTable.Columns.Add("DiagramPath", typeof(string));
+        pageDimensionsTable.Columns.Add("RevisionTimestamp", typeof(DateTime));
+        pageDimensionsTable.Columns.Add("PageIndex", typeof(int));
+        pageDimensionsTable.Columns.Add("PageWidthInches", typeof(double));
+        pageDimensionsTable.Columns.Add("PageHeightInches", typeof(double));
 
-        // For demonstration, we use a simple revision identifier
-        int revisionId = 1; // In a real scenario this would come from your versioning system
+        // Capture the current timestamp as the revision identifier
+        DateTime revisionTimestamp = DateTime.Now;
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Iterate over each page explicitly typing the iterator as Page
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block as required by Aspose.Diagram
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Retrieve page dimensions (values are in inches)
-                double width = page.PageSheet.PageProps.PageWidth.Value;
-                double height = page.PageSheet.PageProps.PageHeight.Value;
+                // Iterate over each page in the diagram
+                int pageIndex = 0;
+                foreach (Page page in diagram.Pages)
+                {
+                    // Retrieve page dimensions (values are in inches)
+                    double width = page.PageSheet.PageProps.PageWidth.Value;
+                    double height = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Create a new DataRow with the extracted information
-                DataRow row = pageDimensionsTable.NewRow();
-                row["RevisionId"] = revisionId;
-                // Page.Name is a string, not a cell with .Value
-                row["PageName"] = page.Name ?? $"Page_{page.ID}";
-                row["WidthInches"] = width;
-                row["HeightInches"] = height;
-                row["Timestamp"] = DateTime.UtcNow;
+                    // Add a new row to the DataTable
+                    DataRow row = pageDimensionsTable.NewRow();
+                    row["DiagramPath"] = diagramPath;
+                    row["RevisionTimestamp"] = revisionTimestamp;
+                    row["PageIndex"] = pageIndex;
+                    row["PageWidthInches"] = width;
+                    row["PageHeightInches"] = height;
+                    pageDimensionsTable.Rows.Add(row);
 
-                pageDimensionsTable.Rows.Add(row);
+                    pageIndex++;
+                }
             }
 
-            // Simulated database insertion
-            // In a real implementation you would use ADO.NET with a proper DbConnection,
-            // e.g., SqlConnection, NpgsqlConnection, etc., and execute INSERT commands.
-            // The following loop demonstrates how rows would be processed.
-            foreach (DataRow dr in pageDimensionsTable.Rows)
+            // ----- Real database insertion (commented out) -----
+            // The following illustrates how you would insert the collected data
+            // into a relational database using ADO.NET. Replace the connection
+            // string and table/column names with those matching your schema.
+            /*
+            using (var connection = new System.Data.SqlClient.SqlConnection("your-connection-string"))
             {
-                // For this example we simply output the row to the console
-                Console.WriteLine($"Stored Revision {dr["RevisionId"]}, Page '{dr["PageName"]}': {dr["WidthInches"]}in x {dr["HeightInches"]}in at {dr["Timestamp"]}");
+                connection.Open();
+                foreach (DataRow row in pageDimensionsTable.Rows)
+                {
+                    using (var command = new System.Data.SqlClient.SqlCommand(
+                        "INSERT INTO PageDimensions (DiagramPath, RevisionTimestamp, PageIndex, PageWidthInches, PageHeightInches) " +
+                        "VALUES (@DiagramPath, @RevisionTimestamp, @PageIndex, @PageWidthInches, @PageHeightInches)", connection))
+                    {
+                        command.Parameters.AddWithValue("@DiagramPath", row["DiagramPath"]);
+                        command.Parameters.AddWithValue("@RevisionTimestamp", row["RevisionTimestamp"]);
+                        command.Parameters.AddWithValue("@PageIndex", row["PageIndex"]);
+                        command.Parameters.AddWithValue("@PageWidthInches", row["PageWidthInches"]);
+                        command.Parameters.AddWithValue("@PageHeightInches", row["PageHeightInches"]);
+                        command.ExecuteNonQuery();
+                    }
+                }
             }
+            */
 
-            // No need to dispose Diagram as it does not implement IDisposable
+            // For demonstration purposes, output the collected data to the console
+            Console.WriteLine("Page dimensions captured:");
+            foreach (DataRow row in pageDimensionsTable.Rows)
+            {
+                Console.WriteLine($"Diagram: {row["DiagramPath"]}, Revision: {row["RevisionTimestamp"]}, " +
+                                  $"Page {row["PageIndex"]}: {row["PageWidthInches"]}in x {row["PageHeightInches"]}in");
+            }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
+            // Log any errors that occur during diagram processing
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

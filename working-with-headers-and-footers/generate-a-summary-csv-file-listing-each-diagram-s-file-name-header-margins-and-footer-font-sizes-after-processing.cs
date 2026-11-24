@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using System.Collections.Generic;
 using Aspose.Diagram;
 
@@ -8,88 +9,78 @@ class Program
     static void Main(string[] args)
     {
         // Determine the folder containing diagram files.
-        string folderPath = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
+        string inputFolder = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
 
-        // Guard: ensure the folder exists.
-        if (!Directory.Exists(folderPath))
+        if (!Directory.Exists(inputFolder))
         {
-            Console.Error.WriteLine($"Folder not found: {folderPath}");
+            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
             return;
         }
 
-        // Prepare a list of supported Visio file extensions.
-        string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vssx", ".vstx", ".vss", ".vst" };
+        // Prepare the CSV output file.
+        string csvPath = Path.Combine(inputFolder, "summary.csv");
+        var csvBuilder = new StringBuilder();
+        csvBuilder.AppendLine("FileName,HeaderMargin,FooterFontSize");
 
-        // Collect all diagram files in the folder (non-recursive).
-        List<string> diagramFiles = new List<string>();
-        foreach (string ext in extensions)
+        // Get all Visio files (VSDX and VSD) in the folder.
+        string[] diagramFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+        var supportedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".vsdx", ".vsd" };
+
+        foreach (string filePath in diagramFiles)
         {
-            diagramFiles.AddRange(Directory.GetFiles(folderPath, "*" + ext, SearchOption.TopDirectoryOnly));
-        }
+            if (!supportedExtensions.Contains(Path.GetExtension(filePath)))
+                continue; // Skip non‑Visio files.
 
-        // Define the output CSV file path.
-        string csvPath = Path.Combine(folderPath, "summary.csv");
-
-        try
-        {
-            using (StreamWriter writer = new StreamWriter(csvPath))
+            // Guard against missing file (should not happen after GetFiles, but follow the rule).
+            if (!File.Exists(filePath))
             {
-                // Write CSV header.
-                writer.WriteLine("FileName,HeaderMargin,FooterMargin,FooterFontSize");
-
-                // Process each diagram file.
-                foreach (string filePath in diagramFiles)
-                {
-                    // Guard: ensure the file still exists.
-                    if (!File.Exists(filePath))
-                    {
-                        Console.Error.WriteLine($"File not found (skipped): {filePath}");
-                        continue;
-                    }
-
-                    try
-                    {
-                        // Load the diagram.
-                        Diagram diagram = new Diagram(filePath);
-
-                        // Retrieve header margin (in inches).
-                        double headerMargin = diagram.HeaderFooter.HeaderMargin.Value;
-
-                        // Retrieve footer margin (in inches).
-                        double footerMargin = diagram.HeaderFooter.FooterMargin.Value;
-
-                        // Retrieve footer font size (height property, integer points).
-                        int footerFontSize = diagram.HeaderFooter.HeaderFooterFont.Height;
-
-                        // Write a CSV line for this diagram.
-                        string fileName = Path.GetFileName(filePath);
-                        writer.WriteLine($"{EscapeCsv(fileName)},{headerMargin},{footerMargin},{footerFontSize}");
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log any errors that occur while processing this diagram.
-                        Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
-                    }
-                }
+                Console.Error.WriteLine($"File not found: {filePath}");
+                continue;
             }
 
-            Console.WriteLine($"Summary CSV generated at: {csvPath}");
+            try
+            {
+                // Load the diagram.
+                Diagram diagram = new Diagram(filePath);
+
+                // ----- Processing: modify header margin and footer font size -----
+                // Set a new header margin (example: 0.5 inches).
+                diagram.HeaderFooter.HeaderMargin.Value = 0.5;
+
+                // Set footer font size to 12 points.
+                // According to the specification, Height stores a negative scaled value:
+                // Height = round(DesiredPointSize * -1.333)
+                int desiredPointSize = 12;
+                int scaledHeight = (int)Math.Round(desiredPointSize * -1.333);
+                diagram.HeaderFooter.HeaderFooterFont.Height = scaledHeight;
+
+                // Save the modified diagram back to the same file.
+                diagram.Save(filePath, SaveFileFormat.Vsdx);
+                // -----------------------------------------------------------------
+
+                // Retrieve the values after processing.
+                double headerMargin = diagram.HeaderFooter.HeaderMargin.Value;
+                int footerFontHeight = diagram.HeaderFooter.HeaderFooterFont.Height;
+
+                // Append a line to the CSV.
+                string fileName = Path.GetFileName(filePath);
+                csvBuilder.AppendLine($"{fileName},{headerMargin},{footerFontHeight}");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+            }
+        }
+
+        // Write the CSV file.
+        try
+        {
+            File.WriteAllText(csvPath, csvBuilder.ToString());
+            Console.WriteLine($"Summary CSV created at: {csvPath}");
         }
         catch (Exception ex)
         {
-            // Log errors related to CSV file creation/writing.
-            Console.Error.WriteLine($"Failed to create summary CSV: {ex.Message}");
+            Console.Error.WriteLine($"Failed to write CSV file: {ex.Message}");
         }
-    }
-
-    // Helper method to escape CSV fields containing commas or quotes.
-    private static string EscapeCsv(string field)
-    {
-        if (field.Contains(",") || field.Contains("\""))
-        {
-            string escaped = field.Replace("\"", "\"\"");
-            return $"\"{escaped}\"";
-        }
-        return field;
     }
 }

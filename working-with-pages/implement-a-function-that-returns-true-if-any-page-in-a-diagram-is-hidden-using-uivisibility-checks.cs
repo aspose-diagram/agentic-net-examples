@@ -6,62 +6,57 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the first argument to be the path to the Visio file.
+        // Expect a single argument: path to the Visio file
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the path to a Visio file as the first argument.");
+            Console.Error.WriteLine("Error: No input file path provided.");
             return;
         }
 
-        string filePath = args[0];
+        string inputPath = args[0];
 
-        // Guard: ensure the file exists before attempting to load.
-        if (!File.Exists(filePath))
+        // Guard: ensure the file exists before proceeding
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {filePath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required.
-            using (Diagram diagram = new Diagram(filePath))
+            // Load the diagram inside a using block as required by the API
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Determine if any page is hidden.
-                bool hasHiddenPage = AnyPageHidden(diagram);
-
-                // Output the result.
-                Console.WriteLine($"Any hidden page: {hasHiddenPage}");
+                bool hidden = AnyPageHidden(diagram);
+                Console.WriteLine($"Any hidden page: {hidden}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Capture any Aspose or IO exceptions and report them
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 
     /// <summary>
-    /// Checks all pages in the given diagram and returns true if any page is hidden.
+    /// Checks all pages in the provided diagram and returns true if any page is hidden.
     /// A page is considered hidden when its UIVisibility cell value equals UIVisibilityValue.Hidden.
     /// </summary>
     /// <param name="diagram">The loaded Aspose.Diagram.Diagram instance.</param>
     /// <returns>True if at least one page is hidden; otherwise, false.</returns>
     static bool AnyPageHidden(Diagram diagram)
     {
-        // Iterate over each page using an index to avoid var in foreach (per rules).
-        for (int i = 0; i < diagram.Pages.Count; i++)
+        // Iterate over each page using explicit type to avoid var issues
+        foreach (Page page in diagram.Pages)
         {
-            Page page = diagram.Pages[i];
-
-            // UIVisibility.Value returns a UIVisibilityValue enum.
+            // UIVisibility.Value indicates hidden state (UIVisibilityValue.Hidden means hidden)
             if (page.PageSheet.PageProps.UIVisibility.Value == UIVisibilityValue.Hidden)
             {
                 return true;
             }
         }
 
-        // No hidden pages found.
+        // No hidden pages found
         return false;
     }
 }

@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output PNG file path
+        // Validate input arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPngPath>");
@@ -29,53 +29,58 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // ------------------------------------------------------------
-            // Create a background page and set its background flag to true
-            // ------------------------------------------------------------
+            // Ensure there is at least one foreground page
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
+            // Get the first (foreground) page
+            Page foregroundPage = diagram.Pages[0];
+
+            // Create a new background page
             Page backgroundPage = new Page();
             diagram.Pages.Add(backgroundPage);
-            backgroundPage.Background = BOOL.True;
+            backgroundPage.Background = BOOL.True; // Mark as background page
 
-            // ------------------------------------------------------------
-            // Determine page dimensions (in inches) from the first foreground page
-            // ------------------------------------------------------------
-            Page foregroundPage = diagram.Pages[0];
+            // Retrieve page dimensions from the foreground page
             double pageWidth = foregroundPage.PageSheet.PageProps.PageWidth.Value;
             double pageHeight = foregroundPage.PageSheet.PageProps.PageHeight.Value;
 
-            // ------------------------------------------------------------
-            // Add a rectangle shape that spans the entire page on the background page
-            // ------------------------------------------------------------
-            long bgShapeId = backgroundPage.DrawRectangle(0, 0, pageWidth, pageHeight);
-            Shape bgShape = backgroundPage.Shapes.GetShape(bgShapeId);
+            // Draw a rectangle that spans the entire page on the background page
+            // The DrawRectangle method returns the shape ID of the created shape
+            long rectShapeId = backgroundPage.DrawRectangle(0, 0, pageWidth, pageHeight);
 
-            // Set the background fill color to white
-            bgShape.Fill.FillBkgnd.Value = "#FFFFFF";
+            // Retrieve the rectangle shape to configure its appearance
+            Shape rectShape = backgroundPage.Shapes.GetShape(rectShapeId);
 
-            // Remove the shape's border by setting line pattern to 0 (no line)
-            bgShape.Line.LinePattern.Value = 0;
+            // Set the fill background color to white
+            rectShape.Fill.FillBkgnd.Value = "#FFFFFF";
+
+            // Remove any outline by setting line pattern to 0 (no line)
+            rectShape.Line.LinePattern.Value = 0;
 
             // Make the background shape non-selectable
-            bgShape.Protection.LockSelect.Value = BOOL.True;
+            rectShape.Protection.LockSelect.Value = BOOL.True;
 
-            // ------------------------------------------------------------
             // Link the foreground page to the newly created background page
-            // ------------------------------------------------------------
             foregroundPage.BackPage = backgroundPage;
 
-            // ------------------------------------------------------------
-            // Export the diagram to PNG using ImageSaveOptions
-            // ------------------------------------------------------------
+            // Prepare PNG export options
             ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            // Optional: set resolution, export hidden pages, etc., if needed
-            // pngOptions.Resolution = 300f;
-            // pngOptions.ExportHiddenPage = BOOL.False;
+            // Export only the foreground page (background is part of the page rendering)
+            pngOptions.PageIndex = 0;
+            pngOptions.PageCount = 1;
 
+            // Save the diagram as PNG with the specified options
             diagram.Save(outputPath, pngOptions);
-            Console.WriteLine($"Diagram exported successfully to PNG: {outputPath}");
+
+            Console.WriteLine($"Diagram exported successfully to {outputPath}");
         }
         catch (Exception ex)
         {
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

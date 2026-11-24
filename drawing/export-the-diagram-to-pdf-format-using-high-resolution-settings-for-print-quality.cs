@@ -17,42 +17,44 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Configure PDF save options for high‑resolution (print quality) output.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Configure PDF save options for high‑resolution print quality.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Explicitly set the target format (required before saving).
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-            // Explicitly set the save format to PDF.
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                // Set DPI to 300 for both horizontal and vertical resolution.
+                pdfOptions.HorizontalResolution = 300;
+                pdfOptions.VerticalResolution = 300;
 
-            // Use a common font as fallback.
-            pdfOptions.DefaultFont = "Arial";
+                // Use maximum JPEG quality for raster images embedded in the PDF.
+                pdfOptions.JpegQuality = 100;
 
-            // Exclude hidden pages from the export.
-            pdfOptions.ExportHiddenPage = false; // changed from BOOL.False to bool
+                // Optional: do not export hidden pages.
+                pdfOptions.ExportHiddenPage = false;
 
-            // Set PDF/A compliance for print‑ready output.
-            pdfOptions.Compliance = PdfCompliance.PdfA1b; // corrected property name
-
-            // Save the diagram as PDF with the configured options.
-            diagram.Save(outputPath, pdfOptions);
+                // Save the diagram as PDF using the configured options.
+                diagram.Save(outputPath, pdfOptions);
+            }
 
             Console.WriteLine($"Diagram successfully exported to PDF: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error during PDF export: {ex.Message}");
+            // Write any errors that occur during loading or saving to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

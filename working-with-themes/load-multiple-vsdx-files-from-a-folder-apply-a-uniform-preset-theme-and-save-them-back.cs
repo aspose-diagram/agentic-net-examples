@@ -6,37 +6,35 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine the folder containing VSDX files (argument or user input)
-        string folderPath;
-        if (args.Length > 0)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            folderPath = args[0];
-        }
-        else
-        {
-            Console.Write("Enter the folder path containing VSDX files: ");
-            folderPath = Console.ReadLine();
-        }
-
-        // Validate folder existence
-        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
-        {
-            Console.Error.WriteLine("The specified folder does not exist.");
+            Console.Error.WriteLine("Usage: Program <folderPath>");
             return;
         }
 
-        // Get all VSDX files in the folder
+        string folderPath = args[0];
+
+        // Verify the folder exists.
+        if (!Directory.Exists(folderPath))
+        {
+            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
+            return;
+        }
+
+        // Get all VSDX files in the specified folder.
         string[] vsdxFiles = Directory.GetFiles(folderPath, "*.vsdx");
+
         if (vsdxFiles.Length == 0)
         {
-            Console.WriteLine("No VSDX files found in the specified folder.");
+            Console.WriteLine("No VSDX files found in the folder.");
             return;
         }
 
-        // Process each VSDX file
+        // Process each VSDX file.
         foreach (string filePath in vsdxFiles)
         {
-            // Guard against missing file (should not happen after GetFiles, but added per rules)
+            // Guard against missing file (should not happen after GetFiles, but added per rules).
             if (!File.Exists(filePath))
             {
                 Console.Error.WriteLine($"File not found: {filePath}");
@@ -45,17 +43,18 @@ class Program
 
             try
             {
-                // Load diagram inside a using block as required
+                // Load the diagram inside a using block as required.
                 using (Diagram diagram = new Diagram(filePath))
                 {
-                    // Apply a uniform preset theme to every page in the diagram
+                    // Apply the preset theme to every page in the diagram.
                     foreach (Page page in diagram.Pages)
                     {
+                        // Set a uniform preset theme (Bubble) and a variant.
                         page.PresetTheme = PresetThemeValue.Bubble;
                         page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
                     }
 
-                    // Save the modified diagram back to the original file
+                    // Save the modified diagram back to the original file.
                     diagram.Save(filePath, SaveFileFormat.Vsdx);
                 }
 
@@ -63,8 +62,8 @@ class Program
             }
             catch (Exception ex)
             {
-                // Report any errors that occur during processing
-                Console.Error.WriteLine($"Error processing '{filePath}': {ex.Message}");
+                // Write any Aspose or IO errors to the error stream.
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
         }
     }

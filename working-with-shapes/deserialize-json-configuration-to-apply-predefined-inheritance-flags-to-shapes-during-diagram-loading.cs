@@ -1,31 +1,46 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Text.Json;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
+    // Model representing a single shape configuration from JSON
+    private class ShapeConfig
+    {
+        public long ShapeId { get; set; }
+        public int? BeginArrow { get; set; }
+        public int? EndArrow { get; set; }
+        // Additional inheritance-related flags can be added here
+    }
+
+    // Model representing the root of the JSON configuration
+    private class ConfigRoot
+    {
+        public List<ShapeConfig> ShapeSettings { get; set; }
+    }
+
     static void Main(string[] args)
     {
-        // Expect three arguments: <config.json> <inputDiagram> <outputDiagram>
-        if (args.Length < 3)
+        // Expect two arguments: path to JSON config and path to input diagram
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <config.json> <inputDiagram> <outputDiagram>");
+            Console.Error.WriteLine("Usage: Program <config.json> <inputDiagram.vsdx>");
             return;
         }
 
         string configPath = args[0];
         string diagramPath = args[1];
-        string outputPath = args[2];
+        string outputPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? "", "output_modified.vsdx");
 
-        // Guard: ensure configuration file exists
+        // Guard against missing files
         if (!File.Exists(configPath))
         {
             Console.Error.WriteLine($"Configuration file not found: {configPath}");
             return;
         }
-
-        // Guard: ensure input diagram file exists
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
@@ -33,67 +48,84 @@ class Program
         }
 
         // Deserialize JSON configuration
-        Config config;
+        ConfigRoot config;
         try
         {
             string json = File.ReadAllText(configPath);
-            config = JsonSerializer.Deserialize<Config>(json);
-            if (config == null)
+            config = JsonSerializer.Deserialize<ConfigRoot>(json, new JsonSerializerOptions
             {
-                Console.Error.WriteLine("Failed to deserialize configuration.");
+                PropertyNameCaseInsensitive = true
+            });
+            if (config?.ShapeSettings == null)
+            {
+                Console.Error.WriteLine("Invalid configuration: ShapeSettings missing.");
                 return;
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error reading configuration: {ex.Message}");
+            Console.Error.WriteLine($"Failed to read or parse JSON configuration: {ex.Message}");
             return;
         }
 
-        // Combine inheritance flags into a single enum value (if any)
-        RemoveHiddenInfoItem combinedFlags = 0;
-        if (config.InheritanceFlags != null)
-        {
-            foreach (string flagStr in config.InheritanceFlags)
-            {
-                if (Enum.TryParse<RemoveHiddenInfoItem>(flagStr, ignoreCase: true, out var flag))
-                {
-                    combinedFlags |= flag;
-                }
-                else
-                {
-                    Console.Error.WriteLine($"Unknown inheritance flag: {flagStr}");
-                }
-            }
-        }
-
-        // Load diagram, optionally apply flags, and save
+        // Load diagram and apply settings
         try
         {
-            // Load the diagram
             using (Diagram diagram = new Diagram(diagramPath))
             {
-                // NOTE: The RemoveHiddenInfo method is not available in this version of Aspose.Diagram.
-                // If needed, custom processing based on combinedFlags can be added here.
-                if (combinedFlags != 0)
+                foreach (var shapeCfg in config.ShapeSettings)
                 {
-                    Console.WriteLine($"Combined inheritance flags: {combinedFlags}");
-                    // Placeholder for future flag handling logic.
+                    Shape shape = FindShapeById(diagram, shapeCfg.ShapeId);
+                    if (shape == null)
+                    {
+                        Console.Error.WriteLine($"Shape with ID {shapeCfg.ShapeId} not found in diagram.");
+                        continue;
+                    }
+
+                    // Apply BeginArrow if specified
+                    if (shapeCfg.BeginArrow.HasValue)
+                    {
+                        // Arrow style values are integers; assign directly
+                        shape.Line.BeginArrow.Value = shapeCfg.BeginArrow.Value;
+                    }
+
+                    // Apply EndArrow if specified
+                    if (shapeCfg.EndArrow.HasValue)
+                    {
+                        shape.Line.EndArrow.Value = shapeCfg.EndArrow.Value;
+                    }
+
+                    // Additional inheritance flag handling can be added here
                 }
 
-                // Save the diagram to the specified output path in VSDX format
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Aspose.Diagram operation failed: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 
-    // Helper class matching the expected JSON structure
-    private class Config
+    // Helper method to locate a shape by its ID across all pages
+    private static Shape FindShapeById(Diagram diagram, long shapeId)
     {
-        public string[] InheritanceFlags { get; set; } = Array.Empty<string>();
+        foreach (Page page in diagram.Pages)
+        {
+            try
+            {
+                // GetShape throws if not found; we catch and continue
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape != null)
+                    return shape;
+            }
+            catch
+            {
+                // Ignore and continue searching other pages
+            }
+        }
+        return null;
     }
 }

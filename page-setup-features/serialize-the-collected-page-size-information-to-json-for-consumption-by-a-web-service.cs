@@ -6,22 +6,31 @@ using Aspose.Diagram;
 
 class Program
 {
+    // Simple DTO to hold page size information
+    private class PageInfo
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public double WidthInches { get; set; }
+        public double HeightInches { get; set; }
+    }
+
     static void Main(string[] args)
     {
-        // Validate arguments
+        // Expect two arguments: input Visio file path and output JSON file path
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputJsonFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputJsonPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: check input file exists
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -30,24 +39,23 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Prepare a list to hold page size information
-            var pageInfos = new List<PageInfo>();
+            // Collect page size information
+            List<PageInfo> pagesInfo = new List<PageInfo>();
 
-            // Iterate through all pages in the diagram
+            // Iterate over each page in the diagram
             foreach (Page page in diagram.Pages)
             {
-                // Retrieve page identifier and name
-                int pageId = page.ID;
-                string pageName = page.Name;
-
-                // Retrieve page width and height (values are in inches)
+                // Retrieve width and height from PageProps (values are in inches)
                 double width = page.PageSheet.PageProps.PageWidth.Value;
                 double height = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Add the collected information to the list
-                pageInfos.Add(new PageInfo
+                // Page ID and Name
+                int pageId = page.ID;
+                string pageName = page.NameU;
+
+                pagesInfo.Add(new PageInfo
                 {
-                    PageId = pageId,
+                    Id = pageId,
                     Name = pageName,
                     WidthInches = width,
                     HeightInches = height
@@ -55,8 +63,7 @@ class Program
             }
 
             // Serialize the list to JSON with indentation for readability
-            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-            string json = JsonSerializer.Serialize(pageInfos, jsonOptions);
+            string json = JsonSerializer.Serialize(pagesInfo, new JsonSerializerOptions { WriteIndented = true });
 
             // Ensure the output directory exists
             string outputDir = Path.GetDirectoryName(outputPath);
@@ -65,7 +72,7 @@ class Program
                 Directory.CreateDirectory(outputDir);
             }
 
-            // Write JSON to the specified output file
+            // Write JSON to the specified file
             File.WriteAllText(outputPath, json);
             Console.WriteLine($"Page size information successfully written to: {outputPath}");
         }
@@ -74,14 +81,5 @@ class Program
             // Log any errors that occur during processing
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
-    }
-
-    // Helper class to represent page size information
-    private class PageInfo
-    {
-        public int PageId { get; set; }
-        public string Name { get; set; }
-        public double WidthInches { get; set; }
-        public double HeightInches { get; set; }
     }
 }

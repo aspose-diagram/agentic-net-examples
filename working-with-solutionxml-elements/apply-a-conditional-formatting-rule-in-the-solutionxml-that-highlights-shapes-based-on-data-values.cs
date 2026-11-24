@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -17,44 +16,50 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block (Diagram implements IDisposable).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Create a new SolutionXML element that contains a conditional formatting rule.
-                // The XML defines a rule that highlights shapes where the custom property "Status" equals "Critical".
-                SolutionXML solXml = new SolutionXML
-                {
-                    Name = "ConditionalFormatting",
-                    XmlValue = @"
+                // Define a conditional formatting rule as custom XML.
+                // This XML can be interpreted by a consuming application to highlight shapes
+                // where the custom data field "Data1" exceeds 100.
+                string conditionalXml = @"
 <ConditionalFormatting>
     <Rule>
-        <Condition Property=""Status"" Operator=""Equals"" Value=""Critical"" />
-        <Highlight FillColor=""#FFCCCC"" LineColor=""#FF0000"" />
+        <Condition>Data1 &gt; 100</Condition>
+        <HighlightColor>#FF0000</HighlightColor>
+        <Description>Highlight shapes with Data1 greater than 100</Description>
     </Rule>
-</ConditionalFormatting>"
+</ConditionalFormatting>";
+
+                // Create a new SolutionXML element and assign its properties.
+                SolutionXML solutionXml = new SolutionXML
+                {
+                    // Identifier for the SolutionXML element.
+                    Name = "ConditionalFormatting",
+
+                    // The actual XML content stored in the element.
+                    XmlValue = conditionalXml
                 };
 
-                // Add the SolutionXML element to the document's collection.
-                diagram.SolutionXMLs.Add(solXml);
+                // Add the SolutionXML element to the diagram's collection.
+                diagram.SolutionXMLs.Add(solutionXml);
 
-                // Save the modified diagram to the specified output path in VSDX format.
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Write any errors to the error console.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

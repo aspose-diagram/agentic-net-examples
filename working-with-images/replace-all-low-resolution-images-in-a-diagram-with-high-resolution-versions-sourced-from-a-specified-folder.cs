@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -8,87 +7,95 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: path to the Visio diagram and path to the folder containing high‑resolution images.
-        if (args.Length < 2)
+        // Expect three arguments: input diagram path, high‑resolution images folder, output diagram path
+        if (args.Length != 3)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <highResImagesFolder>");
+            Console.Error.WriteLine("Usage: Program <inputDiagram.vsdx> <highResImagesFolder> <outputDiagram.vsdx>");
             return;
         }
 
         string diagramPath = args[0];
         string highResFolder = args[1];
+        string outputPath = args[2];
 
-        // Guard: verify diagram file exists.
+        // Guard against missing files/folders
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
+            Console.Error.WriteLine($"Input diagram file not found: {diagramPath}");
             return;
         }
 
-        // Guard: verify high‑resolution images folder exists.
         if (!Directory.Exists(highResFolder))
         {
             Console.Error.WriteLine($"High‑resolution images folder not found: {highResFolder}");
             return;
         }
 
-        // Build a lookup dictionary of high‑resolution image files (key = file name without extension).
-        var highResMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (string filePath in Directory.GetFiles(highResFolder))
-        {
-            string key = Path.GetFileNameWithoutExtension(filePath);
-            if (!highResMap.ContainsKey(key))
-                highResMap[key] = filePath;
-        }
-
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Iterate through all pages.
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page.
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Identify image shapes by checking for foreign (image) type.
-                        if (shape.Type == TypeValue.Foreign)
+                        // Identify foreign (image) shapes
+                        if (shape.Type == TypeValue.Foreign && shape.ForeignData != null && shape.ForeignData.Value != null)
                         {
-                            // Use the shape's NameU (or Name) to locate a matching high‑resolution file.
-                            string shapeName = shape.NameU ?? string.Empty;
-                            if (string.IsNullOrEmpty(shapeName))
-                                continue;
+                            byte[] currentBytes = shape.ForeignData.Value;
 
-                            string key = Path.GetFileNameWithoutExtension(shapeName);
-                            if (highResMap.TryGetValue(key, out string highResPath))
+                            // Load the current image to assess its resolution
+                            using (MemoryStream ms = new MemoryStream(currentBytes))
+                            using (Aspose.Drawing.Image img = Aspose.Drawing.Image.FromStream(ms))
                             {
-                                // Read the high‑resolution image bytes.
-                                byte[] imageBytes = File.ReadAllBytes(highResPath);
+                                // Simple heuristic: treat images smaller than 500x500 as low‑resolution
+                                if (img.Width < 500 || img.Height < 500)
+                                {
+                                    // Determine a base name for matching high‑resolution files
+                                    string baseName = !string.IsNullOrEmpty(shape.NameU) ? shape.NameU : $"shape_{shape.ID}";
+                                    string[] candidateFiles = Directory.GetFiles(highResFolder, baseName + ".*", SearchOption.TopDirectoryOnly);
 
-                                // Replace the shape's foreign data with the new image bytes.
-                                shape.ForeignData.Value = imageBytes;
+                                    if (candidateFiles.Length > 0)
+                                    {
+                                        // Load the first matching high‑resolution image
+                                        string highResPath = candidateFiles[0];
+                                        byte[] highResBytes = File.ReadAllBytes(highResPath);
 
-                                // Ensure the image stays behind other content.
-                                shape.SendToBack();
+                                        // Replace the foreign data with the high‑resolution image bytes
+                                        shape.ForeignData.Value = highResBytes;
+
+                                        // Adjust shape size to match the new image dimensions
+                                        using (MemoryStream hrMs = new MemoryStream(highResBytes))
+                                        using (Aspose.Drawing.Image hrImg = Aspose.Drawing.Image.FromStream(hrMs))
+                                        {
+                                            shape.XForm.Width.Value = (double)hrImg.Width;
+                                            shape.XForm.Height.Value = (double)hrImg.Height;
+                                        }
+
+                                        Console.WriteLine($"Replaced low‑resolution image in shape ID {shape.ID} with '{Path.GetFileName(highResPath)}'.");
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine($"No high‑resolution replacement found for shape ID {shape.ID} (base name '{baseName}').");
+                                    }
+                                }
                             }
                         }
                     }
                 }
 
-                // Save the updated diagram to a new file.
-                string outputPath = Path.Combine(
-                    Path.GetDirectoryName(diagramPath) ?? string.Empty,
-                    Path.GetFileNameWithoutExtension(diagramPath) + "_updated.vsdx");
-
+                // Save the modified diagram to the specified output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Capture any Aspose or IO exceptions and report them.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

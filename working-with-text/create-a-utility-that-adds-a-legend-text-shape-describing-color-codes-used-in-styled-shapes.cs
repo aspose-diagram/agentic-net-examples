@@ -7,15 +7,19 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input diagram path and output diagram path
-        if (args.Length < 2)
+        // Validate arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputDiagramPath]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        string outputPath = args.Length >= 2
+            ? args[1]
+            : Path.Combine(
+                Path.GetDirectoryName(inputPath) ?? "",
+                Path.GetFileNameWithoutExtension(inputPath) + "_with_legend.vsdx");
 
         // Guard: ensure input file exists
         if (!File.Exists(inputPath))
@@ -26,81 +30,66 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block (required pattern)
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram has at least one page
-                if (diagram.Pages.Count == 0)
+                // Collect fill foreground colors used in all shapes (excluding deleted shapes)
+                Dictionary<string, int> colorCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (Page page in diagram.Pages)
                 {
-                    Console.Error.WriteLine("The diagram contains no pages.");
-                    return;
-                }
-
-                // Work with the first page
-                Page page = diagram.Pages[0];
-
-                // Collect distinct fill foreground colors from all non-deleted shapes
-                HashSet<string> colorSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                for (int i = 0; i < page.Shapes.Count; i++)
-                {
-                    Shape shape = page.Shapes[i];
-
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Retrieve the fill foreground color if available
-                    string fillColor = shape.Fill?.FillForegnd?.Value;
-                    if (!string.IsNullOrEmpty(fillColor))
+                    foreach (Shape shape in page.Shapes)
                     {
-                        colorSet.Add(fillColor);
+                        // Skip shapes marked as deleted
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Retrieve the fill foreground color if set
+                        string fillColor = shape.Fill?.FillForegnd?.Value;
+
+                        if (!string.IsNullOrEmpty(fillColor))
+                        {
+                            if (colorCounts.ContainsKey(fillColor))
+                                colorCounts[fillColor]++;
+                            else
+                                colorCounts[fillColor] = 1;
+                        }
                     }
                 }
 
-                // Build and add legend shape if colors were found
-                if (colorSet.Count == 0)
+                // Build legend text
+                string legendText = "Legend of Fill Colors:\n";
+                foreach (KeyValuePair<string, int> kvp in colorCounts)
                 {
-                    Console.WriteLine("No colored shapes found; legend will not be added.");
-                }
-                else
-                {
-                    // Construct legend text
-                    string legendText = "Colors used in diagram:\n";
-                    foreach (string color in colorSet)
-                    {
-                        legendText += $"{color}\n";
-                    }
-
-                    // Define legend shape position and size (adjust as needed)
-                    double pinX = 1.0;   // Horizontal position (in inches)
-                    double pinY = 10.0;  // Vertical position (in inches)
-                    double width = 2.5;  // Width of the text box (in inches)
-                    double height = 0.5 * colorSet.Count + 0.5; // Height based on number of lines
-
-                    // Add a text shape to the page; AddText returns a Shape object
-                    Shape legendShape = page.AddText(pinX, pinY, width, height, legendText);
-
-                    // Optional formatting for the legend shape
-                    if (legendShape != null)
-                    {
-                        // Make the text block background fully opaque
-                        legendShape.TextBlock.TextBkgndTrans.Value = 0.0; // 0% transparent (fully opaque)
-
-                        // Set a solid white background for the legend shape
-                        legendShape.Fill.FillPattern.Value = 1; // Solid fill
-                        legendShape.Fill.FillForegnd.Value = "#FFFFFF"; // White background
-                    }
+                    legendText += $"{kvp.Key}: {kvp.Value} shape(s)\n";
                 }
 
-                // Save the modified diagram with explicit format
+                if (colorCounts.Count == 0)
+                {
+                    legendText += "No colored shapes found.";
+                }
+
+                // Add a text shape on the active page to display the legend
+                // Position and size are arbitrary; adjust as needed
+                double pinX = 1.0;   // X coordinate (in inches)
+                double pinY = 10.0;  // Y coordinate (in inches)
+                double width = 5.0;  // Width of the text box (in inches)
+                double height = 5.0; // Height of the text box (in inches)
+
+                // AddText returns a Shape object (per API)
+                Shape legendShape = diagram.ActivePage.AddText(pinX, pinY, width, height, legendText);
+
+                // Ensure the legend shape has a visible solid background fill
+                legendShape.Fill.FillPattern.Value = 1; // Solid fill
+
+                // Save the modified diagram in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                Console.WriteLine($"Diagram saved with legend to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

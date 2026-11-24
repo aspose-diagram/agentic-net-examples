@@ -2,97 +2,98 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
         // Validate command line arguments.
-        if (args.Length == 0)
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <diagrams_folder_path>");
+            Console.Error.WriteLine("Usage: Program <inputFolder> <outputFolder>");
             return;
         }
 
-        string folderPath = args[0];
+        string inputFolder = args[0];
+        string outputFolder = args[1];
 
-        // Guard: ensure the folder exists.
-        if (!Directory.Exists(folderPath))
+        // Verify input folder exists.
+        if (!Directory.Exists(inputFolder))
         {
-            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
+            Console.Error.WriteLine($"Input folder does not exist: {inputFolder}");
             return;
         }
 
-        // Get all Visio diagram files (VSDX) in the folder.
-        string[] diagramFiles = Directory.GetFiles(folderPath, "*.vsdx");
-
-        foreach (string diagramPath in diagramFiles)
+        // Create output folder if it does not exist.
+        if (!Directory.Exists(outputFolder))
         {
-            // Guard: ensure the file exists (redundant after GetFiles, but required by rules).
-            if (!File.Exists(diagramPath))
+            try
             {
-                Console.Error.WriteLine($"File not found: {diagramPath}");
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
+                return;
+            }
+        }
+
+        // Get all Visio files in the input folder (including subfolders if needed).
+        string[] diagramFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+        foreach (string filePath in diagramFiles)
+        {
+            // Process only supported Visio formats.
+            string extension = Path.GetExtension(filePath).ToLowerInvariant();
+            if (extension != ".vsdx" && extension != ".vsd" && extension != ".vssx" && extension != ".vstx")
+            {
+                continue;
+            }
+
+            // Guard against missing file.
+            if (!File.Exists(filePath))
+            {
+                Console.Error.WriteLine($"File not found: {filePath}");
                 continue;
             }
 
             try
             {
-                // Load the diagram.
-                Diagram diagram = new Diagram(diagramPath);
-
-                // ---------- Remove document-level custom property named "DeprecatedFlag" ----------
-                var docCustomProps = diagram.DocumentProps.CustomProps;
-                List<CustomProp> docPropsToRemove = new List<CustomProp>();
-
-                foreach (CustomProp cp in docCustomProps)
+                // Load diagram inside a using block as required.
+                using (Diagram diagram = new Diagram(filePath))
                 {
-                    if (cp.Name == "DeprecatedFlag")
+                    // Access the custom properties collection.
+                    var customProps = diagram.DocumentProps.CustomProps;
+                    if (customProps != null && customProps.Count > 0)
                     {
-                        docPropsToRemove.Add(cp);
-                    }
-                }
-
-                foreach (CustomProp cp in docPropsToRemove)
-                {
-                    docCustomProps.Remove(cp);
-                }
-
-                // ---------- Remove shape-level custom properties named "DeprecatedFlag" ----------
-                foreach (Page page in diagram.Pages)
-                {
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Ensure the shape has a Props collection.
-                        if (shape.Props == null)
-                            continue;
-
-                        List<Prop> shapePropsToRemove = new List<Prop>();
-
-                        foreach (Prop prop in shape.Props)
+                        // Collect properties named "DeprecatedFlag" for removal.
+                        var toRemove = new List<CustomProp>();
+                        foreach (CustomProp prop in customProps)
                         {
-                            // Prop.Name holds the property name.
                             if (prop.Name == "DeprecatedFlag")
                             {
-                                shapePropsToRemove.Add(prop);
+                                toRemove.Add(prop);
                             }
                         }
 
-                        foreach (Prop prop in shapePropsToRemove)
+                        // Remove the identified custom properties.
+                        foreach (CustomProp prop in toRemove)
                         {
-                            shape.Props.Remove(prop);
+                            customProps.Remove(prop);
                         }
                     }
+
+                    // Determine output path (overwrite in output folder).
+                    string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
+
+                    // Save the modified diagram back to VSDX format.
+                    diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                // Save the modified diagram, overwriting the original file.
-                diagram.Save(diagramPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Processed and saved: {diagramPath}");
+                Console.WriteLine($"Processed and saved: {filePath}");
             }
             catch (Exception ex)
             {
-                // Log any errors that occur during processing.
-                Console.Error.WriteLine($"Error processing file '{diagramPath}': {ex.Message}");
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
         }
     }

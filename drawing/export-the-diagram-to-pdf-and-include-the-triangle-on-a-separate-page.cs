@@ -10,7 +10,7 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputPdfPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
             return;
         }
 
@@ -26,31 +26,50 @@ class Program
 
         try
         {
-            // Load the existing Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the source Visio diagram inside a using block.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // ------------------------------------------------------------
+                // Create a new page that will contain only the triangle.
+                // ------------------------------------------------------------
+                Page trianglePage = new Page();
+                diagram.Pages.Add(trianglePage);
+                trianglePage.Name = "TrianglePage";
 
-            // Add a new page that will contain the triangle.
-            Page trianglePage = new Page();
-            diagram.Pages.Add(trianglePage);
+                // Define triangle vertices (simple equilateral triangle).
+                // Points are defined in the order: X1, Y1, X2, Y2, X3, Y3, X1, Y1 (close shape).
+                double[] trianglePoints = new double[]
+                {
+                    1.0, 1.0,   // Vertex 1
+                    5.0, 1.0,   // Vertex 2
+                    3.0, 4.0,   // Vertex 3
+                    1.0, 1.0    // Close back to Vertex 1
+                };
 
-            // Draw a triangle using a closed polyline (repeat first point at the end).
-            // Coordinates are in Visio drawing units.
-            trianglePage.DrawPolyline(new double[] { 1, 1, 5, 1, 3, 4, 1, 1 });
+                // Draw the triangle polyline on the new page.
+                trianglePage.DrawPolyline(trianglePoints);
 
-            // Configure PDF save options.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;   // Explicitly set the format tracker.
-            pdfOptions.DefaultFont = "Arial";            // Fallback font for missing glyphs.
+                // ------------------------------------------------------------
+                // Prepare PDF save options.
+                // ------------------------------------------------------------
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Explicitly set the format tracker as required by the API.
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                // Optional: set a default font to avoid missing‑font warnings.
+                pdfOptions.DefaultFont = "Arial";
 
-            // Export the diagram (including the new triangle page) to PDF.
-            diagram.Save(outputPath, pdfOptions);
+                // ------------------------------------------------------------
+                // Export the entire diagram (original pages + triangle page) to PDF.
+                // ------------------------------------------------------------
+                diagram.Save(outputPath, pdfOptions);
+            }
 
             Console.WriteLine($"Diagram successfully exported to PDF: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error during processing: {ex.Message}");
         }
     }
 }

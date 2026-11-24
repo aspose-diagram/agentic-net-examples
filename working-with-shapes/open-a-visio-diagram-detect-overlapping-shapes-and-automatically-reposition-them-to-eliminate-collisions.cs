@@ -2,14 +2,12 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.AutoLayout;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (command‑line arguments or defaults)
+        // Input and output file paths (use defaults if not provided)
         string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
         string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
@@ -22,88 +20,93 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required by the API
+            // Load the Visio diagram inside a using block to ensure proper disposal
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Process each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // -------------------------------------------------------------
-                    // Detect overlapping shapes on the current page
-                    // -------------------------------------------------------------
-                    List<(long, long)> overlappingPairs = new List<(long, long)>();
-                    List<Shape> shapeList = new List<Shape>();
-
-                    // Collect non‑deleted, visible shapes with non‑zero size
-                    foreach (Shape s in page.Shapes)
+                    // Collect all non-deleted shapes on the page
+                    List<Shape> shapes = new List<Shape>();
+                    foreach (Shape shape in page.Shapes)
                     {
-                        if (s.Del == BOOL.True) continue; // skip deleted shapes
-                        if (s.XForm.Width.Value == 0 || s.XForm.Height.Value == 0) continue; // skip zero‑size shapes
-                        shapeList.Add(s);
+                        if (shape.Del == BOOL.False)
+                        {
+                            shapes.Add(shape);
+                        }
                     }
 
-                    // Compare each pair of shapes for intersection
-                    for (int i = 0; i < shapeList.Count; i++)
+                    // Simple O(n^2) overlap detection and resolution
+                    for (int i = 0; i < shapes.Count; i++)
                     {
-                        Shape a = shapeList[i];
-                        double aLeft   = a.XForm.PinX.Value - a.XForm.Width.Value / 2.0;
-                        double aRight  = a.XForm.PinX.Value + a.XForm.Width.Value / 2.0;
-                        double aTop    = a.XForm.PinY.Value + a.XForm.Height.Value / 2.0;
-                        double aBottom = a.XForm.PinY.Value - a.XForm.Height.Value / 2.0;
+                        Shape s1 = shapes[i];
+                        Rectangle rect1 = GetBoundingRectangle(s1);
 
-                        for (int j = i + 1; j < shapeList.Count; j++)
+                        for (int j = i + 1; j < shapes.Count; j++)
                         {
-                            Shape b = shapeList[j];
-                            double bLeft   = b.XForm.PinX.Value - b.XForm.Width.Value / 2.0;
-                            double bRight  = b.XForm.PinX.Value + b.XForm.Width.Value / 2.0;
-                            double bTop    = b.XForm.PinY.Value + b.XForm.Height.Value / 2.0;
-                            double bBottom = b.XForm.PinY.Value - b.XForm.Height.Value / 2.0;
+                            Shape s2 = shapes[j];
+                            Rectangle rect2 = GetBoundingRectangle(s2);
 
-                            bool overlapX = aLeft < bRight && aRight > bLeft;
-                            bool overlapY = aBottom < bTop && aTop > bBottom;
-
-                            if (overlapX && overlapY)
+                            if (RectanglesOverlap(rect1, rect2))
                             {
-                                overlappingPairs.Add((a.ID, b.ID));
+                                // Calculate horizontal offset to separate the shapes
+                                double offset = (rect1.Right - rect2.Left) + 0.5; // add a small gap
+                                double newPinX = s2.XForm.PinX.Value + offset;
+
+                                // Reposition the second shape
+                                s2.XForm.PinX.Value = newPinX;
+
+                                // Update rectangle for further checks
+                                rect2 = GetBoundingRectangle(s2);
                             }
                         }
                     }
-
-                    // Report overlapping shape pairs
-                    if (overlappingPairs.Count > 0)
-                    {
-                        Console.WriteLine($"Page \"{page.NameU}\" has {overlappingPairs.Count} overlapping shape pairs:");
-                        foreach (var pair in overlappingPairs)
-                        {
-                            Console.WriteLine($"  Shape ID {pair.Item1} overlaps with Shape ID {pair.Item2}");
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Page \"{page.NameU}\" has no overlapping shapes.");
-                    }
-
-                    // -------------------------------------------------------------
-                    // Reposition shapes to eliminate collisions using AutoSpaceShapes
-                    // -------------------------------------------------------------
-                    AutoSpaceOptions options = new AutoSpaceOptions();
-                    // Set spacing distances (in inches) – adjust as needed
-                    options.DistanceInHorizontal = 0.5;
-                    options.DistanceInVertical   = 0.5;
-
-                    // Auto‑space all shapes on the page
-                    page.AutoSpaceShapes(page.Shapes, options);
                 }
 
-                // Save the adjusted diagram to the output file (must specify format)
+                // Save the modified diagram to the output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
+            // Write any errors to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
+
+    // Helper struct to represent a shape's bounding box
+    private struct Rectangle
+    {
+        public double Left;
+        public double Right;
+        public double Top;
+        public double Bottom;
+    }
+
+    // Compute the bounding rectangle of a shape based on its PinX, PinY, Width, and Height
+    private static Rectangle GetBoundingRectangle(Shape shape)
+    {
+        double pinX = shape.XForm.PinX.Value;
+        double pinY = shape.XForm.PinY.Value;
+        double width = shape.XForm.Width.Value;
+        double height = shape.XForm.Height.Value;
+
+        Rectangle rect = new Rectangle
+        {
+            Left = pinX - width / 2.0,
+            Right = pinX + width / 2.0,
+            Bottom = pinY - height / 2.0,
+            Top = pinY + height / 2.0
+        };
+        return rect;
+    }
+
+    // Determine if two rectangles intersect
+    private static bool RectanglesOverlap(Rectangle r1, Rectangle r2)
+    {
+        bool horizontalOverlap = r1.Left < r2.Right && r1.Right > r2.Left;
+        bool verticalOverlap = r1.Bottom < r2.Top && r1.Top > r2.Bottom;
+        return horizontalOverlap && verticalOverlap;
     }
 }

@@ -6,73 +6,74 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define a tolerance for dimension comparison (in inches)
-        const double tolerance = 0.001;
+        // Expect at least one argument: path to the input Visio diagram file.
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            return;
+        }
 
         try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Load the diagram.
+            Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there is at least one page to work with
-            if (diagram.Pages.Count == 0)
-            {
-                Console.Error.WriteLine("The diagram does not contain any pages.");
-                return;
-            }
-
-            // Get the first page
+            // Assume the shape with ID 1 exists (commonly a rectangle in sample files).
+            // Retrieve the shape from the first page.
             Page page = diagram.Pages[0];
-
-            // Add a rectangle shape to the page.
-            // Parameters: pinX, pinY, width, height, master name.
-            // Using arbitrary initial size; it will be changed by SetHeight/SetWidth.
-            double initialPinX = 2.0;
-            double initialPinY = 2.0;
-            double initialWidth = 1.0;
-            double initialHeight = 1.0;
-            long shapeId = page.AddShape(initialPinX, initialPinY, initialWidth, initialHeight, "Rectangle");
-
-            // Retrieve the shape instance using the returned ID
+            long shapeId = 1;
             Shape shape = page.Shapes.GetShape(shapeId);
+
+            // Verify the shape was retrieved.
             if (shape == null)
             {
-                Console.Error.WriteLine("Failed to retrieve the shape after creation.");
-                return;
+                throw new Exception($"Shape with ID {shapeId} not found.");
             }
 
-            // -------------------- Test SetHeight --------------------
-            double newHeight = 3.5; // inches
-            shape.SetHeight(newHeight);
+            // Store original dimensions for reference (optional).
+            double originalHeight = shape.XForm.Height.Value;
+            double originalWidth = shape.XForm.Width.Value;
 
-            // Verify the height was set within tolerance
+            // Define new dimensions to set.
+            double newHeight = originalHeight + 1.0; // increase by 1 inch
+            double newWidth = originalWidth + 2.0;   // increase by 2 inches
+
+            // Set height and width using the provided methods.
+            shape.SetHeight(newHeight);
+            shape.SetWidth(newWidth);
+
+            // Tolerance for floating‑point comparison.
+            const double tolerance = 0.001;
+
+            // Validate height.
             double actualHeight = shape.XForm.Height.Value;
             if (Math.Abs(actualHeight - newHeight) > tolerance)
             {
-                throw new Exception($"SetHeight test failed. Expected: {newHeight}, Actual: {actualHeight}");
+                throw new Exception($"Height verification failed. Expected: {newHeight}, Actual: {actualHeight}");
             }
-            Console.WriteLine("SetHeight test passed.");
 
-            // -------------------- Test SetWidth --------------------
-            double newWidth = 4.25; // inches
-            shape.SetWidth(newWidth);
-
-            // Verify the width was set within tolerance
+            // Validate width.
             double actualWidth = shape.XForm.Width.Value;
             if (Math.Abs(actualWidth - newWidth) > tolerance)
             {
-                throw new Exception($"SetWidth test failed. Expected: {newWidth}, Actual: {actualWidth}");
+                throw new Exception($"Width verification failed. Expected: {newWidth}, Actual: {actualWidth}");
             }
-            Console.WriteLine("SetWidth test passed.");
 
-            // Optional: Save the diagram to verify visually (not required for the test)
-            string outputPath = "output.vsdx";
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+            // If we reach this point, the test passed.
+            Console.WriteLine("SetHeight and SetWidth tests passed successfully.");
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

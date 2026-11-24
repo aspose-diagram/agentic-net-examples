@@ -1,107 +1,96 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: source diagram, output diagram, master shape name, comma‑separated target shape names
-        if (args.Length < 4)
+        // Input Visio file path (first argument) – validate existence.
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: <source.vsdx> <output.vsdx> <masterShapeName> <targetShapeName1,targetShapeName2,...>");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        string sourcePath = args[0];
-        string outputPath = args[1];
-        string masterShapeName = args[2];
-        string[] targetShapeNames = args[3].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-
-        // Guard: source file must exist
-        if (!File.Exists(sourcePath))
-        {
-            Console.Error.WriteLine($"Source file not found: {sourcePath}");
-            return;
-        }
+        // Output file path – same folder with suffix "_updated.vsdx".
+        string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", Path.GetFileNameWithoutExtension(inputPath) + "_updated.vsdx");
 
         try
         {
-            // Load the source diagram inside a using block (mandatory pattern)
-            using (Diagram diagram = new Diagram(sourcePath))
+            // Load the diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Assume the template shape is identified by its NameU property "TemplateMaster".
+            // Adjust this name as needed for your specific template.
+            const string templateShapeNameU = "TemplateMaster";
+
+            // Locate the template shape on the first page.
+            Shape? templateShape = null;
+            if (diagram.Pages.Count > 0)
             {
-                // Locate the master/template shape by its NameU (case‑insensitive)
-                Shape? masterShape = null;
-                foreach (Page page in diagram.Pages)
+                Page firstPage = diagram.Pages[0];
+                foreach (Shape shape in firstPage.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    if (shape.NameU != null && shape.NameU.Equals(templateShapeNameU, StringComparison.OrdinalIgnoreCase))
                     {
-                        if (string.Equals(shape.NameU, masterShapeName, StringComparison.OrdinalIgnoreCase))
-                        {
-                            masterShape = shape;
-                            break;
-                        }
-                    }
-                    if (masterShape != null) break;
-                }
-
-                if (masterShape == null)
-                {
-                    Console.Error.WriteLine($"Master shape \"{masterShapeName}\" not found in the diagram.");
-                    return;
-                }
-
-                // Iterate over each target shape name and copy geometry from the master shape
-                foreach (string targetName in targetShapeNames)
-                {
-                    bool found = false;
-                    foreach (Page page in diagram.Pages)
-                    {
-                        foreach (Shape shape in page.Shapes)
-                        {
-                            if (string.Equals(shape.NameU, targetName, StringComparison.OrdinalIgnoreCase))
-                            {
-                                // Copy XForm geometry (position, size, rotation)
-                                if (masterShape.XForm != null && shape.XForm != null)
-                                {
-                                    shape.XForm.PinX.Value = masterShape.XForm.PinX.Value;
-                                    shape.XForm.PinY.Value = masterShape.XForm.PinY.Value;
-                                    shape.XForm.Width.Value = masterShape.XForm.Width.Value;
-                                    shape.XForm.Height.Value = masterShape.XForm.Height.Value;
-                                    shape.XForm.Angle.Value = masterShape.XForm.Angle.Value;
-                                }
-
-                                // Copy TextXForm geometry (text block position, size, rotation)
-                                if (masterShape.TextXForm != null && shape.TextXForm != null)
-                                {
-                                    shape.TextXForm.TxtPinX.Value = masterShape.TextXForm.TxtPinX.Value;
-                                    shape.TextXForm.TxtPinY.Value = masterShape.TextXForm.TxtPinY.Value;
-                                    shape.TextXForm.TxtLocPinX.Value = masterShape.TextXForm.TxtLocPinX.Value;
-                                    shape.TextXForm.TxtLocPinY.Value = masterShape.TextXForm.TxtLocPinY.Value;
-                                    shape.TextXForm.TxtWidth.Value = masterShape.TextXForm.TxtWidth.Value;
-                                    shape.TextXForm.TxtHeight.Value = masterShape.TextXForm.TxtHeight.Value;
-                                    shape.TextXForm.TxtAngle.Value = masterShape.TextXForm.TxtAngle.Value;
-                                }
-
-                                Console.WriteLine($"Copied geometry from master \"{masterShapeName}\" to target \"{targetName}\" (Shape ID: {shape.ID}).");
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (found) break;
-                    }
-
-                    if (!found)
-                    {
-                        Console.Error.WriteLine($"Target shape \"{targetName}\" not found in the diagram. Skipping.");
+                        templateShape = shape;
+                        break;
                     }
                 }
-
-                // Save the modified diagram to the specified output path
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
             }
+
+            if (templateShape == null)
+            {
+                Console.Error.WriteLine($"Template shape with NameU \"{templateShapeNameU}\" not found.");
+                return;
+            }
+
+            // Copy geometry from the template shape to all other shapes on the first page.
+            if (diagram.Pages.Count > 0)
+            {
+                Page firstPage = diagram.Pages[0];
+                foreach (Shape targetShape in firstPage.Shapes)
+                {
+                    // Skip the template shape itself.
+                    if (targetShape.ID == templateShape.ID)
+                        continue;
+
+                    // ----- Copy Position and Size (XForm) -----
+                    targetShape.XForm.PinX.Value = templateShape.XForm.PinX.Value;
+                    targetShape.XForm.PinY.Value = templateShape.XForm.PinY.Value;
+                    targetShape.XForm.Width.Value = templateShape.XForm.Width.Value;
+                    targetShape.XForm.Height.Value = templateShape.XForm.Height.Value;
+                    targetShape.XForm.Angle.Value = templateShape.XForm.Angle.Value;
+
+                    // ----- Copy Fill Properties -----
+                    targetShape.Fill.FillForegnd.Value = templateShape.Fill.FillForegnd.Value;
+                    targetShape.Fill.FillForegndTrans.Value = templateShape.Fill.FillForegndTrans.Value;
+                    targetShape.Fill.FillBkgnd.Value = templateShape.Fill.FillBkgnd.Value;
+                    targetShape.Fill.FillPattern.Value = templateShape.Fill.FillPattern.Value;
+                    targetShape.Fill.ShdwForegnd.Value = templateShape.Fill.ShdwForegnd.Value;
+                    targetShape.Fill.ShdwBkgnd.Value = templateShape.Fill.ShdwBkgnd.Value;
+                    targetShape.Fill.ShdwPattern.Value = templateShape.Fill.ShdwPattern.Value;
+                    targetShape.Fill.ShapeShdwType.Value = templateShape.Fill.ShapeShdwType.Value;
+                    targetShape.Fill.ShapeShdwObliqueAngle.Value = templateShape.Fill.ShapeShdwObliqueAngle.Value;
+                    targetShape.Fill.ShapeShdwOffsetX.Value = templateShape.Fill.ShapeShdwOffsetX.Value;
+                    targetShape.Fill.ShapeShdwOffsetY.Value = templateShape.Fill.ShapeShdwOffsetY.Value;
+
+                    // ----- Copy Line (Border) Properties -----
+                    targetShape.Line.LineWeight.Value = templateShape.Line.LineWeight.Value;
+                    targetShape.Line.LineColor.Value = templateShape.Line.LineColor.Value;
+                    targetShape.Line.BeginArrow.Value = templateShape.Line.BeginArrow.Value;
+                    targetShape.Line.BeginArrowSize.Value = templateShape.Line.BeginArrowSize.Value;
+                    targetShape.Line.EndArrow.Value = templateShape.Line.EndArrow.Value;
+                    targetShape.Line.EndArrowSize.Value = templateShape.Line.EndArrowSize.Value;
+                    targetShape.Line.LinePattern.Value = templateShape.Line.LinePattern.Value;
+                }
+            }
+
+            // Save the updated diagram.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved with updated geometry to: {outputPath}");
         }
         catch (Exception ex)
         {

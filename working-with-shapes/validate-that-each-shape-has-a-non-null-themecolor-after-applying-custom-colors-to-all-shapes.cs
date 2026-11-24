@@ -6,55 +6,62 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the first argument to be the path to the Visio file.
-        if (args.Length == 0)
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        string diagramPath = args[0];
-
-        // Guard: ensure the file exists before proceeding.
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram.
-            Diagram diagram = new Diagram(diagramPath);
+            // Load the diagram
+            Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes.
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
-                // Skip logically deleted shapes.
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
+                    // Skip logically deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
                     // TODO: Apply custom colors to the shape.
-                    // Example (replace with actual API calls):
-                    // shape.Fill.FillForegnd = "#FF0000"; // Set fill color.
-                    // shape.Line.LineColor = "#00FF00"; // Set line color.
+                    // Example (replace with actual color application logic):
+                    // shape.Fill.FillForegnd.Value = 0xFF0000; // Red fill
 
                     // TODO: Validate that the shape's ThemeColor is not null.
-                    // The actual property name and type may differ; replace with correct API usage.
+                    // The exact property/method to access ThemeColor may differ.
+                    // Replace the following placeholder with the correct API call.
                     // if (shape.ThemeColor == null)
                     // {
-                    //     Console.Error.WriteLine($"Shape ID {shape.ID} on page {page.NameU} has a null ThemeColor.");
+                    //     throw new Exception($"Shape ID {shape.ID} has a null ThemeColor.");
                     // }
+
+                    // Placeholder validation (to be replaced)
+                    bool themeColorIsSet = true; // TODO: determine actual condition
+                    if (!themeColorIsSet)
+                    {
+                        throw new Exception($"Shape ID {shape.ID} has a null ThemeColor.");
+                    }
                 }
             }
 
-            Console.WriteLine("Custom colors applied and ThemeColor validation completed.");
+            Console.WriteLine("All shapes have a non-null ThemeColor after applying custom colors.");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

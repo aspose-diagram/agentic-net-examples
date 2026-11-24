@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -15,20 +16,29 @@ class Program
         }
 
         string visioPath = args[0];
-        // Guard: check if the Visio file exists
+
+        // Guard: ensure the Visio file exists
         if (!File.Exists(visioPath))
         {
             Console.Error.WriteLine($"Visio file not found: {visioPath}");
             return;
         }
 
-        // Optional second argument: output directory
-        string outputDir = args.Length > 1 ? args[1] : Path.GetDirectoryName(visioPath);
-        // Guard: check if the output directory exists
+        // Optional: output directory (second argument) or use current directory
+        string outputDir = args.Length > 1 ? args[1] : Directory.GetCurrentDirectory();
+
+        // Guard: ensure the output directory exists (create if necessary)
         if (!Directory.Exists(outputDir))
         {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
-            return;
+            try
+            {
+                Directory.CreateDirectory(outputDir);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output directory '{outputDir}': {ex.Message}");
+                return;
+            }
         }
 
         try
@@ -36,56 +46,64 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(visioPath);
 
-            // Iterate through each page in the diagram
+            // Iterate over each page in the diagram
             for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
                 // Retrieve the current page
                 Page page = diagram.Pages[pageIndex];
 
-                // Define the output PDF file name for this page
-                string pdfPath = Path.Combine(outputDir, $"Page_{pageIndex + 1}.pdf");
+                // Prepare PDF file name for the current page
+                string pdfFileName = $"Page_{pageIndex + 1}.pdf";
+                string pdfPath = Path.Combine(outputDir, pdfFileName);
 
                 // Configure PDF save options to export only the current page
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
                 pdfOptions.PageIndex = pageIndex;   // zero‑based index of the page to start saving
-                pdfOptions.PageCount = 1;           // export a single page
+                pdfOptions.PageCount = 1;           // save only one page
                 pdfOptions.ExportHiddenPage = false;
 
-                // Save the selected page to a PDF file
+                // Save the single page to PDF
                 diagram.Save(pdfPath, pdfOptions);
 
-                // Load the generated PDF to add bookmarks for each shape
+                // After saving, open the PDF with Aspose.Pdf to add bookmarks
+                // Fully qualified types are used to avoid namespace conflicts
                 Aspose.Pdf.Document pdfDoc = new Aspose.Pdf.Document(pdfPath);
 
-                // The PDF contains only one page; retrieve it (Aspose.Pdf pages are 1‑based)
-                Aspose.Pdf.Page pdfPage = pdfDoc.Pages[1];
-
-                // Add a bookmark (outline item) for each shape on the Visio page
-                foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                // Ensure the PDF has at least one page before adding bookmarks
+                if (pdfDoc.Pages.Count > 0)
                 {
-                    // Use the shape's NameU if available; otherwise fall back to its ID
-                    string title = !string.IsNullOrEmpty(shape.NameU) ? shape.NameU : $"Shape {shape.ID}";
-
-                    // Create a new bookmark linked to the single PDF page
-                    Aspose.Pdf.OutlineItemCollection bookmark = new Aspose.Pdf.OutlineItemCollection(pdfDoc.Outlines)
+                    // Iterate over all shapes on the current Visio page
+                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
                     {
-                        Title = title,
-                        Action = new Aspose.Pdf.Annotations.GoToAction(pdfPage)
-                    };
+                        // Create a bookmark (outline item) for the shape
+                        Aspose.Pdf.OutlineItemCollection bookmark = new Aspose.Pdf.OutlineItemCollection(pdfDoc.Outlines);
+                        // Use the shape's name as the bookmark title; fallback to shape ID if name is empty
+                        string title = !string.IsNullOrEmpty(shape.Name) ? shape.Name : $"Shape_{shape.ID}";
+                        bookmark.Title = title;
 
-                    // Add the bookmark to the PDF's outline collection
-                    pdfDoc.Outlines.Add(bookmark);
+                        // Set the action to go to the first (and only) page of this PDF
+                        // The page number in GoToAction is 1‑based
+                        bookmark.Action = new Aspose.Pdf.Annotations.GoToAction(pdfDoc.Pages[1]);
+
+                        // Add the bookmark to the document's outline collection
+                        pdfDoc.Outlines.Add(bookmark);
+                    }
+
+                    // Save the PDF with the added bookmarks
+                    pdfDoc.Save(pdfPath);
                 }
-
-                // Save the PDF with the newly added bookmarks
-                pdfDoc.Save(pdfPath);
-                Console.WriteLine($"Page {pageIndex + 1} saved to {pdfPath}");
+                else
+                {
+                    Console.Error.WriteLine($"Warning: PDF '{pdfPath}' contains no pages; bookmarks were not added.");
+                }
             }
+
+            Console.WriteLine("Batch conversion completed successfully.");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
-            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
+            // Capture any Aspose or I/O errors
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

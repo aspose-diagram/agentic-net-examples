@@ -6,16 +6,16 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Verify that a file path argument was provided
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the path to a VSDX file as the first argument.");
+            Console.Error.WriteLine("Usage: Program <path-to-vsdx-file>");
             return;
         }
 
         string inputPath = args[0];
 
-        // Guard against missing file
+        // Guard: ensure the specified file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"File not found: {inputPath}");
@@ -24,28 +24,28 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the Visio diagram inside a using block to ensure proper disposal
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each page in the diagram
+                // Iterate over all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through each shape on the current page
+                    // Iterate over all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip logically deleted shapes
+                        // Skip shapes that are marked as deleted
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Output the shape ID (and page name for context)
-                        Console.WriteLine($"Page: {page.NameU}, Shape ID: {shape.ID}");
+                        // Output the page name and shape ID
+                        Console.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}");
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing
+            // Write any errors that occur during loading or enumeration to the error stream
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

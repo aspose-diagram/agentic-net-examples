@@ -6,46 +6,45 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Expect the diagram file path as the first argument.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            Console.Error.WriteLine("Error: No diagram file path provided.");
             return;
         }
 
         string diagramPath = args[0];
 
-        // Guard: ensure the file exists
+        // Guard: ensure the file exists before proceeding.
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(diagramPath);
 
             bool anyViolation = false;
 
-            // Iterate through all pages
+            // Iterate through each page in the diagram.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the page
+                // Iterate through each shape on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Ensure the ThreeDFormat object is available
+                    // Ensure the ThreeDFormat object exists.
                     if (shape.ThreeDFormat != null)
                     {
-                        // Retrieve the DistanceFromGround value (in points)
                         double distance = shape.ThreeDFormat.DistanceFromGround.Value;
 
-                        // Validate that the distance does not exceed 100 points
+                        // Validate that the distance does not exceed 100 points.
                         if (distance > 100.0)
                         {
                             anyViolation = true;
-                            Console.WriteLine($"Violation: Shape ID {shape.ID} on page '{page.Name}' has DistanceFromGround = {distance} (exceeds 100).");
+                            Console.WriteLine($"Violation: Shape ID {shape.ID} on page \"{page.Name}\" has DistanceFromGround = {distance} (exceeds 100).");
                         }
                     }
                 }
@@ -53,13 +52,13 @@ class Program
 
             if (!anyViolation)
             {
-                Console.WriteLine("All shapes have DistanceFromGround <= 100 points.");
+                Console.WriteLine("Validation passed: No shape exceeds a DistanceFromGround of 100 points.");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

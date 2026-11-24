@@ -7,60 +7,60 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input Visio file, shape ID, output SVG file
-        if (args.Length < 3)
+        // Define input Visio file and output SVG file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <shapeId> <outputSvgFile>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "shape.svg";
 
-        string inputPath = args[0];
-        string shapeIdStr = args[1];
-        string outputPath = args[2];
-
-        // Guard: ensure the input Visio file exists
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
-            return;
-        }
-
-        // Guard: parse the shape ID as an integer
-        if (!int.TryParse(shapeIdStr, out int shapeId))
-        {
-            Console.Error.WriteLine($"Invalid shape ID: {shapeIdStr}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required by the API
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Retrieve the first page (index 0). Adjust if a different page is needed.
-                Page page = diagram.Pages[0];
-
-                // Get the shape by its ID from the page's shape collection
-                Shape shape = page.Shapes.GetShape(shapeId);
-                if (shape == null)
+                // Verify the diagram contains at least one page
+                if (diagram.Pages.Count == 0)
                 {
-                    Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
+                    Console.Error.WriteLine("The diagram contains no pages.");
                     return;
                 }
 
-                // Create default SVG save options
+                // Get the first page
+                Page page = diagram.Pages[0];
+
+                // Verify the page contains at least one shape
+                if (page.Shapes.Count == 0)
+                {
+                    Console.Error.WriteLine("The page contains no shapes.");
+                    return;
+                }
+
+                // Retrieve the first shape on the page
+                Shape shape = page.Shapes[0];
+
+                // Create SVG save options (default settings)
                 SVGSaveOptions svgOptions = new SVGSaveOptions();
 
-                // Export the selected shape to an SVG file
+                // Export the shape to an SVG file
                 shape.ToSvg(outputPath, svgOptions);
 
-                Console.WriteLine($"Shape {shapeId} exported to SVG successfully: {outputPath}");
+                Console.WriteLine($"Shape successfully exported to SVG: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
-            Console.Error.WriteLine($"Error during SVG export: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -7,76 +7,81 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: input file, output file, and tag name to search for.
+        // Expect three arguments: input Visio file path, tag value to match, output Visio file path
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <tagName>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <tagValue> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-        string targetTag = args[2];
+        string targetTagValue = args[1];
+        string outputPath = args[2];
 
-        // Guard: ensure the input file exists.
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages in the diagram.
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page.
+                    // Iterate through each shape on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes.
+                        // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Determine whether the shape has the specified tag (custom property).
-                        bool hasTag = false;
-                        if (shape.Props != null)
+                        // Ensure the shape has custom properties (Props) collection
+                        if (shape.Props == null)
+                            continue;
+
+                        // Look for a custom property named "Tag" with the desired value
+                        bool tagMatches = false;
+                        foreach (Prop prop in shape.Props)
                         {
-                            foreach (Prop prop in shape.Props)
+                            if (prop.Name == "Tag" && prop.Value != null && prop.Value.Val == targetTagValue)
                             {
-                                if (prop.Name == targetTag)
-                                {
-                                    hasTag = true;
-                                    break;
-                                }
+                                tagMatches = true;
+                                break;
                             }
                         }
 
-                        if (hasTag)
+                        if (!tagMatches)
+                            continue;
+
+                        // Apply a simple drop shadow to the shape
+                        if (shape.Fill != null)
                         {
-                            // Apply a simple drop shadow to the shape.
-                            // Set shadow type.
+                            // Set shadow type to Simple
                             shape.Fill.ShapeShdwType.Value = ShapeShdwTypeValue.Simple;
-                            // Set shadow color (black).
+                            // Set shadow color to black
                             shape.Fill.ShdwForegnd.Value = "#000000";
-                            // Set shadow transparency (30% transparent).
+                            // Set shadow transparency to 30% (0.3)
                             shape.Fill.ShdwForegndTrans.Value = 0.3;
-                            // Set shadow offsets.
-                            shape.Fill.ShapeShdwOffsetX.Value = 0.1;
-                            shape.Fill.ShapeShdwOffsetY.Value = 0.1;
+                            // Optional: set shadow offsets (default values can be used)
+                            // shape.Fill.ShapeShdwOffsetX.Value = 0.1;
+                            // shape.Fill.ShapeShdwOffsetY.Value = 0.1;
                         }
                     }
                 }
 
-                // Save the modified diagram in VSDX format.
+                // Save the modified diagram to the specified output path in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error console.
+            // Write any Aspose or IO errors to the error console
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

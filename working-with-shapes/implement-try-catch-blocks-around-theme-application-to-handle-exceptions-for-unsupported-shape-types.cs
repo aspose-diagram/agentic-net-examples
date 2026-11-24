@@ -6,26 +6,25 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length < 2)
+        // Define input and output file paths.
+        string inputPath = "Themes1.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "Themes1_Themed.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input file exists
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         Diagram diagram = null;
 
-        // Load the diagram inside a try‑catch to handle loading errors
+        // Load the diagram inside a try/catch to handle loading errors.
         try
         {
             diagram = new Diagram(inputPath);
@@ -36,40 +35,43 @@ class Program
             return;
         }
 
-        // Ensure the diagram has at least one page
+        // Ensure the diagram has at least one page and one shape.
         if (diagram.Pages.Count == 0)
         {
             Console.Error.WriteLine("The diagram contains no pages.");
             return;
         }
 
-        // Get the first page
         Page page = diagram.Pages[0];
 
-        // Iterate over all shapes on the page
-        for (int i = 0; i < page.Shapes.Count; i++)
+        if (page.Shapes.Count == 0)
         {
-            Shape shape = page.Shapes[i];
-
-            // Attempt to apply a preset theme to the shape
-            try
-            {
-                // Set the preset theme, variant, and quick style
-                shape.PresetTheme = PresetThemeValue.Bubble;
-                shape.PresetThemeVariant = PresetThemeVariantValue.Variant3;
-                shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
-            }
-            catch (Exception ex)
-            {
-                // Log the exception but continue processing other shapes
-                Console.Error.WriteLine($"Failed to apply theme to shape ID {shape.ID}: {ex.Message}");
-            }
+            Console.Error.WriteLine("The first page contains no shapes.");
+            return;
         }
 
-        // Save the modified diagram inside a try‑catch to handle saving errors
+        // Retrieve the first shape on the page.
+        Shape shape = page.Shapes[0];
+
+        // Attempt to apply a preset theme to the shape.
+        try
+        {
+            // Set the preset theme, variant, and quick style.
+            shape.PresetTheme = PresetThemeValue.Bubble;
+            shape.PresetThemeVariant = PresetThemeVariantValue.Variant3;
+            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
+        }
+        catch (Exception ex)
+        {
+            // Handle cases where the shape type does not support theme application.
+            Console.Error.WriteLine($"Theme application failed for shape ID {shape.ID}: {ex.Message}");
+        }
+
+        // Save the modified diagram.
         try
         {
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {

@@ -6,10 +6,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
@@ -19,48 +19,55 @@ class Program
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
             // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages.
-            foreach (Page page in diagram.Pages)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all shapes on the current page.
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages in the diagram.
+                foreach (Page page in diagram.Pages)
                 {
-                    // Detect missing fill color.
-                    // A missing fill is considered when FillForegnd is empty or set to "0".
-                    bool isFillMissing = string.IsNullOrEmpty(shape.Fill.FillForegnd.Value) ||
-                                         shape.Fill.FillForegnd.Value == "0";
-
-                    if (isFillMissing)
+                    // Iterate through all shapes on the current page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Assign a solid fill pattern.
-                        shape.Fill.FillPattern.Value = 1; // Solid fill.
+                        // Detect shapes with missing fill.
+                        // In Visio, a FillPattern value of 0 means no fill.
+                        // We'll treat such shapes as having a missing fill.
+                        if (shape.Fill != null && shape.Fill.FillPattern != null)
+                        {
+                            int patternValue = shape.Fill.FillPattern.Value;
+                            if (patternValue == 0)
+                            {
+                                // Assign a default solid fill pattern.
+                                shape.Fill.FillPattern.Value = 1; // 1 = solid fill.
 
-                        // Set a default fill color (red).
-                        shape.Fill.FillForegnd.Value = "#FF0000";
+                                // Assign a default foreground fill color (e.g., light orange).
+                                // The FillForegnd property holds a color string like "#FFCC00".
+                                shape.Fill.FillForegnd.Value = "#FFCC00";
 
-                        // Ensure the fill is fully opaque.
-                        shape.Fill.FillForegndTrans.Value = 0.0;
+                                // Optionally ensure the fill is fully opaque.
+                                if (shape.Fill.FillForegndTrans != null)
+                                {
+                                    shape.Fill.FillForegndTrans.Value = 0.0; // 0 = fully opaque.
+                                }
+                            }
+                        }
                     }
                 }
-            }
 
-            // Save the corrected diagram in VSDX format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to {outputPath}");
+                // Save the corrected diagram in VSDX format.
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

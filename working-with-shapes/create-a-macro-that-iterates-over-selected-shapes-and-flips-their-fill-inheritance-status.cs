@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect input and output file paths as arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
@@ -19,7 +19,7 @@ class Program
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -28,40 +28,44 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over all pages in the diagram.
+            // Iterate over all pages.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate over all shapes on the current page.
+                // Iterate over all shapes on the page.
                 foreach (Shape shape in page.Shapes)
                 {
                     // Skip deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Flip the fill inheritance status.
-                    // If the shape currently inherits its fill, disable inheritance by assigning the current value to itself.
-                    // Otherwise, enable inheritance by setting the UFE formula to INHERITED().
-                    if (shape.Fill.FillForegnd.Ufe.F == "INHERITED()")
+                    // Flip fill inheritance status.
+                    // If currently inherited, set to explicit value (disable inheritance).
+                    // Otherwise, enable inheritance by assigning the special INHERITED() function.
+                    // The Ufe.F property holds the inheritance flag as a string.
+                    string currentUfe = shape.Fill.FillForegnd.Ufe.F;
+
+                    if (string.Equals(currentUfe, "INHERITED()", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Disable inheritance – assign the current value back to the cell.
-                        shape.Fill.FillForegnd.Value = shape.Fill.FillForegnd.Value;
+                        // Disable inheritance: assign the current concrete fill color.
+                        // Use the existing FillForegnd value.
+                        shape.Fill.FillForegnd.Ufe.F = shape.Fill.FillForegnd.Value;
                     }
                     else
                     {
-                        // Enable inheritance – set the UFE formula.
+                        // Enable inheritance.
                         shape.Fill.FillForegnd.Ufe.F = "INHERITED()";
                     }
                 }
             }
 
-            // Save the modified diagram to a macro‑enabled format.
-            diagram.Save(outputPath, SaveFileFormat.Vsdm);
+            // Save the modified diagram. Use Vsdx format for standard Visio files.
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

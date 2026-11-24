@@ -7,18 +7,18 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 1)
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
+            Console.Error.WriteLine("Usage: Program <input‑visio‑file>");
             return;
         }
 
         string inputPath = args[0];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine($"Error: File not found – {inputPath}");
             return;
         }
 
@@ -33,18 +33,19 @@ class Program
                     // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes.
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Identify connector shapes (1‑D shapes). shape.OneD returns a bool.
-                        if (shape.OneD)
+                        // Identify dynamic connector shapes.
+                        if (shape.OneD && shape.Master != null && shape.Master.Name == "Dynamic connector")
                         {
-                            // Retrieve the connector's line jump style from its layout.
-                            // ConLineJumpStyleValue enum provides the style.
-                            var jumpStyle = shape.Layout.ConLineJumpStyle.Value;
+                            // Retrieve the line jump style from the shape's layout.
+                            var layout = shape.Layout;
+                            var jumpStyleValue = layout?.ConLineJumpStyle?.Value;
 
-                            // Output connector ID and its jump style.
+                            // Convert the enum value to a readable string; handle undefined cases.
+                            string jumpStyle = jumpStyleValue.HasValue
+                                ? jumpStyleValue.Value.ToString()
+                                : "Undefined";
+
+                            // Output the connector ID and its associated jump style.
                             Console.WriteLine($"Connector ID: {shape.ID}, Jump Style: {jumpStyle}");
                         }
                     }
@@ -53,8 +54,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -8,94 +8,145 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths
-        string inputPath = "input.vsdx";
-        if (!File.Exists(inputPath))
+        // Validate arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
             return;
         }
 
-        string outputPath = "output.pdf";
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            return;
+        }
+
+        // Temporary PDF path (legend will be added later)
+        string tempPdfPath = Path.Combine(Path.GetDirectoryName(outputPath) ?? "", "temp_legend.pdf");
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram inside a using block (mandatory)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Dictionary to hold unique fill colors and their first encountered meaning
-                var colorToMeaning = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                // -----------------------------------------------------------------
+                // 1. Collect unique fill colors and associate them with shape texts
+                // -----------------------------------------------------------------
+                var colorMeanings = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
-                // Iterate through all pages and shapes to collect color-meaning pairs
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip deleted shapes
-                        if (shape.Del == BOOL.True) continue;
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        // Retrieve the fill foreground color (hex string)
-                        string fillColor = shape.Fill?.FillForegnd?.Value;
-                        if (string.IsNullOrWhiteSpace(fillColor))
-                            continue; // No fill color, ignore this shape
-
-                        // Retrieve the shape's plain text
-                        string shapeText = shape.Text?.Value?.Text ?? string.Empty;
-                        string meaning = string.IsNullOrWhiteSpace(shapeText) ? "No Text" : shapeText.Trim();
-
-                        // Store the first meaning encountered for each unique color
-                        if (!colorToMeaning.ContainsKey(fillColor))
+                        // Retrieve fill color (fallback to white if not set)
+                        string fillColor = "#FFFFFF";
+                        if (shape.Fill != null && shape.Fill.FillForegnd != null && !string.IsNullOrEmpty(shape.Fill.FillForegnd.Value))
                         {
-                            colorToMeaning[fillColor] = meaning;
+                            fillColor = shape.Fill.FillForegnd.Value;
                         }
+
+                        // Retrieve shape text (plain string)
+                        string meaning = shape.Text?.Value?.Text ?? string.Empty;
+                        if (string.IsNullOrWhiteSpace(meaning))
+                            meaning = "(no text)";
+
+                        // Store in dictionary
+                        if (!colorMeanings.TryGetValue(fillColor, out var list))
+                        {
+                            list = new List<string>();
+                            colorMeanings[fillColor] = list;
+                        }
+                        if (!list.Contains(meaning))
+                            list.Add(meaning);
                     }
                 }
 
-                // Create a new page that will hold the legend
+                // -----------------------------------------------------------------
+                // 2. Create a new page that will hold the legend (added at the end)
+                // -----------------------------------------------------------------
                 Page legendPage = new Page();
                 diagram.Pages.Add(legendPage);
-                legendPage.Name = "Legend";
 
-                // Positioning variables for legend entries (Visio units are inches)
-                double startX = 1.0;   // left margin
-                double startY = 10.0;  // top margin
-                double swatchWidth = 0.5;
-                double entryHeight = 0.5;
-                double entrySpacing = 0.2;
+                // Layout parameters for legend entries (in inches)
+                double startX = 1.0;
+                double startY = 1.0;
+                double entryHeight = 0.6;
+                double rectWidth = 0.4;
+                double rectHeight = 0.4;
+                double textOffsetX = 0.6;
 
-                // Iterate over collected colors to create legend entries
-                foreach (var kvp in colorToMeaning)
+                double currentY = startY;
+
+                foreach (var kvp in colorMeanings)
                 {
-                    string colorHex = kvp.Key;
-                    string meaning = kvp.Value;
+                    string color = kvp.Key;
+                    List<string> meanings = kvp.Value;
 
-                    // Add a rectangle shape as a color swatch
-                    long swatchId = legendPage.AddShape(startX, startY, swatchWidth, entryHeight, "Rectangle", false);
-                    Shape swatchShape = legendPage.Shapes.GetShape((int)swatchId);
-                    swatchShape.Fill.FillPattern.Value = 1; // solid fill
-                    swatchShape.Fill.FillForegnd.Value = colorHex;
-                    swatchShape.XForm.Width.Value = swatchWidth;
-                    swatchShape.XForm.Height.Value = entryHeight;
+                    // ---- Rectangle shape representing the color ----
+                    long rectId = legendPage.AddShape(startX, currentY, "Rectangle", false); // changed BOOL.False to bool false
+                    Shape rectShape = legendPage.Shapes.GetShape(rectId);
+                    rectShape.Fill.FillPattern.Value = 1; // solid fill
+                    rectShape.Fill.FillForegnd.Value = color;
+                    rectShape.XForm.Width.Value = rectWidth;
+                    rectShape.XForm.Height.Value = rectHeight;
 
-                    // Add a text shape next to the swatch
-                    double textX = startX + swatchWidth + 0.2;
-                    double textWidth = 3.0;
-                    Shape textShape = legendPage.AddText(textX, startY, textWidth, entryHeight, meaning);
-                    // Ensure the text shape has appropriate size
-                    textShape.XForm.Width.Value = textWidth;
-                    textShape.XForm.Height.Value = entryHeight;
+                    // ---- Text shape describing the meanings ----
+                    string text = $"{color}: {string.Join(", ", meanings)}";
+                    Shape textShape = legendPage.AddText(startX + textOffsetX, currentY, 4.0, rectHeight, text);
+                    // Clear any existing runs and add our text
+                    textShape.Text.Value.Clear();
+                    textShape.Text.Value.Add(new Txt(text));
 
-                    // Move down for the next entry
-                    startY -= (entryHeight + entrySpacing);
+                    // Move to next entry position
+                    currentY += entryHeight;
                 }
 
-                // Prepare PDF save options
+                // -----------------------------------------------------------------
+                // 3. Save the diagram (including the legend) as a PDF to a temp file
+                // -----------------------------------------------------------------
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.HorizontalResolution = 300;
+                pdfOptions.VerticalResolution = 300;
+                pdfOptions.JpegQuality = 100;
+                pdfOptions.ExportHiddenPage = false;
                 pdfOptions.DefaultFont = "Arial";
 
-                // Save the diagram (including the legend page) as PDF
-                diagram.Save(outputPath, pdfOptions);
+                diagram.Save(tempPdfPath, pdfOptions);
             }
+
+            // -----------------------------------------------------------------
+            // 4. Reorder PDF pages so that the legend page becomes the first page
+            //    (using Aspose.Pdf with fully qualified names to avoid ambiguity)
+            // -----------------------------------------------------------------
+            // Load the temporary PDF
+            var pdfDoc = new Aspose.Pdf.Document(tempPdfPath);
+
+            // If there is more than one page, move the last page (legend) to the front
+            if (pdfDoc.Pages.Count > 1)
+            {
+                // Extract the legend page
+                Aspose.Pdf.Page legendPdfPage = pdfDoc.Pages[pdfDoc.Pages.Count];
+                // Remove it from its original position
+                pdfDoc.Pages.Delete(pdfDoc.Pages.Count);
+                // Insert it at the beginning (index 1 because Aspose.Pdf pages are 1‑based)
+                pdfDoc.Pages.Insert(1, legendPdfPage);
+            }
+
+            // Save the reordered PDF to the final output path
+            pdfDoc.Save(outputPath);
+            // Clean up temporary file
+            if (File.Exists(tempPdfPath))
+                File.Delete(tempPdfPath);
+
+            Console.WriteLine($"PDF successfully created at: {outputPath}");
         }
         catch (Exception ex)
         {

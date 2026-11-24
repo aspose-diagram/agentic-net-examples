@@ -6,78 +6,77 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate arguments: input file path, shape name, expected shape ID
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: <program> <diagramPath> <shapeName> <expectedShapeId>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <shapeName> <expectedShapeId>");
             return;
         }
 
-        string diagramPath = args[0];
+        string inputPath = args[0];
         string targetShapeName = args[1];
-        string expectedIdText = args[2];
+        string expectedIdStr = args[2];
 
-        // Guard: ensure the diagram file exists.
-        if (!File.Exists(diagramPath))
+        // Guard: check if the input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
-        // Guard: parse the expected shape identifier.
-        if (!long.TryParse(expectedIdText, out long expectedShapeId))
+        // Parse expected shape ID
+        if (!long.TryParse(expectedIdStr, out long expectedShapeId))
         {
-            Console.Error.WriteLine($"Error: Expected shape ID '{expectedIdText}' is not a valid integer.");
+            Console.Error.WriteLine($"Error: Invalid expected shape ID '{expectedIdStr}'.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Load the Visio diagram using a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                bool shapeFound = false;
+                Shape foundShape = null;
 
-                // Iterate through all pages and shapes to locate the shape by its NameU.
+                // Iterate through all pages and shapes to locate the shape by its NameU
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Compare the shape's universal name with the target name.
+                        // Compare the shape's universal name with the target name
                         if (shape.NameU == targetShapeName)
                         {
-                            shapeFound = true;
-                            long actualShapeId = shape.ID;
-
-                            // Compare the actual ID with the expected identifier.
-                            if (actualShapeId == expectedShapeId)
-                            {
-                                Console.WriteLine($"Shape '{targetShapeName}' ID matches expected value: {expectedShapeId}.");
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Shape '{targetShapeName}' ID mismatch. Expected: {expectedShapeId}, Actual: {actualShapeId}.");
-                            }
-
-                            // Shape found; exit loops.
+                            foundShape = shape;
                             break;
                         }
                     }
 
-                    if (shapeFound)
+                    if (foundShape != null)
                         break;
                 }
 
-                if (!shapeFound)
+                // If the shape was not found, report an error
+                if (foundShape == null)
                 {
-                    Console.WriteLine($"Shape with name '{targetShapeName}' was not found in the diagram.");
+                    Console.Error.WriteLine($"Error: Shape with name '{targetShapeName}' not found.");
+                    return;
+                }
+
+                // Compare the actual shape ID with the expected ID
+                if (foundShape.ID == expectedShapeId)
+                {
+                    Console.WriteLine($"Success: Shape '{targetShapeName}' has the expected ID {expectedShapeId}.");
+                }
+                else
+                {
+                    Console.WriteLine($"Mismatch: Shape '{targetShapeName}' has ID {foundShape.ID}, expected {expectedShapeId}.");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

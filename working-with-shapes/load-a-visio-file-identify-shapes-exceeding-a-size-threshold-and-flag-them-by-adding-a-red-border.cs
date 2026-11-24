@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -10,10 +9,11 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> [outputVisioPath]");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> [sizeThresholdInInches] [outputVisioPath]");
             return;
         }
 
+        // Input Visio file path.
         string inputPath = args[0];
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
@@ -22,62 +22,67 @@ class Program
             return;
         }
 
-        // Determine output path. If not supplied, create a new file name with suffix "_flagged".
-        string outputPath = args.Length >= 2
-            ? args[1]
-            : Path.Combine(
-                Path.GetDirectoryName(inputPath) ?? string.Empty,
-                Path.GetFileNameWithoutExtension(inputPath) + "_flagged" + Path.GetExtension(inputPath));
+        // Parse optional size threshold (default = 2.0 inches).
+        double sizeThreshold = 2.0;
+        if (args.Length >= 2 && !double.TryParse(args[1], out sizeThreshold))
+        {
+            Console.Error.WriteLine($"Invalid size threshold value: {args[1]}");
+            return;
+        }
 
+        // Determine output path (optional argument or auto‑generated).
+        string outputPath;
+        if (args.Length >= 3)
+        {
+            outputPath = args[2];
+        }
+        else
+        {
+            string dir = Path.GetDirectoryName(inputPath) ?? string.Empty;
+            string nameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+            outputPath = Path.Combine(dir, $"{nameWithoutExt}_flagged.vsdx");
+        }
+
+        // Load the Visio diagram inside a using block (mandatory pattern).
         try
         {
-            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Define size thresholds (in inches). Shapes larger than these will be flagged.
-                const double maxWidth = 2.0;
-                const double maxHeight = 2.0;
-
-                // Iterate over all pages in the diagram.
+                // Iterate through all pages in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate over all shapes on the current page.
+                    // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes.
+                        // Skip logically deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Retrieve shape dimensions.
+                        // Retrieve shape dimensions (in inches).
                         double width = shape.XForm.Width.Value;
                         double height = shape.XForm.Height.Value;
 
-                        // Check if the shape exceeds the defined size thresholds.
-                        if (width > maxWidth || height > maxHeight)
+                        // Flag shapes that exceed the size threshold.
+                        if (width > sizeThreshold || height > sizeThreshold)
                         {
-                            // Flag the shape by applying a red border.
-                            // Set line color to red.
+                            // Add a red border by setting the line color.
                             shape.Line.LineColor.Value = "#FF0000";
 
-                            // Set a visible line weight (e.g., 0.03 inches).
-                            shape.Line.LineWeight.Value = 0.03;
-
-                            // Ensure the line pattern is solid. Cast integer to LinePatternValue.
-                            shape.Line.LinePattern.Value = (LinePatternValue)1;
+                            // Increase line weight for better visibility.
+                            shape.Line.LineWeight.Value = 0.02;
                         }
                     }
                 }
 
-                // Save the modified diagram to the output path using VSDX format.
+                // Save the modified diagram to the output file.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Processing complete. Output saved to: {outputPath}");
             }
-
-            Console.WriteLine($"Processing completed. Output saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
         }
     }
 }

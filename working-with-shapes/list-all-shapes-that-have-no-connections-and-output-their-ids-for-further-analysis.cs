@@ -1,21 +1,22 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Manipulation;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect the first argument to be the path to the Visio file.
+        // Validate command‑line arguments.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Error: No input file path provided.");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
             return;
         }
 
         string filePath = args[0];
 
-        // Guard: ensure the file exists before attempting to load.
+        // Guard against missing input file.
         if (!File.Exists(filePath))
         {
             Console.Error.WriteLine($"Error: File not found - {filePath}");
@@ -24,10 +25,10 @@ class Program
 
         try
         {
-            // Load the diagram from the specified file.
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(filePath);
 
-            // Iterate through all pages in the diagram.
+            // Iterate through all pages.
             foreach (Page page in diagram.Pages)
             {
                 // Iterate through all shapes on the current page.
@@ -37,23 +38,27 @@ class Program
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Retrieve IDs of shapes connected to the current shape.
-                    // Using ConnectedShapesAllNodes to consider all connection types.
+                    // Retrieve shapes connected via connectors.
                     long[] connectedIds = shape.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
 
-                    // If there are no connections, output the shape's ID.
-                    bool hasNoConnections = connectedIds == null || connectedIds.Length == 0;
-                    if (hasNoConnections)
+                    // Retrieve shapes glued to this shape (1‑D connectors).
+                    long[] gluedIds = shape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
+
+                    bool hasConnections = (connectedIds != null && connectedIds.Length > 0) ||
+                                          (gluedIds != null && gluedIds.Length > 0);
+
+                    // If the shape has no connections, output its ID.
+                    if (!hasConnections)
                     {
-                        Console.WriteLine($"Shape ID with no connections: {shape.ID}");
+                        Console.WriteLine($"Shape ID: {shape.ID}");
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

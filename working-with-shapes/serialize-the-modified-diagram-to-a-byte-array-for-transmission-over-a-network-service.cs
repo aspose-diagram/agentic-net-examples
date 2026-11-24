@@ -1,49 +1,61 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Determine the input diagram file path (first argument or default).
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Validate input arguments
+        if (args.Length == 0)
+        {
+            Console.Error.WriteLine("Error: No input diagram file path provided.");
+            return;
+        }
 
-        // Guard: ensure the input file exists.
+        string inputPath = args[0];
+
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // TODO: Apply any modifications to the diagram here.
-            // Example: diagram.Pages[0].Name = "ModifiedPage";
-
-            // Serialize the diagram to a memory stream in VSDX format.
-            using (MemoryStream memoryStream = new MemoryStream())
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Save the diagram into the stream using the VSDX format.
-                diagram.Save(memoryStream, SaveFileFormat.Vsdx);
+                // Example modification: set the first page background to white (optional)
+                if (diagram.Pages.Count > 0)
+                {
+                    Page firstPage = diagram.Pages[0];
+                    // Ensure the page background is visible
+                    firstPage.Background = BOOL.False;
+                }
 
-                // Convert the stream contents to a byte array for transmission.
-                byte[] diagramBytes = memoryStream.ToArray();
+                // Serialize the diagram to a byte array using a memory stream
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    // Save the diagram in VSDX format to the memory stream
+                    diagram.Save(ms, SaveFileFormat.Vsdx);
 
-                // Example usage: output the size of the serialized data.
-                Console.WriteLine($"Diagram serialized to byte array. Size: {diagramBytes.Length} bytes.");
+                    // Retrieve the byte array
+                    byte[] diagramBytes = ms.ToArray();
 
-                // The byte array (diagramBytes) can now be sent over a network service.
-                // For demonstration, you could write it to a file:
-                // File.WriteAllBytes("output_bytes.bin", diagramBytes);
+                    // Output information about the serialized data
+                    Console.WriteLine($"Diagram serialized to byte array. Size: {diagramBytes.Length} bytes.");
+
+                    // Example: write the byte array to a file (optional, can be removed)
+                    // File.WriteAllBytes("output.vsdx", diagramBytes);
+                }
             }
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during loading or saving to the error console.
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

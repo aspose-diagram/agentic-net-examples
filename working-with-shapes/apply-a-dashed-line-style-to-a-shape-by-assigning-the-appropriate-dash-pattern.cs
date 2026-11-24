@@ -6,14 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (required)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Output Visio file path (required)
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-        // Shape ID to modify (optional, default = 1)
-        int shapeId = args.Length > 2 ? int.Parse(args[2]) : 1;
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
+            return;
+        }
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -22,38 +25,53 @@ class Program
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Get the first page (or you could select by name)
+            // Get the first page (or you could select by name).
+            if (diagram.Pages.Count == 0)
+            {
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
+
             Page page = diagram.Pages[0];
 
-            // Retrieve the shape by its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
-            if (shape == null)
+            // Ensure the page has at least one shape.
+            if (page.Shapes.Count == 0)
             {
-                Console.Error.WriteLine($"Shape with ID {shapeId} not found on page.");
+                Console.Error.WriteLine("The page contains no shapes.");
                 return;
             }
 
-            // Skip logically deleted shapes
-            if (shape.Del == BOOL.True)
-            {
-                Console.Error.WriteLine($"Shape with ID {shapeId} is marked as deleted.");
-                return;
-            }
+            // Retrieve the first shape on the page.
+            // Shapes are accessed via GetShape(shapeId). Here we use the first shape's ID.
+            long firstShapeId = page.Shapes[0].ID;
+            Shape shape = page.Shapes.GetShape(firstShapeId);
 
-            // Apply a dashed line pattern using the LinePatternValue enumeration
+            // Apply a dashed line pattern to the shape.
+            // Use the LinePatternValue enumeration for clarity.
             shape.Line.LinePattern.Value = LinePatternValue.Dash;
 
-            // Save the modified diagram to the output path in VSDX format
+            // Optionally, you can also set line weight or color here.
+            // shape.Line.LineWeight.Value = 0.03; // inches
+            // shape.Line.LineColor.Value = "#FF0000"; // red
+
+            // Ensure the output directory exists.
+            string outputDir = Path.GetDirectoryName(outputPath);
+            if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+            {
+                Directory.CreateDirectory(outputDir);
+            }
+
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

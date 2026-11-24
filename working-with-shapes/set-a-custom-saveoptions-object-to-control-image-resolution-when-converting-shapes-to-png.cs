@@ -7,54 +7,58 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-
-        // Guard: ensure the input file exists
-        if (!File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputDirectory>");
             return;
         }
 
-        // Output directory for PNG images (second argument or default)
-        string outputDir = args.Length > 1 ? args[1] : "output";
+        string inputPath = args[0];
+        string outputDir = args[1];
 
-        // Ensure the output directory exists
+        // Guard: ensure the input Visio file exists.
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        // Ensure the output directory exists (create if necessary).
         try
         {
             Directory.CreateDirectory(outputDir);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to create output directory '{outputDir}': {ex.Message}");
+            Console.Error.WriteLine($"Error creating output directory \"{outputDir}\": {ex.Message}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages
+            // Create ImageSaveOptions for PNG with a custom resolution.
+            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            pngOptions.Resolution = 300f; // Set DPI (dots per inch) for high‑resolution output.
+
+            // Iterate through all pages.
             for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                Page page = diagram.Pages[pageIndex];
+                // Set page‑specific options (optional, here we export one page at a time).
+                pngOptions.PageIndex = pageIndex;
+                pngOptions.PageCount = 1;
 
-                // Iterate through all shapes on the current page
-                for (int i = 0; i < page.Shapes.Count; i++)
+                // Iterate through all shapes on the current page.
+                foreach (Shape shape in diagram.Pages[pageIndex].Shapes)
                 {
-                    Shape shape = page.Shapes[i];
+                    // Build a unique file name for each shape using its ID.
+                    string shapeFileName = Path.Combine(outputDir, $"shape_{shape.ID}_page{pageIndex + 1}.png");
 
-                    // Prepare custom ImageSaveOptions with desired resolution (e.g., 300 DPI)
-                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                    saveOptions.Resolution = 300f; // Set resolution in DPI
-
-                    // Build output file name using shape ID and page index for uniqueness
-                    string outputPath = Path.Combine(outputDir, $"page{pageIndex + 1}_shape{shape.ID}.png");
-
-                    // Export the shape to PNG using the custom save options
-                    shape.ToImage(outputPath, saveOptions);
+                    // Export the shape to PNG using the custom save options.
+                    shape.ToImage(shapeFileName, pngOptions);
                 }
             }
 
@@ -62,8 +66,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Log any Aspose.Diagram related errors
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Capture any Aspose.Diagram related errors.
+            Console.Error.WriteLine($"An error occurred during processing: {ex.Message}");
         }
     }
 }

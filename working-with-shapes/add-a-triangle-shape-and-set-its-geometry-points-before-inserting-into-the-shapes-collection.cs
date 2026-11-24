@@ -8,61 +8,78 @@ class Program
     static void Main(string[] args)
     {
         // Define output file path
-        string outputPath = "TriangleDiagram.vsdx";
+        string outputPath = "TriangleShape.vsdx";
+
+        // Guard: ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath)) ?? ".";
+        if (!Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
 
         try
         {
-            // Create a new empty diagram
-            Diagram diagram = new Diagram();
+            // Create a new empty diagram inside a using block (mandatory pattern)
+            using (Diagram diagram = new Diagram())
+            {
+                // Add a new blank page to the diagram
+                diagram.Pages.Add(new Page());
+                Page page = diagram.Pages[0];
 
-            // Get the active page where the shape will be added
-            Page page = diagram.ActivePage;
+                // Add a generic rectangle shape (master name "Rectangle") at position (2,2)
+                // The fourth parameter 'isCalculate' is set to false because we will define custom geometry
+                long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false); // corrected bool argument
 
-            // Add a placeholder rectangle shape (master name "Rectangle") at position (2,2)
-            // The fourth parameter 'isCalculate' is set to false as we will customize geometry manually
-            long shapeId = page.AddShape(2.0, 2.0, "Rectangle", false);
+                // Retrieve the shape instance using the returned ID
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
+                {
+                    Console.Error.WriteLine("Failed to retrieve the newly added shape.");
+                    return;
+                }
 
-            // Retrieve the newly added shape using its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
+                // Create a new geometry (Geom) for the triangle
+                Geom triangleGeom = new Geom();
+                shape.Geoms.Add(triangleGeom);
 
-            // ------------------------------------------------------------
-            // Set custom geometry to turn the rectangle into a triangle
-            // ------------------------------------------------------------
-            // NOTE: The exact API for editing geometry rows may vary between versions.
-            // The following steps outline the intended actions:
-            // 1. Clear existing geometry rows.
-            // 2. Add new geometry rows that define the three vertices of a triangle.
-            // 3. Set the appropriate formulas for each vertex (e.g., MoveTo, LineTo).
-            // ------------------------------------------------------------
-            // TODO: Implement geometry editing using the appropriate Aspose.Diagram APIs.
-            // Example (pseudo-code):
-            // shape.Geometry.Row.Clear();
-            // Row moveTo = new Row();
-            // moveTo.Type = GeometryRowType.MoveTo;
-            // moveTo.X.Value = "Width*0.5";
-            // moveTo.Y.Value = "Height";
-            // shape.Geometry.Row.Add(moveTo);
-            // Row line1 = new Row();
-            // line1.Type = GeometryRowType.LineTo;
-            // line1.X.Value = "0";
-            // line1.Y.Value = "0";
-            // shape.Geometry.Row.Add(line1);
-            // Row line2 = new Row();
-            // line2.Type = GeometryRowType.LineTo;
-            // line2.X.Value = "Width";
-            // line2.Y.Value = "0";
-            // shape.Geometry.Row.Add(line2);
-            // Row close = new Row();
-            // close.Type = GeometryRowType.Close;
-            // shape.Geometry.Row.Add(close);
-            // ------------------------------------------------------------
+                // Define the triangle vertices using MoveTo and LineTo segments
+                // Vertex 1 (bottom left)
+                MoveTo moveTo = new MoveTo();
+                moveTo.X.Value = 0.0;
+                moveTo.Y.Value = 0.0;
+                triangleGeom.CoordinateCol.Add(moveTo);
 
-            // Save the diagram to a VSDX file
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+                // Vertex 2 (bottom right)
+                LineTo lineTo2 = new LineTo();
+                lineTo2.X.Value = 2.0;
+                lineTo2.Y.Value = 0.0;
+                triangleGeom.CoordinateCol.Add(lineTo2);
+
+                // Vertex 3 (top middle)
+                LineTo lineTo3 = new LineTo();
+                lineTo3.X.Value = 1.0;
+                lineTo3.Y.Value = 1.732; // Height of an equilateral triangle with side length 2
+                triangleGeom.CoordinateCol.Add(lineTo3);
+
+                // Close the path by returning to the first vertex
+                LineTo lineToClose = new LineTo();
+                lineToClose.X.Value = 0.0;
+                lineToClose.Y.Value = 0.0;
+                triangleGeom.CoordinateCol.Add(lineToClose);
+
+                // Optionally set the shape's text to identify it
+                shape.Text.Value.Clear();
+                shape.Text.Value.Add(new Txt("Triangle"));
+
+                // Save the diagram to VSDX format (must specify SaveFileFormat)
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
+            }
         }
         catch (Exception ex)
         {
+            // Write any Aspose or IO errors to the error console
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

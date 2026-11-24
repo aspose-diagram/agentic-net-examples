@@ -13,33 +13,30 @@ class Program
             return;
         }
 
-        string inputPath = args[0];
-        string outputPath = args[1];
+        string diagramPath = args[0];
+        string csvPath = args[1];
 
         // Guard against missing input file.
-        if (!File.Exists(inputPath))
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input diagram file not found: {diagramPath}");
             return;
         }
 
         try
         {
             // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Prepare the CSV output file.
-            using (StreamWriter writer = new StreamWriter(outputPath))
+            // Prepare the CSV writer.
+            using (StreamWriter writer = new StreamWriter(csvPath, false))
             {
                 // Write CSV header.
-                writer.WriteLine("PageName,ShapeID,ShapeNameU,InheritFillForegnd,InheritLineColor");
+                writer.WriteLine("PageName,ShapeID,ShapeName,InheritFillForegnd,InheritLineColor");
 
                 // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Use the page's universal name for reporting.
-                    string pageName = page.NameU ?? string.Empty;
-
                     // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
@@ -47,26 +44,36 @@ class Program
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Retrieve shape identifiers.
+                        // Retrieve shape identifier and name.
                         long shapeId = shape.ID;
                         string shapeName = shape.NameU ?? string.Empty;
 
-                        // Retrieve inheritance information.
-                        string inheritFill = shape.InheritFill?.FillForegnd?.Value ?? string.Empty;
-                        string inheritLine = shape.InheritLine?.LineColor?.Value ?? string.Empty;
+                        // Retrieve inherited fill foreground color (if available).
+                        string inheritFillForegnd = string.Empty;
+                        if (shape.InheritFill != null && shape.InheritFill.FillForegnd != null && shape.InheritFill.FillForegnd.Value != null)
+                        {
+                            inheritFillForegnd = shape.InheritFill.FillForegnd.Value;
+                        }
+
+                        // Retrieve inherited line color (if available).
+                        string inheritLineColor = string.Empty;
+                        if (shape.InheritLine != null && shape.InheritLine.LineColor != null && shape.InheritLine.LineColor.Value != null)
+                        {
+                            inheritLineColor = shape.InheritLine.LineColor.Value;
+                        }
 
                         // Write a CSV line for the current shape.
-                        writer.WriteLine($"{EscapeCsv(pageName)},{shapeId},{EscapeCsv(shapeName)},{EscapeCsv(inheritFill)},{EscapeCsv(inheritLine)}");
+                        writer.WriteLine($"{EscapeCsv(page.NameU)},{shapeId},{EscapeCsv(shapeName)},{EscapeCsv(inheritFillForegnd)},{EscapeCsv(inheritLineColor)}");
                     }
                 }
             }
 
-            Console.WriteLine($"CSV summary successfully written to: {outputPath}");
+            Console.WriteLine($"CSV summary successfully written to: {csvPath}");
         }
         catch (Exception ex)
         {
             // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 

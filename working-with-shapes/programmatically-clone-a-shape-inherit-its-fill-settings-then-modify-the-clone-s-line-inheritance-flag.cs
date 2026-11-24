@@ -1,93 +1,94 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
-            return;
-        }
-
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input file exists.
+        // Input and output file paths
+        string inputPath = "input.vsdx";
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "output.vsdx";
 
         try
         {
-            // Load the Visio diagram inside a using block (required pattern).
+            // Load the Visio diagram inside a using block (mandatory pattern)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                Shape originalShape = null;
-                Page sourcePage = null;
+                // Get the first page of the diagram
+                Page page = diagram.Pages[0];
 
-                // Locate the first non‑deleted shape in the document.
-                foreach (Page page in diagram.Pages)
+                // Find the first non-deleted shape to serve as the source for cloning
+                Shape originalShape = null;
+                foreach (Shape s in page.Shapes)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    if (s.Del == BOOL.False)
                     {
-                        if (shape.Del == BOOL.False)
-                        {
-                            originalShape = shape;
-                            sourcePage = page;
-                            break;
-                        }
-                    }
-                    if (originalShape != null)
+                        originalShape = s;
                         break;
+                    }
                 }
 
-                if (originalShape == null || sourcePage == null)
+                // Guard: ensure a source shape was found
+                if (originalShape == null)
                 {
                     Console.Error.WriteLine("No suitable shape found to clone.");
                     return;
                 }
 
-                // Ensure the original shape has an associated master (required for adding a similar shape).
-                if (originalShape.Master == null)
+                // Determine a position for the cloned shape (offset by 2 inches on X)
+                double newPinX = originalShape.XForm.PinX.Value + 2.0;
+                double newPinY = originalShape.XForm.PinY.Value;
+
+                // Retrieve the master name of the original shape
+                string masterName = originalShape.Master?.Name;
+                if (string.IsNullOrEmpty(masterName))
                 {
-                    Console.Error.WriteLine("The original shape does not have a master; cannot clone.");
+                    Console.Error.WriteLine("Original shape does not have an associated master.");
                     return;
                 }
 
-                // Determine a position for the cloned shape (offset slightly to avoid overlap).
-                double newPinX = originalShape.XForm.PinX.Value + 1.0;
-                double newPinY = originalShape.XForm.PinY.Value;
+                // Add a new shape on the same page using the same master
+                long clonedId = page.AddShape(newPinX, newPinY, masterName, false);
 
-                // Add a new shape on the same page using the same master as the original.
-                // AddShape returns the new shape's ID (long).
-                long clonedShapeId = sourcePage.AddShape(newPinX, newPinY, originalShape.Master.Name, false);
+                // Retrieve the newly added shape instance
+                Shape clonedShape = page.Shapes.GetShape((int)clonedId);
 
-                // Retrieve the Shape instance for the newly added shape.
-                Shape clonedShape = sourcePage.Shapes.GetShape(clonedShapeId);
+                // Copy fill settings from the original shape to the clone
+                clonedShape.Fill.FillForegnd.Value = originalShape.Fill.FillForegnd.Value;
+                clonedShape.Fill.FillBkgnd.Value = originalShape.Fill.FillBkgnd.Value;
+                clonedShape.Fill.FillPattern.Value = originalShape.Fill.FillPattern.Value;
+                clonedShape.Fill.FillForegndTrans.Value = originalShape.Fill.FillForegndTrans.Value;
+                clonedShape.Fill.FillBkgndTrans.Value = originalShape.Fill.FillBkgndTrans.Value;
+                // Updated property names: Shadow* -> Shdw*
+                clonedShape.Fill.ShdwForegnd.Value = originalShape.Fill.ShdwForegnd.Value; // corrected
+                clonedShape.Fill.ShdwBkgnd.Value = originalShape.Fill.ShdwBkgnd.Value;   // corrected
+                clonedShape.Fill.ShdwPattern.Value = originalShape.Fill.ShdwPattern.Value; // corrected
+                clonedShape.Fill.ShapeShdwType.Value = originalShape.Fill.ShapeShdwType.Value;
+                clonedShape.Fill.ShapeShdwObliqueAngle.Value = originalShape.Fill.ShapeShdwObliqueAngle.Value;
+                clonedShape.Fill.ShapeShdwOffsetX.Value = originalShape.Fill.ShapeShdwOffsetX.Value;
+                clonedShape.Fill.ShapeShdwOffsetY.Value = originalShape.Fill.ShapeShdwOffsetY.Value;
+                clonedShape.Fill.ShapeShdwScaleFactor.Value = originalShape.Fill.ShapeShdwScaleFactor.Value;
 
-                // Inherit fill settings from the original shape by enabling fill inheritance.
-                // The Ufe.F formula "INHERITED()" tells Visio to use inherited fill values.
-                clonedShape.Fill.FillForegnd.Ufe.F = "INHERITED()";
+                // Modify the clone's line inheritance flag (enable inheritance)
+                clonedShape.Line.LineColor.Ufe.F = "INHERITED()";
 
-                // Modify the clone's line inheritance flag.
-                // Assigning the current line color value to itself disables line inheritance.
-                clonedShape.Line.LineColor.Value = clonedShape.Line.LineColor.Value;
-
-                // Save the modified diagram to the specified output path using VSDX format.
+                // Save the modified diagram to the output file in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to {outputPath}");
+
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

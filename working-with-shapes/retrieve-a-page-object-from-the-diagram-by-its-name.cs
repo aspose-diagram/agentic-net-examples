@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: diagram file path and page name
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <diagramPath> <pageName>");
@@ -16,36 +16,37 @@ class Program
         string diagramPath = args[0];
         string pageName = args[1];
 
-        // Guard: ensure the diagram file exists
+        // Guard against missing input file.
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required by the API
+            // Load the Visio diagram inside a using block (mandatory pattern).
             using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Retrieve the page by its name
+                // Retrieve the page by its name.
                 Page page = diagram.Pages.GetPage(pageName);
 
                 if (page == null)
                 {
-                    Console.WriteLine($"Page with name \"{pageName}\" was not found.");
+                    Console.Error.WriteLine($"Page \"{pageName}\" not found in the diagram.");
+                    return;
                 }
-                else
-                {
-                    // Output basic information about the found page
-                    Console.WriteLine($"Page found: Name = {page.NameU}");
-                }
+
+                // Output basic information about the retrieved page.
+                Console.WriteLine($"Page found:");
+                Console.WriteLine($"  ID   : {page.ID}");
+                Console.WriteLine($"  Name : {page.Name}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: diagram file path and shape ID
+        // Validate command‑line arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId>");
@@ -23,10 +23,10 @@ class Program
             return;
         }
 
-        // Parse the shape ID (Visio shape IDs are long)
+        // Parse the shape identifier (must be a long)
         if (!long.TryParse(shapeIdArg, out long shapeId))
         {
-            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'.");
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'. Must be a numeric value.");
             return;
         }
 
@@ -40,9 +40,9 @@ class Program
                 // Search each page for the shape with the specified ID
                 foreach (Page page in diagram.Pages)
                 {
-                    // GetShape returns null if the shape is not on this page
+                    // GetShape expects a long identifier
                     Shape shape = page.Shapes.GetShape(shapeId);
-                    if (shape != null)
+                    if (shape != null && shape.ID == shapeId)
                     {
                         targetShape = shape;
                         break;
@@ -51,22 +51,23 @@ class Program
 
                 if (targetShape == null)
                 {
-                    Console.Error.WriteLine($"Shape with ID {shapeId} not found in the diagram.");
+                    Console.Error.WriteLine($"Error: Shape with ID {shapeId} not found in the diagram.");
                     return;
                 }
 
-                // Retrieve inherited fill data.
-                // The API provides an InheritFill property (not Fill.Inherit).
-                // We'll output the inherited foreground fill color as an example.
-                string inheritedForeColor = targetShape.InheritFill?.FillForegnd?.Value ?? "(none)";
+                // Retrieve the inherited fill data (shape.InheritFill)
+                Fill inheritFill = targetShape.InheritFill;
 
+                // Output some representative inherited fill properties
                 Console.WriteLine($"Shape ID: {shapeId}");
-                Console.WriteLine($"Inherited Fill Foreground Color: {inheritedForeColor}");
+                Console.WriteLine($"Inherited Fill Foreground Color: {inheritFill.FillForegnd.Value}");
+                Console.WriteLine($"Inherited Fill Background Color: {inheritFill.FillBkgnd.Value}");
+                Console.WriteLine($"Inherited Fill Pattern: {inheritFill.FillPattern.Value}");
             }
         }
         catch (Exception ex)
         {
-            // Report any errors from Aspose or runtime
+            // Report any errors that occur during processing
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

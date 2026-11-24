@@ -6,17 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Input Visio file path (modify as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        // Output Visio file path
+        string outputPath = "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,51 +25,50 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram has at least one page.
-            if (diagram.Pages.Count == 0)
+            // Flag to indicate whether a shape was modified
+            bool shapeModified = false;
+
+            // Iterate through pages and shapes to find a non-deleted shape
+            foreach (Page page in diagram.Pages)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
+                foreach (Shape shape in page.Shapes)
+                {
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Example: rotate the shape 45 degrees (optional)
+                    shape.XForm.Angle.Value = 45.0;
+
+                    // Set KeepTextFlat to true to keep text horizontal despite rotation
+                    shape.ThreeDFormat.KeepTextFlat.Value = BOOL.True;
+
+                    shapeModified = true;
+                    // Break after first shape modification; remove if you want to modify all shapes
+                    break;
+                }
+
+                if (shapeModified)
+                    break;
+            }
+
+            if (!shapeModified)
+            {
+                Console.Error.WriteLine("No suitable shape found to modify.");
                 return;
             }
 
-            // Work with the first page.
-            Page page = diagram.Pages[0];
-
-            // Find the first non‑deleted shape on the page.
-            Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
-            {
-                // Skip logically deleted shapes.
-                if (shape.Del == BOOL.True)
-                    continue;
-
-                targetShape = shape;
-                break;
-            }
-
-            if (targetShape == null)
-            {
-                Console.Error.WriteLine("No suitable shape found on the first page.");
-                return;
-            }
-
-            // Rotate the shape by 45 degrees (2D rotation).
-            targetShape.XForm.Angle.Value = 45.0;
-
-            // Enable KeepTextFlat to keep the text horizontal despite rotation.
-            targetShape.ThreeDFormat.KeepTextFlat.Value = BOOL.True;
-
-            // Save the modified diagram to the specified output path.
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,87 +1,97 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define file paths
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <commaSeparatedShapeIds>");
             return;
         }
-        string themeSourcePath = "theme.vsdx";
-        if (!System.IO.File.Exists(themeSourcePath))
-        {
-            Console.Error.WriteLine($"File not found: {themeSourcePath}");
-            return;
-        }
-        string outputPath = "output.vsdx";
 
-        // Guard against missing input files
-        if (!File.Exists(inputPath))
+        string diagramPath = args[0];
+        string idsArgument = args[1];
+
+        // Guard: ensure the diagram file exists.
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Input diagram file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
             return;
         }
-        if (!File.Exists(themeSourcePath))
+
+        // Parse expected shape IDs from the second argument.
+        string[] idTokens = idsArgument.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+        long[] expectedShapeIds = new long[idTokens.Length];
+        for (int i = 0; i < idTokens.Length; i++)
         {
-            Console.Error.WriteLine($"Theme source file not found: {themeSourcePath}");
-            return;
+            if (!long.TryParse(idTokens[i].Trim(), out long parsedId))
+            {
+                Console.Error.WriteLine($"Error: Invalid shape ID '{idTokens[i]}' at position {i + 1}.");
+                return;
+            }
+            expectedShapeIds[i] = parsedId;
         }
 
         try
         {
-            // Load the main diagram inside a using block as required
-            using (Diagram diagram = new Diagram(inputPath))
-            // Load the theme source diagram
-            using (Diagram themeDiagram = new Diagram(themeSourcePath))
+            // Load the diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Define the list of expected shape IDs (example values)
-                long[] expectedShapeIds = new long[] { 1, 2, 3, 4, 5 };
+                // Ensure the diagram contains at least one page.
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("Error: Diagram contains no pages.");
+                    return;
+                }
 
-                // Iterate over each expected ID and verify its existence
+                // Work with the first page (index 0).
+                Page page = diagram.Pages[0];
+
+                bool anyMissing = false;
+
+                // Check each expected shape ID.
                 foreach (long shapeId in expectedShapeIds)
                 {
-                    // Attempt to retrieve the shape from the first page
-                    Shape shape = null;
-                    if (diagram.Pages.Count > 0)
-                    {
-                        // GetShape returns null if the shape does not exist
-                        shape = diagram.Pages[0].Shapes.GetShape(shapeId);
-                    }
+                    // Retrieve the shape by ID.
+                    Shape shape = page.Shapes.GetShape(shapeId);
 
-                    // Check if shape is missing or logically deleted
+                    // If the shape is null or marked as deleted, log it.
                     if (shape == null || shape.Del == BOOL.True)
                     {
-                        Console.WriteLine($"Missing or deleted shape with ID: {shapeId}");
+                        Console.WriteLine($"Missing shape with ID {shapeId}.");
+                        anyMissing = true;
                     }
                 }
 
-                // Apply theme from the source diagram to the target diagram
-                // Note: The exact API for copying a theme may vary; using CopyTheme as an example.
-                // If CopyTheme is not available, replace with appropriate theme application logic.
-                try
+                if (!anyMissing)
                 {
-                    diagram.CopyTheme(themeDiagram);
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Failed to copy theme: {ex.Message}");
+                    Console.WriteLine("All expected shapes are present.");
                 }
 
-                // Save the modified diagram
+                // Apply a preset theme to the page after verification.
+                // Using Bubble theme as an example.
+                page.PresetTheme = PresetThemeValue.Bubble;
+                // Optionally set a variant (Variant1 is a valid member).
+                page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+
+                // Save the themed diagram to a new file.
+                string outputPath = Path.Combine(
+                    Path.GetDirectoryName(diagramPath) ?? string.Empty,
+                    Path.GetFileNameWithoutExtension(diagramPath) + "_themed.vsdx");
+
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved to {outputPath}");
+                Console.WriteLine($"Themed diagram saved to '{outputPath}'.");
             }
         }
         catch (Exception ex)
         {
-            // Log any Aspose.Diagram related errors
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Log any Aspose or IO exceptions.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

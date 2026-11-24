@@ -1,7 +1,7 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -24,100 +24,97 @@ class Program
             Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
             return;
         }
+
         if (!File.Exists(csvPath))
         {
             Console.Error.WriteLine($"CSV file not found: {csvPath}");
             return;
         }
 
+        // Load CSV data into a dictionary mapping shape IDs to values
+        var shapeValueMap = new Dictionary<long, string>();
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Read all lines from the CSV (assumes UTF-8 encoding)
-            string[] csvLines = File.ReadAllLines(csvPath);
-
-            // Process each line (skip header if present)
-            for (int i = 0; i < csvLines.Length; i++)
+            // Simple CSV parsing: each line "shapeId,value"
+            foreach (var line in File.ReadAllLines(csvPath))
             {
-                string line = csvLines[i].Trim();
-                if (string.IsNullOrEmpty(line))
-                    continue; // Skip empty lines
+                // Skip empty lines
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
 
-                // Simple heuristic: if first line contains non-numeric first token, treat as header
-                string[] parts = line.Split(',');
+                // Split by comma
+                var parts = line.Split(',');
                 if (parts.Length < 2)
-                    continue; // Not enough data
-
-                // Header detection
-                if (i == 0 && !long.TryParse(parts[0], out _))
-                    continue; // Skip header row
+                    continue; // malformed line
 
                 // Parse shape ID
-                if (!long.TryParse(parts[0], out long shapeId))
+                if (long.TryParse(parts[0].Trim(), out long shapeId))
                 {
-                    Console.Error.WriteLine($"Invalid ShapeId at line {i + 1}: {parts[0]}");
-                    continue;
+                    string value = parts[1].Trim();
+                    shapeValueMap[shapeId] = value;
                 }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error reading CSV file: {ex.Message}");
+            return;
+        }
 
-                // Expected CSV columns: ShapeId, Theme, Variant, QuickStyle
-                string themeStr = parts.Length > 1 ? parts[1].Trim() : string.Empty;
-                string variantStr = parts.Length > 2 ? parts[2].Trim() : string.Empty;
-                string quickStyleStr = parts.Length > 3 ? parts[3].Trim() : string.Empty;
+        // Load the Visio diagram and apply themes based on CSV data
+        try
+        {
+            Diagram diagram = new Diagram(diagramPath);
 
-                // Locate the shape by ID across all pages
-                Shape shape = FindShapeById(diagram, shapeId);
-                if (shape == null)
+            // Iterate through all pages and shapes
+            foreach (Page page in diagram.Pages)
+            {
+                // Iterate shapes using indexer (Shapes collection)
+                for (int i = 0; i < page.Shapes.Count; i++)
                 {
-                    Console.Error.WriteLine($"Shape with ID {shapeId} not found in diagram.");
-                    continue;
-                }
+                    Shape shape = page.Shapes[i];
 
-                // Apply Preset Theme if provided
-                if (!string.IsNullOrEmpty(themeStr) &&
-                    Enum.TryParse<PresetThemeValue>(themeStr, true, out var themeVal))
-                {
-                    shape.PresetTheme = themeVal;
-                }
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                // Apply Preset Theme Variant if provided
-                if (!string.IsNullOrEmpty(variantStr) &&
-                    Enum.TryParse<PresetThemeVariantValue>(variantStr, true, out var variantVal))
-                {
-                    shape.PresetThemeVariant = variantVal;
-                }
-
-                // Apply Preset Quick Style if provided
-                if (!string.IsNullOrEmpty(quickStyleStr) &&
-                    Enum.TryParse<PresetQuickStyleValue>(quickStyleStr, true, out var quickStyleVal))
-                {
-                    shape.PresetThemeQuickStyle = quickStyleVal;
+                    // Check if this shape ID has a corresponding CSV entry
+                    if (shapeValueMap.TryGetValue(shape.ID, out string dataValue))
+                    {
+                        // Apply a theme based on the data value
+                        // Example mapping: "High" => Bubble theme, "Medium" => Office theme, else default
+                        if (string.Equals(dataValue, "High", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Apply Bubble theme with Variant3 and QuickStyle2
+                            shape.PresetTheme = PresetThemeValue.Bubble;
+                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant3;
+                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
+                        }
+                        else if (string.Equals(dataValue, "Medium", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Apply Office theme with Variant1 and QuickStyle1
+                            shape.PresetTheme = PresetThemeValue.Office;
+                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
+                        }
+                        else
+                        {
+                            // Apply a default theme (e.g., Simple theme)
+                            shape.PresetTheme = PresetThemeValue.Simple;
+                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
+                            shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle3;
+                        }
+                    }
                 }
             }
 
-            // Save the modified diagram to the specified output path
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
-    }
-
-    /// <summary>
-    /// Searches all pages of the diagram for a shape with the specified ID.
-    /// Returns null if not found.
-    /// </summary>
-    private static Shape FindShapeById(Diagram diagram, long shapeId)
-    {
-        foreach (Page page in diagram.Pages)
-        {
-            // Shapes collection provides GetShape(long id)
-            Shape shape = page.Shapes.GetShape(shapeId);
-            if (shape != null)
-                return shape;
-        }
-        return null;
     }
 }

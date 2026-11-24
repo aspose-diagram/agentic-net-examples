@@ -14,47 +14,46 @@ class Program
             return;
         }
 
-        string diagramPath = args[0];
+        string inputPath = args[0];
 
         // Guard against missing file
-        if (!File.Exists(diagramPath))
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
         try
         {
             // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
+            Diagram diagram = new Diagram(inputPath);
 
             // Use LINQ to filter shapes that inherit both fill and line formatting from masters
             var inheritedShapes = diagram.Pages
-                .SelectMany(page => page.Shapes.Cast<Shape>()) // Flatten all shapes across pages
-                .Where(shape => shape.Del == BOOL.False) // Exclude deleted shapes
+                .Cast<Page>()
+                .SelectMany(page => page.Shapes.Cast<Shape>())
                 .Where(shape =>
-                    // Ensure required cells are present
-                    shape.Fill != null &&
-                    shape.Fill.FillForegnd != null &&
-                    shape.Fill.FillForegnd.Ufe != null &&
-                    shape.Line != null &&
-                    shape.Line.LineColor != null &&
-                    shape.Line.LineColor.Ufe != null &&
-                    // Check inheritance flags (both must be "INHERITED()")
+                    // Exclude logically deleted shapes
+                    shape.Del == BOOL.False &&
+                    // Check fill inheritance flag (INHERITED())
                     shape.Fill.FillForegnd.Ufe.F == "INHERITED()" &&
+                    // Check line inheritance flag (INHERITED())
                     shape.Line.LineColor.Ufe.F == "INHERITED()")
                 .ToList();
 
-            // Output the results
+            // Output results
             Console.WriteLine($"Total shapes inheriting both fill and line from masters: {inheritedShapes.Count}");
             foreach (var shape in inheritedShapes)
             {
-                // Shape ID is a long value
+                // Shape ID uniquely identifies the shape within the page
                 Console.WriteLine($"Shape ID: {shape.ID}");
             }
 
-            // Optionally, save a copy of the diagram (demonstration of saving)
-            string outputPath = Path.Combine(Path.GetDirectoryName(diagramPath) ?? "", "FilteredOutput.vsdx");
+            // Optionally, save a copy of the diagram (no modifications made)
+            string outputPath = Path.Combine(
+                Path.GetDirectoryName(inputPath) ?? string.Empty,
+                Path.GetFileNameWithoutExtension(inputPath) + "_filtered.vsdx");
+
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved to: {outputPath}");
         }

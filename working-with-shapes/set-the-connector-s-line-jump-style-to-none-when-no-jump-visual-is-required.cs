@@ -6,16 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define input and output file paths
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Expect input and output file paths as command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
-        string outputPath = "output.vsdx";
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -24,38 +25,32 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block (Diagram implements IDisposable)
+            // Load the Visio diagram inside a using block (mandatory pattern).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages in the diagram
+                // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
-                    for (int i = 0; i < page.Shapes.Count; i++)
+                    // Iterate through all shapes on the page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        Shape shape = page.Shapes[i];
-
-                        // Skip deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Process only 1‑D connector shapes
-                        if (shape.OneD)
+                        // Process only connector shapes (1‑D shapes).
+                        if (shape.OneD && shape.Layout != null)
                         {
-                            // Set the connector's line jump style to 'none' (page default)
+                            // Set the line jump style to 'none' (page default).
                             shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.PageDefault;
                         }
                     }
                 }
 
-                // Save the modified diagram in VSDX format
+                // Save the modified diagram in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

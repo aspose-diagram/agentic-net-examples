@@ -7,29 +7,31 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: input Visio file, master name, output folder
-        if (args.Length < 3)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <masterName> <outputFolder>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <masterName> [outputFolder]");
             return;
         }
 
         string inputPath = args[0];
         string masterName = args[1];
-        string outputFolder = args[2];
+        string outputFolder = args.Length >= 3 ? args[2] : Path.GetDirectoryName(inputPath) ?? Directory.GetCurrentDirectory();
 
-        // Guard: check input file exists
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Guard: ensure output folder exists or create it
+        // Guard: ensure the output folder exists or create it.
         try
         {
             if (!Directory.Exists(outputFolder))
+            {
                 Directory.CreateDirectory(outputFolder);
+            }
         }
         catch (Exception ex)
         {
@@ -37,31 +39,48 @@ class Program
             return;
         }
 
+        // Load the Visio diagram inside a using block.
         try
         {
-            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages
+                // Iterate through each page in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
+                    // Iterate through each shape on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the shape has a master and that its name matches the requested master
-                        if (shape.Master != null && shape.Master.Name == masterName)
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
                         {
-                            // Prepare a unique file name for each shape export
-                            string htmlFileName = $"Shape_{shape.ID}_{Guid.NewGuid():N}.html";
-                            string htmlPath = Path.Combine(outputFolder, htmlFileName);
+                            continue;
+                        }
 
-                            // Create default HTML save options
-                            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                        // Ensure the shape has an associated master.
+                        if (shape.Master == null)
+                        {
+                            continue;
+                        }
 
-                            // Export the individual shape to HTML while preserving its formatting
-                            shape.ToHTML(htmlPath, htmlOptions);
+                        // Export only shapes that use the specified master.
+                        if (string.Equals(shape.Master.Name, masterName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Build a unique HTML file name for the shape.
+                            string baseFileName = Path.GetFileNameWithoutExtension(inputPath);
+                            string htmlFileName = $"{baseFileName}_shape_{shape.ID}.html";
+                            string htmlFilePath = Path.Combine(outputFolder, htmlFileName);
 
-                            Console.WriteLine($"Exported shape ID {shape.ID} to {htmlPath}");
+                            try
+                            {
+                                // Export the shape to HTML while preserving its formatting.
+                                HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+                                shape.ToHTML(htmlFilePath, htmlOptions);
+                                Console.WriteLine($"Exported shape ID {shape.ID} to '{htmlFilePath}'.");
+                            }
+                            catch (Exception exportEx)
+                            {
+                                Console.Error.WriteLine($"Failed to export shape ID {shape.ID}: {exportEx.Message}");
+                            }
                         }
                     }
                 }
@@ -69,8 +88,7 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

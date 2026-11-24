@@ -7,7 +7,7 @@ class Program
     static void Main(string[] args)
     {
         // Expect three arguments: input diagram path, shape name, output diagram path
-        if (args.Length < 3)
+        if (args.Length != 3)
         {
             Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <shapeName> <outputDiagramPath>");
             return;
@@ -29,7 +29,7 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Locate the shape by its NameU property (case‑sensitive)
+            // Locate the shape by its universal name (NameU)
             Shape targetShape = null;
             foreach (Page page in diagram.Pages)
             {
@@ -39,6 +39,7 @@ class Program
                     if (shape.Del == BOOL.True)
                         continue;
 
+                    // Compare the shape's NameU with the requested name
                     if (shape.NameU == shapeName)
                     {
                         targetShape = shape;
@@ -51,36 +52,36 @@ class Program
 
             if (targetShape == null)
             {
-                Console.Error.WriteLine($"Shape with name '{shapeName}' not found.");
+                Console.Error.WriteLine($"Shape with name \"{shapeName}\" not found.");
                 return;
             }
 
-            // Toggle fill inheritance
-            // When inherited, the formula is "INHERITED()"
-            string currentFormula = targetShape.Fill.FillForegnd.Ufe.F;
+            // Determine current fill inheritance state
+            // Inheritance is enabled when the Ufe.F string equals "INHERITED()"
+            bool isInherited = string.Equals(targetShape.Fill.FillForegnd.Ufe.F, "INHERITED()", StringComparison.OrdinalIgnoreCase);
 
-            if (!string.IsNullOrEmpty(currentFormula) &&
-                currentFormula.Equals("INHERITED()", StringComparison.OrdinalIgnoreCase))
+            if (isInherited)
             {
-                // Currently inherited – disable inheritance by assigning the effective fill color
-                string effectiveValue = targetShape.Fill.FillForegnd.Value; // resolved color (e.g., "#FF0000")
-                targetShape.Fill.FillForegnd.Ufe.F = effectiveValue;
-                Console.WriteLine($"Fill inheritance disabled for shape '{shapeName}'. New fill value: {effectiveValue}");
+                // Disable inheritance: assign the current explicit value back to the cell
+                // This breaks the inheritance link.
+                targetShape.Fill.FillForegnd.Value = targetShape.Fill.FillForegnd.Value;
+                Console.WriteLine($"Fill inheritance disabled for shape \"{shapeName}\".");
             }
             else
             {
-                // Currently explicit – enable inheritance
+                // Enable inheritance by setting the Ufe.F formula to INHERITED()
                 targetShape.Fill.FillForegnd.Ufe.F = "INHERITED()";
-                Console.WriteLine($"Fill inheritance enabled for shape '{shapeName}'.");
+                Console.WriteLine($"Fill inheritance enabled for shape \"{shapeName}\".");
             }
 
-            // Save the modified diagram
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to: {outputPath}");
+            Console.WriteLine($"Diagram saved to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

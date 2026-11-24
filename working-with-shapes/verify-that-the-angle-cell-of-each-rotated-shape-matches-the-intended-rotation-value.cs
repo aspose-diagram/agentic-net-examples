@@ -1,111 +1,91 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: diagram file path and CSV file path with intended angles.
-        if (args.Length < 2)
+        // Expect the first argument to be the path to the Visio file.
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <anglesCsvPath>");
+            Console.Error.WriteLine("Error: No diagram file path provided.");
             return;
         }
 
         string diagramPath = args[0];
-        string csvPath = args[1];
 
-        // Guard against missing files.
+        // Guard: ensure the file exists before attempting to load.
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
-            return;
-        }
-        if (!File.Exists(csvPath))
-        {
-            Console.Error.WriteLine($"CSV file not found: {csvPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
-        // Load intended rotation values from CSV.
-        // CSV format: ShapeId,AngleInDegrees (e.g., 123,45.0)
-        var intendedAngles = new Dictionary<long, double>();
         try
         {
-            foreach (var line in File.ReadAllLines(csvPath))
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Iterate through all pages in the diagram.
+            foreach (Page page in diagram.Pages)
             {
-                if (string.IsNullOrWhiteSpace(line))
-                    continue;
-
-                var parts = line.Split(',');
-                if (parts.Length != 2)
+                // Iterate through all shapes on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    Console.Error.WriteLine($"Invalid CSV line (expected 2 columns): {line}");
-                    continue;
-                }
+                    // Skip logically deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
 
-                if (!long.TryParse(parts[0].Trim(), out long shapeId))
-                {
-                    Console.Error.WriteLine($"Invalid ShapeId in CSV line: {line}");
-                    continue;
-                }
+                    // Retrieve the current rotation angle from the shape's XForm.Angle cell.
+                    double actualAngle = shape.XForm.Angle.Value;
 
-                if (!double.TryParse(parts[1].Trim(), out double angle))
-                {
-                    Console.Error.WriteLine($"Invalid Angle in CSV line: {line}");
-                    continue;
-                }
+                    // Attempt to find a custom property named "IntendedAngle" that holds the expected rotation.
+                    double intendedAngle = double.NaN;
+                    bool hasIntendedAngle = false;
 
-                intendedAngles[shapeId] = angle;
+                    for (int i = 0; i < shape.Props.Count; i++)
+                    {
+                        Prop prop = shape.Props[i];
+                        if (string.Equals(prop.Name, "IntendedAngle", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // Parse the intended angle value from the property.
+                            if (double.TryParse(prop.Value.Val, out double parsed))
+                            {
+                                intendedAngle = parsed;
+                                hasIntendedAngle = true;
+                            }
+                            else
+                            {
+                                Console.Error.WriteLine($"Warning: Shape ID {shape.ID} has an invalid IntendedAngle value '{prop.Value.Val}'.");
+                            }
+                            break;
+                        }
+                    }
+
+                    // If there is no intended angle defined, skip verification for this shape.
+                    if (!hasIntendedAngle)
+                        continue;
+
+                    // Compare the actual angle with the intended angle using a small tolerance.
+                    const double tolerance = 0.001;
+                    if (Math.Abs(actualAngle - intendedAngle) > tolerance)
+                    {
+                        Console.WriteLine($"Mismatch detected on Page {page.ID}, Shape ID {shape.ID}: " +
+                                          $"Actual Angle = {actualAngle}, Intended Angle = {intendedAngle}");
+                    }
+                    else
+                    {
+                        // Optional: report successful verification.
+                        Console.WriteLine($"Shape ID {shape.ID} on Page {page.ID} matches intended rotation ({actualAngle}°).");
+                    }
+                }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error reading CSV file: {ex.Message}");
-            return;
-        }
-
-        // Load the Visio diagram.
-        Diagram diagram;
-        try
-        {
-            diagram = new Diagram(diagramPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
-            return;
-        }
-
-        // Iterate through all pages and shapes to verify angles.
-        foreach (Page page in diagram.Pages)
-        {
-            foreach (Shape shape in page.Shapes)
-            {
-                // Skip logically deleted shapes.
-                if (shape.Del == BOOL.True)
-                    continue;
-
-                // Check if we have an intended angle for this shape.
-                if (!intendedAngles.TryGetValue(shape.ID, out double expectedAngle))
-                    continue; // No expectation defined; skip verification.
-
-                // Retrieve the actual angle from the shape's XForm.
-                double actualAngle = shape.XForm.Angle.Value;
-
-                // Compare with a tolerance to account for floating‑point precision.
-                const double tolerance = 0.0001;
-                if (Math.Abs(actualAngle - expectedAngle) > tolerance)
-                {
-                    Console.Error.WriteLine($"Shape ID {shape.ID} angle mismatch. Expected: {expectedAngle}, Actual: {actualAngle}");
-                }
-                else
-                {
-                    Console.WriteLine($"Shape ID {shape.ID} angle verified: {actualAngle}°");
-                }
-            }
+            // Capture any Aspose.Diagram or I/O errors and report them.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

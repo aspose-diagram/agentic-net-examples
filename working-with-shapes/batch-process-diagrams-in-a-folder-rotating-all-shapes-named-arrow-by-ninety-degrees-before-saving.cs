@@ -6,32 +6,34 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 1)
+        // Validate input arguments.
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <folderPath>");
+            Console.Error.WriteLine("Please provide the path to the folder containing diagram files.");
             return;
         }
 
         string folderPath = args[0];
 
-        // Guard: ensure the folder exists.
+        // Verify the folder exists.
         if (!Directory.Exists(folderPath))
         {
             Console.Error.WriteLine($"Folder does not exist: {folderPath}");
             return;
         }
 
-        // Get all Visio files in the folder (common extensions).
-        string[] visioFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
-        foreach (string filePath in visioFiles)
+        // Define supported diagram extensions.
+        string[] supportedExtensions = new[] { ".vsdx", ".vsd", ".vdx", ".vssx", ".vss", ".vstx", ".vst", ".vtx" };
+
+        // Get all files in the folder with supported extensions.
+        string[] files = Directory.GetFiles(folderPath);
+        foreach (string filePath in files)
         {
-            // Process only known Visio extensions.
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx" && ext != ".vsx" && ext != ".vtx")
+            // Skip files that do not have a supported extension.
+            if (Array.IndexOf(supportedExtensions, Path.GetExtension(filePath).ToLowerInvariant()) < 0)
                 continue;
 
-            // Guard: ensure the file still exists before processing.
+            // Guard against missing file (should not happen after GetFiles, but added per rules).
             if (!File.Exists(filePath))
             {
                 Console.Error.WriteLine($"File not found: {filePath}");
@@ -43,7 +45,7 @@ class Program
                 // Load the diagram inside a using block as required.
                 using (Diagram diagram = new Diagram(filePath))
                 {
-                    // Iterate through each page.
+                    // Iterate through each page in the diagram.
                     foreach (Page page in diagram.Pages)
                     {
                         // Iterate through each shape on the page.
@@ -53,14 +55,12 @@ class Program
                             if (shape.Del == BOOL.True)
                                 continue;
 
-                            // Ensure the shape has a name and compare it to "Arrow".
-                            if (shape.NameU != null && string.Equals(shape.NameU, "Arrow", StringComparison.OrdinalIgnoreCase))
+                            // Check if the shape's NameU matches "Arrow" (case-insensitive).
+                            if (!string.IsNullOrEmpty(shape.NameU) &&
+                                shape.NameU.Equals("Arrow", StringComparison.OrdinalIgnoreCase))
                             {
                                 // Rotate the shape by 90 degrees.
-                                if (shape.XForm != null && shape.XForm.Angle != null)
-                                {
-                                    shape.XForm.Angle.Value = 90.0;
-                                }
+                                shape.XForm.Angle.Value = 90.0;
                             }
                         }
                     }
@@ -68,10 +68,12 @@ class Program
                     // Save the modified diagram, overwriting the original file.
                     diagram.Save(filePath, SaveFileFormat.Vsdx);
                 }
+
+                Console.WriteLine($"Processed and saved: {Path.GetFileName(filePath)}");
             }
             catch (Exception ex)
             {
-                // Report any errors that occur during processing.
+                // Write any errors to the error stream.
                 Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
         }

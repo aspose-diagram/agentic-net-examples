@@ -6,17 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputFilePath> <outputFilePath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        // Output Visio file path after modification
+        string outputPath = "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,42 +25,42 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram contains at least one page.
+            // Ensure there is at least one page
             if (diagram.Pages.Count == 0)
             {
                 Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Work with the first page.
+            // Work with the first page
             Page page = diagram.Pages[0];
 
-            // Find the first non‑deleted shape on the page.
+            // Find the first non-deleted shape on the page
             Shape targetShape = null;
             foreach (Shape shape in page.Shapes)
             {
-                // Skip logically deleted shapes.
-                if (shape.Del == BOOL.False)
-                {
-                    targetShape = shape;
-                    break;
-                }
+                // Skip shapes that are marked as deleted
+                if (shape.Del == BOOL.True)
+                    continue;
+
+                targetShape = shape;
+                break;
             }
 
             if (targetShape == null)
             {
-                Console.Error.WriteLine("No suitable shape found on the first page.");
+                Console.Error.WriteLine("No usable shape found on the first page.");
                 return;
             }
 
-            // Set a 45‑degree rotation around the X‑axis.
+            // Set a 45-degree rotation around the X‑axis using the ThreeDFormat
             targetShape.ThreeDFormat.RotationXAngle.Value = 45.0;
 
-            // Retrieve and display ThreeDFormat properties.
-            Console.WriteLine("ThreeDFormat properties of the selected shape:");
+            // Retrieve and display various ThreeDFormat properties
+            Console.WriteLine("ThreeDFormat properties of the modified shape:");
             Console.WriteLine($"RotationXAngle: {targetShape.ThreeDFormat.RotationXAngle.Value}");
             Console.WriteLine($"RotationYAngle: {targetShape.ThreeDFormat.RotationYAngle.Value}");
             Console.WriteLine($"RotationZAngle: {targetShape.ThreeDFormat.RotationZAngle.Value}");
@@ -69,13 +69,13 @@ class Program
             Console.WriteLine($"DistanceFromGround: {targetShape.ThreeDFormat.DistanceFromGround.Value}");
             Console.WriteLine($"KeepTextFlat: {targetShape.ThreeDFormat.KeepTextFlat.Value}");
 
-            // Save the modified diagram to the specified output path.
+            // Save the modified diagram to a new file
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

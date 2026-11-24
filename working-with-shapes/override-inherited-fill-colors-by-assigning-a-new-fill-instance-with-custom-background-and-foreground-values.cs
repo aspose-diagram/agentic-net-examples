@@ -6,17 +6,16 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments
-        if (args.Length < 2)
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure the input Visio file exists
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,7 +24,7 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block as required by the API
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Iterate through all pages in the diagram
@@ -34,30 +33,29 @@ class Program
                     // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted
+                        // Skip logically deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Override fill colors by modifying the existing Fill object
-                        // Set foreground (fill) color to red
-                        shape.Fill.FillForegnd.Value = "#FF0000";
-
-                        // Set background color to green
-                        shape.Fill.FillBkgnd.Value = "#00FF00";
-
-                        // Use a solid fill pattern (1 = solid)
+                        // Override fill colors by setting a solid fill pattern
+                        // Set fill pattern to solid (value 1)
                         shape.Fill.FillPattern.Value = 1;
+
+                        // Set custom foreground and background colors (hex strings)
+                        shape.Fill.FillForegnd.Value = "#FF0000"; // Red foreground
+                        shape.Fill.FillBkgnd.Value = "#00FF00";   // Green background
                     }
                 }
 
-                // Save the modified diagram to the specified output path in VSDX format
+                // Save the modified diagram to the output file
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any processing errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

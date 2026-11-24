@@ -7,70 +7,80 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define output file path
+        // Output file path for the generated diagram
         string outputPath = "GluedDiagram.vsdx";
-
-        // Ensure the output directory exists
-        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
-        if (!Directory.Exists(outputDir))
-        {
-            Directory.CreateDirectory(outputDir);
-        }
 
         try
         {
             // Create a new empty diagram
             Diagram diagram = new Diagram();
 
-            // Get the active page (creates one if none exists)
+            // Get the active page where shapes will be added
             Page page = diagram.ActivePage;
 
-            // Add a rectangle shape (gluing-enabled) to the page
-            // Parameters: pinX, pinY, masterName, isCalculate
-            long rectangleId = page.AddShape(2.0, 2.0, "Rectangle", false);
-            Shape rectangleShape = page.Shapes.GetShape(rectangleId);
+            // -----------------------------------------------------------------
+            // Add the first rectangle shape (gluing-enabled by default)
+            // -----------------------------------------------------------------
+            long rect1Id = page.AddShape(2.0, 2.0, "Rectangle", false);
+            Shape rect1 = page.Shapes.GetShape(rect1Id);
 
-            // Add a dynamic connector shape to the page
-            long connectorId = page.AddShape(3.0, 3.0, "Dynamic connector", false);
-            Shape connectorShape = page.Shapes.GetShape(connectorId);
+            // -----------------------------------------------------------------
+            // Add the second rectangle shape
+            // -----------------------------------------------------------------
+            long rect2Id = page.AddShape(5.0, 2.0, "Rectangle", false);
+            Shape rect2 = page.Shapes.GetShape(rect2Id);
 
-            // Glue the connector to the rectangle using the center connection point
-            // shape1_ID = rectangle, shape2_ID = connector
-            page.GlueShapes(rectangleId, ConnectionPointPlace.Center, connectorId);
+            // -----------------------------------------------------------------
+            // Add a dynamic connector shape
+            // -----------------------------------------------------------------
+            long connectorId = page.AddShape(0.0, 0.0, "Dynamic connector", false);
+            Shape connector = page.Shapes.GetShape(connectorId);
 
-            // Verify that the connector is glued to the rectangle
-            // Retrieve all 1-D glued shapes (connectors) from the rectangle
-            long[] gluedShapeIds = rectangleShape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
+            // Set connector routing style (straight line)
+            connector.SetConnectorsType(ConnectorsTypeValue.StraightLines);
 
-            bool isGlued = false;
-            if (gluedShapeIds != null)
+            // -----------------------------------------------------------------
+            // Attach (glue) the connector between the two rectangle shapes
+            // -----------------------------------------------------------------
+            page.ConnectShapesViaConnector(
+                rect1Id,
+                ConnectionPointPlace.Right,
+                rect2Id,
+                ConnectionPointPlace.Left,
+                connectorId);
+
+            // -----------------------------------------------------------------
+            // Verify that the connector has been attached successfully
+            // -----------------------------------------------------------------
+            bool connectionFound = false;
+            foreach (Connect conn in page.Connects)
             {
-                foreach (long id in gluedShapeIds)
+                // A successful connection will have FromSheet and ToSheet matching our shapes
+                if (conn.FromSheet == rect1Id && conn.ToSheet == rect2Id)
                 {
-                    if (id == connectorId)
-                    {
-                        isGlued = true;
-                        break;
-                    }
+                    connectionFound = true;
+                    break;
                 }
             }
 
-            if (!isGlued)
+            if (connectionFound)
             {
-                throw new Exception("Connector was not successfully glued to the rectangle shape.");
+                Console.WriteLine("Connector successfully attached between the two shapes.");
             }
             else
             {
-                Console.WriteLine("Connector successfully glued to the rectangle shape.");
+                throw new Exception("Failed to attach connector to the shapes.");
             }
 
+            // -----------------------------------------------------------------
             // Save the diagram to a VSDX file
+            // -----------------------------------------------------------------
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

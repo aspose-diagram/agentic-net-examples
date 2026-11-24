@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Collections;
+using System.Linq;
 using System.Text.Json;
 using Aspose.Diagram;
 
@@ -8,84 +10,81 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect two arguments: input Visio file path and output JSON file path
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputJsonFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputJsonPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Collect all shapes from all pages.
-            var allShapes = new List<(Shape shape, long id, string name)>();
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Store shape reference together with its ID and Name for later use.
-                    allShapes.Add((shape, shape.ID, shape.Name));
-                }
-            }
+            // Collection to hold unique glued shape pairs
+            List<(long, long)> gluedPairs = new List<(long, long)>();
+            HashSet<string> seenPairs = new HashSet<string>();
 
-            // Find all pairs of shapes that are glued together.
-            var gluedPairs = new List<GluedPair>();
-            for (int i = 0; i < allShapes.Count; i++)
+            // Iterate through all pages and shapes
+            foreach (Aspose.Diagram.Page page in diagram.Pages)
             {
-                for (int j = i + 1; j < allShapes.Count; j++)
+                foreach (Aspose.Diagram.Shape shape in page.Shapes)
                 {
-                    Shape shapeA = allShapes[i].shape;
-                    Shape shapeB = allShapes[j].shape;
+                    // Retrieve IDs of shapes glued to the current shape (1D connectors)
+                    long[] gluedIds = shape.GluedShapes(GluedShapesFlags.GluedShapesAll1D, null, null);
+                    if (gluedIds == null) continue;
 
-                    // Use the IsGlued method to determine if the two shapes are glued.
-                    bool areGlued = shapeA.IsGlued(shapeB);
-                    if (areGlued)
+                    foreach (long gluedId in gluedIds)
                     {
-                        gluedPairs.Add(new GluedPair
+                        // Create a deterministic key to avoid duplicate pairs
+                        long first = Math.Min(shape.ID, gluedId);
+                        long second = Math.Max(shape.ID, gluedId);
+                        string key = $"{first}-{second}";
+
+                        if (!seenPairs.Contains(key))
                         {
-                            Shape1Id = allShapes[i].id,
-                            Shape1Name = allShapes[i].name,
-                            Shape2Id = allShapes[j].id,
-                            Shape2Name = allShapes[j].name
-                        });
+                            seenPairs.Add(key);
+                            gluedPairs.Add((first, second));
+                        }
                     }
                 }
             }
 
-            // Serialize the list of glued pairs to JSON.
-            var jsonOptions = new JsonSerializerOptions { WriteIndented = true };
-            string json = JsonSerializer.Serialize(gluedPairs, jsonOptions);
+            // Prepare a serializable list of pairs
+            var serializableList = gluedPairs
+                .Select(p => new GluedPair { Shape1 = p.Item1, Shape2 = p.Item2 })
+                .ToList();
 
-            // Write JSON to the specified output file.
+            // Serialize to JSON with indentation
+            string json = JsonSerializer.Serialize(serializableList, new JsonSerializerOptions { WriteIndented = true });
+
+            // Write JSON to the output file
             File.WriteAllText(outputPath, json);
-            Console.WriteLine($"Exported {gluedPairs.Count} glued shape pairs to '{outputPath}'.");
+
+            Console.WriteLine($"Exported {serializableList.Count} glued shape pairs to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
+            // Capture any errors from Aspose.Diagram operations or file I/O
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 
-    // Simple DTO for JSON serialization of a glued shape pair.
-    private class GluedPair
+    // Helper class for JSON serialization
+    public class GluedPair
     {
-        public long Shape1Id { get; set; }
-        public string Shape1Name { get; set; }
-        public long Shape2Id { get; set; }
-        public string Shape2Name { get; set; }
+        public long Shape1 { get; set; }
+        public long Shape2 { get; set; }
     }
 }

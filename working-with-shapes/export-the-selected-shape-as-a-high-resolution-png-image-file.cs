@@ -7,35 +7,34 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expecting three arguments: input diagram path, shape ID, output PNG path.
-        if (args.Length < 3)
+        // Prompt for the Visio diagram file path
+        Console.Write("Enter the path to the Visio diagram file: ");
+        string diagramPath = Console.ReadLine()?.Trim();
+
+        // Validate diagram file existence
+        if (string.IsNullOrEmpty(diagramPath) || !File.Exists(diagramPath))
         {
-            Console.Error.WriteLine("Usage: <program> <inputDiagram.vsdx> <shapeId> <outputImage.png> [resolutionDPI]");
+            Console.Error.WriteLine("Diagram file not found.");
             return;
         }
 
-        string diagramPath = args[0];
-        string shapeIdArg = args[1];
-        string outputPath = args[2];
-        float resolution = 300f; // default high resolution DPI
-
-        // Optional resolution argument
-        if (args.Length >= 4 && float.TryParse(args[3], out float parsedRes) && parsedRes > 0)
+        // Prompt for the shape ID to export
+        Console.Write("Enter the ID of the shape to export (numeric): ");
+        string shapeIdInput = Console.ReadLine()?.Trim();
+        if (!long.TryParse(shapeIdInput, out long shapeId))
         {
-            resolution = parsedRes;
-        }
-
-        // Guard against missing input file
-        if (!File.Exists(diagramPath))
-        {
-            Console.Error.WriteLine($"Input file does not exist: {diagramPath}");
+            Console.Error.WriteLine("Invalid shape ID.");
             return;
         }
 
-        // Guard against invalid shape ID
-        if (!long.TryParse(shapeIdArg, out long shapeId))
+        // Prompt for the output PNG file path
+        Console.Write("Enter the output PNG file path: ");
+        string outputPath = Console.ReadLine()?.Trim();
+
+        // Validate output directory
+        if (string.IsNullOrEmpty(outputPath))
         {
-            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            Console.Error.WriteLine("Invalid output path.");
             return;
         }
 
@@ -44,35 +43,41 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Use the first page (index 0) for simplicity
-            if (diagram.Pages.Count == 0)
+            // Locate the shape with the specified ID across all pages
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
+                // GetShape throws if ID not present, so check existence via Shapes collection
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.ID == shapeId)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
+                }
+                if (targetShape != null) break;
+            }
+
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine($"Shape with ID {shapeId} not found in the diagram.");
                 return;
             }
 
-            Page page = diagram.Pages[0];
-
-            // Retrieve the shape by its ID
-            Shape shape = page.Shapes.GetShape(shapeId);
-            if (shape == null)
-            {
-                Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
-                return;
-            }
-
-            // Configure image save options for high‑resolution PNG
-            ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-            saveOptions.Resolution = resolution; // DPI
+            // Configure high‑resolution PNG export options
+            ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
+            pngOptions.Resolution = 300f; // DPI for high‑resolution output
 
             // Export the selected shape to PNG
-            shape.ToImage(outputPath, saveOptions);
+            targetShape.ToImage(outputPath, pngOptions);
 
-            Console.WriteLine($"Shape {shapeId} exported successfully to {outputPath} at {resolution} DPI.");
+            Console.WriteLine($"Shape ID {shapeId} exported successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error during export: {ex.Message}");
         }
     }
 }

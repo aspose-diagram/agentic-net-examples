@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -8,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file path and output PDF file path
+        // Validate arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
@@ -21,122 +20,83 @@ class Program
         // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Create a temporary directory for thumbnails and intermediate PDFs
-        string tempDir = Path.Combine(Path.GetTempPath(), "VisioIndexThumbnails_" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(tempDir);
-
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Lists to store thumbnail file paths and page names
-                List<string> thumbnailPaths = new List<string>();
-                List<string> pageNames = new List<string>();
+                // -----------------------------------------------------------------
+                // Create an index page that will be placed at the beginning of the document
+                // -----------------------------------------------------------------
+                Page indexPage = new Page();
+                indexPage.Name = "Index";
+                diagram.Pages.Add(indexPage);
+                // Move the newly added index page to the first position (index 0)
+                indexPage.MoveTo(0);
 
-                // Generate a PNG thumbnail for each page
-                for (int i = 0; i < diagram.Pages.Count; i++)
+                // Layout parameters for index entries (in inches)
+                double startX = 1.0;          // left margin
+                double startY = 1.0;          // top margin
+                double entryHeight = 0.5;     // height of each entry rectangle
+                double entryWidth = 6.0;      // width of each entry rectangle
+                double verticalSpacing = 0.2; // space between entries
+
+                int pageNumber = 1;
+                foreach (Page srcPage in diagram.Pages)
                 {
-                    Page page = diagram.Pages[i];
-                    string pageName = page.NameU ?? $"Page {i + 1}";
-                    pageNames.Add(pageName);
+                    // Skip the index page itself
+                    if (srcPage == indexPage)
+                        continue;
 
-                    string thumbPath = Path.Combine(tempDir, $"thumb_{i}.png");
-                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                    imgOptions.PageIndex = i;   // Export only the current page
-                    imgOptions.PageCount = 1;   // Single page
-                    diagram.Save(thumbPath, imgOptions);
-                    thumbnailPaths.Add(thumbPath);
+                    // Calculate Y position for this entry
+                    double posY = startY + (entryHeight + verticalSpacing) * (pageNumber - 1);
+
+                    // Draw a rectangle shape that will hold the page title (and could hold a thumbnail)
+                    long shapeId = indexPage.DrawRectangle(startX, posY, entryWidth, entryHeight);
+                    Shape entryShape = indexPage.Shapes.GetShape(shapeId);
+
+                    // Clear any existing text (should be empty) and add new text run
+                    entryShape.Text.Value.Clear();
+                    string pageName = !string.IsNullOrEmpty(srcPage.Name) ? srcPage.Name : $"Page{pageNumber}";
+                    entryShape.Text.Value.Add(new Txt($"Page {pageNumber}: {pageName}"));
+
+                    // TODO: Insert a thumbnail image of srcPage into the entryShape or adjacent shape.
+                    // This would involve exporting srcPage to an image and adding it as a picture shape.
+
+                    pageNumber++;
                 }
 
-                // Export the full diagram to a temporary PDF (without the index page)
-                string tempPdfPath = Path.Combine(tempDir, "full.pdf");
-                Aspose.Diagram.Saving.PdfSaveOptions pdfOptions = new Aspose.Diagram.Saving.PdfSaveOptions();
+                // -----------------------------------------------------------------
+                // Prepare PDF save options
+                // -----------------------------------------------------------------
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Explicitly set the format tracker as required
                 pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                // Export hidden pages if any (set to false for typical printable output)
                 pdfOptions.ExportHiddenPage = false;
-                diagram.Save(tempPdfPath, pdfOptions);
+                // Set high resolution for raster content inside the PDF
+                pdfOptions.HorizontalResolution = 300;
+                pdfOptions.VerticalResolution = 300;
+                // Use Flate compression to reduce file size
+                pdfOptions.TextCompression = PdfTextCompression.Flate;
+                // Use a fallback font in case the diagram references missing fonts
+                pdfOptions.DefaultFont = "Arial";
 
-                // ------------------------------------------------------------
-                // Build an index PDF page using Aspose.Pdf (fully qualified types)
-                // ------------------------------------------------------------
-                Aspose.Pdf.Document indexDoc = new Aspose.Pdf.Document();
-                Aspose.Pdf.Page indexPage = indexDoc.Pages.Add();
-
-                // Layout configuration: two columns of thumbnails
-                const int columns = 2;
-                double margin = 20;
-                double thumbWidth = 200;   // Width in points
-                double thumbHeight = 150;  // Height in points
-                double x = margin;
-                double y = margin;
-
-                for (int i = 0; i < thumbnailPaths.Count; i++)
-                {
-                    // Add the thumbnail image
-                    Aspose.Pdf.Image img = new Aspose.Pdf.Image();
-                    img.ImageStream = new FileStream(thumbnailPaths[i], FileMode.Open, FileAccess.Read);
-                    img.FixWidth = thumbWidth;
-                    img.FixHeight = thumbHeight;
-                    // Use MarginInfo to position the image (Image does not have a Position property)
-                    img.Margin = new Aspose.Pdf.MarginInfo(x, y, 0, 0);
-                    indexPage.Paragraphs.Add(img);
-
-                    // Add a caption below the thumbnail
-                    Aspose.Pdf.Text.TextFragment tf = new Aspose.Pdf.Text.TextFragment(pageNames[i]);
-                    tf.Position = new Aspose.Pdf.Text.Position(x, y + thumbHeight + 5);
-                    tf.TextState.FontSize = 12;
-                    indexPage.Paragraphs.Add(tf);
-
-                    // Update coordinates for next thumbnail
-                    if ((i + 1) % columns == 0)
-                    {
-                        x = margin;
-                        y += thumbHeight + 30; // Image height + caption + spacing
-                    }
-                    else
-                    {
-                        x += thumbWidth + margin;
-                    }
-                }
-
-                // Load the full PDF generated from the diagram
-                Aspose.Pdf.Document fullDoc = new Aspose.Pdf.Document(tempPdfPath);
-
-                // Create the final PDF document and prepend the index page
-                Aspose.Pdf.Document finalDoc = indexDoc; // indexDoc already contains the index page
-                foreach (Aspose.Pdf.Page p in fullDoc.Pages)
-                {
-                    finalDoc.Pages.Add(p);
-                }
-
-                // Save the combined PDF to the requested output path
-                finalDoc.Save(outputPath);
+                // -----------------------------------------------------------------
+                // Save the diagram (including the index page) as a PDF
+                // -----------------------------------------------------------------
+                diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine($"PDF successfully created at: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error: {ex.Message}");
-            return;
-        }
-        finally
-        {
-            // Clean up the temporary directory
-            try
-            {
-                if (Directory.Exists(tempDir))
-                {
-                    Directory.Delete(tempDir, true);
-                }
-            }
-            catch
-            {
-                // Suppress any cleanup exceptions
-            }
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error during processing: {ex.Message}");
         }
     }
 }

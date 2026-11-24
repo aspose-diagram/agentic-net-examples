@@ -6,29 +6,29 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args == null || args.Length < 2)
+        // Validate input arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Load the diagram inside a using block as required.
         try
         {
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Find the first non‑deleted shape to work with.
+                // Locate the first non-deleted shape on the first page
                 Shape targetShape = null;
                 foreach (Page page in diagram.Pages)
                 {
@@ -40,8 +40,7 @@ class Program
                             break;
                         }
                     }
-                    if (targetShape != null)
-                        break;
+                    if (targetShape != null) break;
                 }
 
                 if (targetShape == null)
@@ -50,59 +49,66 @@ class Program
                     return;
                 }
 
-                // Add two new connection points to the shape.
+                // Add new connection points to the shape
+                // First connection point at the middle of the top edge
                 Connection conn1 = new Connection();
-                conn1.X.Ufe.F = "Width*0.33";
+                conn1.X.Ufe.F = "Width*0.5";
                 conn1.Y.Ufe.F = "Height*0";
                 targetShape.Connections.Add(conn1);
 
+                // Second connection point at the middle of the bottom edge
                 Connection conn2 = new Connection();
-                conn2.X.Ufe.F = "Width*0.66";
-                conn2.Y.Ufe.F = "Height*0";
+                conn2.X.Ufe.F = "Width*0.5";
+                conn2.Y.Ufe.F = "Height*1";
                 targetShape.Connections.Add(conn2);
 
-                // Verify that each connection point exists and is correctly typed.
-                int connectionIndex = 0;
+                // Verify that all connection points exist and are correctly typed
+                int index = 0;
                 foreach (Connection conn in targetShape.Connections)
                 {
-                    connectionIndex++;
+                    index++;
 
-                    // Ensure the connection object itself is not null.
+                    // Ensure the connection object itself is not null
                     if (conn == null)
                     {
-                        throw new Exception($"Connection #{connectionIndex} is null.");
+                        throw new Exception($"Connection #{index} is null.");
                     }
 
-                    // Verify X and Y cells are present.
-                    if (conn.X == null || conn.Y == null)
+                    // Verify X and Y cells are present
+                    if (conn.X == null)
                     {
-                        throw new Exception($"Connection #{connectionIndex} missing X or Y cell.");
+                        throw new Exception($"Connection #{index} has a null X cell.");
                     }
-
-                    // Verify the Ufe (formula) objects are present.
-                    if (conn.X.Ufe == null || conn.Y.Ufe == null)
+                    if (conn.Y == null)
                     {
-                        throw new Exception($"Connection #{connectionIndex} missing Ufe (formula) objects.");
+                        throw new Exception($"Connection #{index} has a null Y cell.");
                     }
 
-                    // Verify that the formula strings are not empty.
-                    if (string.IsNullOrEmpty(conn.X.Ufe.F) || string.IsNullOrEmpty(conn.Y.Ufe.F))
+                    // Verify that the formula strings are not empty
+                    string xFormula = conn.X.Ufe.F;
+                    string yFormula = conn.Y.Ufe.F;
+
+                    if (string.IsNullOrEmpty(xFormula))
                     {
-                        throw new Exception($"Connection #{connectionIndex} has an empty formula.");
+                        throw new Exception($"Connection #{index} X formula is empty.");
+                    }
+                    if (string.IsNullOrEmpty(yFormula))
+                    {
+                        throw new Exception($"Connection #{index} Y formula is empty.");
                     }
 
-                    // Output verification details.
-                    Console.WriteLine($"Connection #{connectionIndex}: X = {conn.X.Ufe.F}, Y = {conn.Y.Ufe.F}");
+                    // Output verification result for this connection point
+                    Console.WriteLine($"Connection #{index}: X = \"{xFormula}\", Y = \"{yFormula}\" verified.");
                 }
 
-                // Save the modified diagram to the specified output path.
+                // Save the modified diagram to the output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
+            // Write any errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

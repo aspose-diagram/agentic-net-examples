@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate command‑line arguments: expect diagram path and shape ID.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId>");
@@ -14,17 +14,19 @@ class Program
         }
 
         string diagramPath = args[0];
+        string shapeIdText = args[1];
+
         // Guard: ensure the diagram file exists.
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
             return;
         }
 
-        // Parse the shape identifier (expected to be a long integer).
-        if (!long.TryParse(args[1], out long shapeId))
+        // Parse the shape identifier.
+        if (!long.TryParse(shapeIdText, out long shapeId))
         {
-            Console.Error.WriteLine($"Invalid shape ID: {args[1]}");
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdText}'. Must be a numeric value.");
             return;
         }
 
@@ -33,7 +35,7 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(diagramPath);
 
-            // Assume the shape resides on the first page; adjust as needed.
+            // Retrieve the first page (index 0). Adjust if needed for multi‑page diagrams.
             Page page = diagram.Pages[0];
 
             // Retrieve the shape by its unique identifier.
@@ -41,31 +43,20 @@ class Program
 
             if (shape == null)
             {
-                Console.WriteLine($"Shape with ID {shapeId} was not found on page 0.");
+                Console.Error.WriteLine($"Shape with ID {shapeId} was not found on page 0.");
                 return;
             }
 
-            // Output basic shape information for verification.
-            Console.WriteLine($"Shape ID      : {shape.ID}");
-            Console.WriteLine($"Shape NameU   : {shape.NameU}");
-            Console.WriteLine($"Is Deleted    : {(shape.Del == BOOL.True ? "Yes" : "No")}");
-
-            // If the shape is based on a master, display the master name.
-            if (shape.Master != null)
-            {
-                Console.WriteLine($"Master NameU  : {shape.Master.NameU}");
-            }
-            else
-            {
-                Console.WriteLine("Shape has no associated master.");
-            }
-
-            // TODO: Add further processing of the retrieved shape here.
+            // Output basic shape information.
+            Console.WriteLine($"Shape ID   : {shape.ID}");
+            Console.WriteLine($"Shape Name : {shape.NameU}");
+            Console.WriteLine($"Master Name: {(shape.Master != null ? shape.Master.Name : "None")}");
+            Console.WriteLine($"Deleted    : {(shape.Del == BOOL.True ? "Yes" : "No")}");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during loading or processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Capture any Aspose.Diagram exceptions and report them.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

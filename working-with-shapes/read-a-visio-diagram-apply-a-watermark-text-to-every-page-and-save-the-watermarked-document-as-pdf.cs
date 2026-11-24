@@ -7,17 +7,16 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Define input Visio file and output PDF file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "output.pdf";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard: ensure the input file exists before proceeding
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,38 +25,42 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over all pages and add a watermark.
+            // Define the watermark text to be applied to each page
+            string watermarkText = "CONFIDENTIAL";
+
+            // Iterate over all pages in the diagram and add the watermark
             foreach (Page page in diagram.Pages)
             {
-                // Retrieve page dimensions.
+                // Retrieve the page dimensions (width and height)
                 double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                 double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Position the watermark at the centre of the page.
-                double pinX = pageWidth / 2.0;
-                double pinY = pageHeight / 2.0;
-
-                // Add watermark text that spans the whole page.
-                // Font color is a light gray; font size is modest.
-                page.AddText(pinX, pinY, pageWidth, pageHeight,
-                             "Watermark", "Calibri", "#a5a5a5", 0.25);
+                // Add watermark text covering the full page area.
+                // pinX and pinY are set to 0 to start at the top‑left corner.
+                // Font name "Calibri", light gray color "#a5a5a5", and size 36 are used.
+                page.AddText(0, 0, pageWidth, pageHeight, watermarkText, "Calibri", "#a5a5a5", 36);
             }
 
-            // Configure PDF save options.
+            // Configure PDF save options
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
+            // Explicitly set the format tracker
             pdfOptions.SaveFormat = SaveFileFormat.Pdf;
-            // Optional: enable text compression to reduce file size.
+            // Apply flate compression to reduce PDF size
             pdfOptions.TextCompression = PdfTextCompression.Flate;
+            // Optional: set high resolution for raster images embedded in the PDF
+            pdfOptions.HorizontalResolution = 300;
+            pdfOptions.VerticalResolution = 300;
+            pdfOptions.JpegQuality = 100;
 
-            // Save the watermarked diagram as PDF.
+            // Save the watermarked diagram as a PDF file using the configured options
             diagram.Save(outputPath, pdfOptions);
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Write any errors that occur during processing to the error console
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

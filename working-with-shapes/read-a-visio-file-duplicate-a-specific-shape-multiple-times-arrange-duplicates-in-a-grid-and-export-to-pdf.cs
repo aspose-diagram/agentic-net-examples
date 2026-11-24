@@ -7,126 +7,119 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Input Visio file path
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath> [shapeName] [rows] [cols]");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-        string shapeName = args.Length >= 3 ? args[2] : null;
-        int rows = args.Length >= 4 && int.TryParse(args[3], out int r) ? r : 3;
-        int cols = args.Length >= 5 && int.TryParse(args[4], out int c) ? c : 3;
-
-        // Guard against missing input file.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
+        // Output PDF file path
+        string outputPath = "output.pdf";
+
+        // Name of the shape to duplicate (NameU property)
+        string targetShapeName = "Rectangle";
+
+        // Grid configuration
+        int rows = 3;
+        int columns = 4;
+        double horizontalSpacing = 2.0; // inches
+        double verticalSpacing = 2.0;   // inches
+
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Work with the active page.
-            Page page = diagram.ActivePage;
-
-            // Locate the shape to duplicate.
-            Shape originalShape = null;
-            if (!string.IsNullOrEmpty(shapeName))
+            // Load the Visio diagram inside a using block (Diagram implements IDisposable)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Search by NameU.
-                for (int i = 0; i < page.Shapes.Count; i++)
+                // Ensure the diagram contains at least one page
+                if (diagram.Pages.Count == 0)
                 {
-                    Shape s = page.Shapes[i];
-                    if (s.NameU == shapeName)
+                    Console.Error.WriteLine("The diagram contains no pages.");
+                    return;
+                }
+
+                // Use the first page for operations (avoid ActivePage per guidelines)
+                Page page = diagram.Pages[0];
+
+                // Locate the source shape by its NameU
+                Shape sourceShape = null;
+                foreach (Shape s in page.Shapes)
+                {
+                    if (s.NameU == targetShapeName)
                     {
-                        originalShape = s;
+                        sourceShape = s;
                         break;
                     }
                 }
 
-                if (originalShape == null)
+                if (sourceShape == null)
                 {
-                    Console.Error.WriteLine($"Shape with NameU \"{shapeName}\" not found on the active page.");
+                    Console.Error.WriteLine($"Shape with NameU '{targetShapeName}' not found on the first page.");
                     return;
                 }
-            }
-            else
-            {
-                // Use the first shape on the page if no name is provided.
-                if (page.Shapes.Count == 0)
+
+                // Verify the source shape has an associated master (required for duplication)
+                if (sourceShape.Master == null)
                 {
-                    Console.Error.WriteLine("The active page contains no shapes to duplicate.");
+                    Console.Error.WriteLine("Source shape does not have a master; cannot duplicate.");
                     return;
                 }
-                originalShape = page.Shapes[0];
-            }
 
-            // Ensure the shape has an associated master (required for duplication).
-            if (originalShape.Master == null || string.IsNullOrEmpty(originalShape.Master.Name))
-            {
-                Console.Error.WriteLine("The selected shape does not have a master shape and cannot be duplicated.");
-                return;
-            }
+                // Retrieve the master name to reuse for new shapes
+                string masterName = sourceShape.Master.Name;
 
-            string masterName = originalShape.Master.Name;
+                // Base position (PinX, PinY) of the source shape
+                double basePinX = sourceShape.XForm.PinX.Value;
+                double basePinY = sourceShape.XForm.PinY.Value;
 
-            // Retrieve original shape dimensions and position.
-            double width = originalShape.XForm.Width.Value;
-            double height = originalShape.XForm.Height.Value;
-            double basePinX = originalShape.XForm.PinX.Value;
-            double basePinY = originalShape.XForm.PinY.Value;
-
-            // Define spacing between duplicated shapes.
-            double marginX = 0.5; // inches
-            double marginY = 0.5; // inches
-
-            // Duplicate the shape in a rows x cols grid.
-            for (int row = 0; row < rows; row++)
-            {
-                for (int col = 0; col < cols; col++)
+                // Duplicate the shape in a rows x columns grid
+                for (int row = 0; row < rows; row++)
                 {
-                    // Skip the original shape position (row 0, col 0) if desired.
-                    // Here we keep the original and add duplicates elsewhere.
-                    if (row == 0 && col == 0)
-                        continue;
+                    for (int col = 0; col < columns; col++)
+                    {
+                        // Calculate new position for each duplicate
+                        double newPinX = basePinX + col * horizontalSpacing;
+                        double newPinY = basePinY + row * verticalSpacing;
 
-                    double newPinX = basePinX + col * (width + marginX);
-                    double newPinY = basePinY + row * (height + marginY);
+                        // Add a new shape using the same master as the source shape
+                        long newShapeId = page.AddShape(newPinX, newPinY, masterName, false);
 
-                    // Add a new shape using the same master.
-                    long newShapeId = page.AddShape(newPinX, newPinY, masterName, false);
+                        // Retrieve the newly added shape for further modifications
+                        Shape newShape = page.Shapes.GetShape(newShapeId);
 
-                    // Optionally retrieve the newly added shape for further customization.
-                    // Shape newShape = page.Shapes.GetShape(newShapeId);
+                        // Copy the text from the source shape to the new shape
+                        string sourceText = sourceShape.Text.Value.Text;
+                        if (!string.IsNullOrEmpty(sourceText))
+                        {
+                            // Clear any existing text and add the source text
+                            newShape.Text.Value.Clear();
+                            newShape.Text.Value.Add(new Txt(sourceText));
+                        }
+                    }
                 }
+
+                // Prepare PDF save options (optional configuration)
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                pdfOptions.ExportHiddenPage = false; // Export only visible pages
+                pdfOptions.DefaultFont = "Arial";    // Fallback font
+
+                // Save the modified diagram as PDF
+                diagram.Save(outputPath, pdfOptions);
+
+                Console.WriteLine($"Diagram processed and saved to PDF: {outputPath}");
             }
-
-            // Prepare PDF save options.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions
-            {
-                // Use a common font as fallback.
-                DefaultFont = "Arial",
-                ExportHiddenPage = false,
-                PageIndex = 0,
-                PageCount = 1,
-                SplitMultiPages = false
-            };
-
-            // Save the modified diagram as PDF.
-            diagram.Save(outputPath, pdfOptions);
-
-            Console.WriteLine($"Diagram saved successfully to PDF: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose or IO exceptions.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

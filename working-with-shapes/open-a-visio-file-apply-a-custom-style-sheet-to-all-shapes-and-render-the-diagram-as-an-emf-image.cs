@@ -8,70 +8,61 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args == null || args.Length < 2)
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputDirectory>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputEmfPath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputDir = args[1];
+        string outputPath = args[1];
 
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
-        }
-
-        // Ensure the output directory exists.
-        if (!Directory.Exists(outputDir))
-        {
-            try
-            {
-                Directory.CreateDirectory(outputDir);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
-                return;
-            }
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block.
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // ------------------------------------------------------------
-                // Create a custom StyleSheet to be applied to all shapes.
+                // Create a custom StyleSheet.
                 // ------------------------------------------------------------
                 StyleSheet customStyle = new StyleSheet();
-                customStyle.ID = diagram.StyleSheets.Count + 1;
                 customStyle.Name = "CustomStyle";
 
-                // Define character (text) style – red text color.
+                // Assign a unique ID for the stylesheet.
+                customStyle.ID = diagram.StyleSheets.Count + 1;
+
+                // Define a character style (e.g., blue text).
                 Aspose.Diagram.Char charStyle = new Aspose.Diagram.Char();
-                charStyle.Color.Value = "#FF0000"; // Red
-                charStyle.IX = 0;
+                charStyle.Color.Value = "#0000FF"; // Blue text color.
+                charStyle.IX = 0; // First character style.
                 customStyle.Chars.Add(charStyle);
 
-                // Define fill style – green fill.
-                customStyle.Fill.FillForegnd.Value = "#00FF00"; // Green
+                // Define line style (e.g., red line, thin weight).
+                customStyle.Line.LineColor.Value = "#FF0000"; // Red line color.
+                customStyle.Line.LineWeight.Value = 0.02;    // Thin line (in inches).
 
-                // Define line style – blue line color.
-                customStyle.Line.LineColor.Value = "#0000FF"; // Blue
+                // Define fill style (e.g., green fill, solid pattern).
+                customStyle.Fill.FillForegnd.Value = "#00FF00"; // Green fill color.
+                customStyle.Fill.FillPattern.Value = 1;        // Solid fill pattern.
 
-                // Add the stylesheet to the diagram's collection.
+                // Add the stylesheet to the document.
                 diagram.StyleSheets.Add(customStyle);
 
                 // ------------------------------------------------------------
-                // Apply the custom stylesheet to every shape on every page.
+                // Apply the custom stylesheet to every shape in every page.
                 // ------------------------------------------------------------
-                foreach (Aspose.Diagram.Page page in diagram.Pages)
+                foreach (Page page in diagram.Pages)
                 {
-                    foreach (Aspose.Diagram.Shape shape in page.Shapes)
+                    foreach (Shape shape in page.Shapes)
                     {
+                        // Assign the stylesheet to text, fill, and line styles.
                         shape.TextStyle = customStyle;
                         shape.FillStyle = customStyle;
                         shape.LineStyle = customStyle;
@@ -79,25 +70,18 @@ class Program
                 }
 
                 // ------------------------------------------------------------
-                // Render each page of the diagram as an EMF image.
+                // Render the diagram as an EMF image.
                 // ------------------------------------------------------------
-                for (int i = 0; i < diagram.Pages.Count; i++)
-                {
-                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Emf);
-                    imgOptions.PageIndex = i;   // Zero‑based page index.
-                    imgOptions.PageCount = 1;   // Export a single page.
-
-                    string outputPath = Path.Combine(outputDir, $"page_{i + 1}.emf");
-
-                    // Save the page as EMF.
-                    diagram.Save(outputPath, imgOptions);
-                }
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Emf);
+                diagram.Save(outputPath, saveOptions);
             }
+
+            Console.WriteLine($"Diagram successfully saved as EMF to: {outputPath}");
         }
         catch (Exception ex)
         {
             // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

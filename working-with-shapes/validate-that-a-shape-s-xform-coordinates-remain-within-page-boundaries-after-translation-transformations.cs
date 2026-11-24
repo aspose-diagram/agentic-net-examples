@@ -1,95 +1,85 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 3)
+        // Expect the input Visio file path as the first argument.
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <translateX> <translateY>");
+            Console.Error.WriteLine("Error: No input file path provided.");
             return;
         }
 
         string inputPath = args[0];
+
+        // Guard: verify the file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
-        // Parse translation offsets.
-        if (!double.TryParse(args[1], out double translateX) ||
-            !double.TryParse(args[2], out double translateY))
-        {
-            Console.Error.WriteLine("Translation values must be valid numbers.");
-            return;
-        }
+        // Translation offsets (in inches). Adjust as needed.
+        const double offsetX = 1.0;
+        const double offsetY = 1.0;
 
         try
         {
-            // Load the Visio diagram.
+            // Load the diagram.
             Diagram diagram = new Diagram(inputPath);
 
             // Iterate through each page in the diagram.
             foreach (Page page in diagram.Pages)
             {
-                // Retrieve page dimensions (in inches).
+                // Retrieve page dimensions.
                 double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                 double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
                 // Iterate through each shape on the page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes.
+                    // Skip logically deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Apply translation to the shape's position.
-                    shape.XForm.PinX.Value += translateX;
-                    shape.XForm.PinY.Value += translateY;
+                    // Apply translation to the shape's PinX and PinY.
+                    shape.XForm.PinX.Value += offsetX;
+                    shape.XForm.PinY.Value += offsetY;
 
-                    // Refresh shape data after modification (optional but safe).
+                    // Refresh shape data after modification.
                     shape.RefreshData();
 
-                    // Calculate shape bounds.
-                    double halfWidth = shape.XForm.Width.Value / 2.0;
-                    double halfHeight = shape.XForm.Height.Value / 2.0;
-                    double left = shape.XForm.PinX.Value - halfWidth;
-                    double right = shape.XForm.PinX.Value + halfWidth;
-                    double bottom = shape.XForm.PinY.Value - halfHeight;
-                    double top = shape.XForm.PinY.Value + halfHeight;
+                    // Calculate the shape's bounding box.
+                    double left   = shape.XForm.PinX.Value - shape.XForm.LocPinX.Value;
+                    double top    = shape.XForm.PinY.Value - shape.XForm.LocPinY.Value;
+                    double right  = left + shape.XForm.Width.Value;
+                    double bottom = top + shape.XForm.Height.Value;
 
-                    // Validate bounds against page dimensions.
+                    // Validate that the shape stays within page boundaries.
                     bool withinHorizontal = left >= 0 && right <= pageWidth;
-                    bool withinVertical = bottom >= 0 && top <= pageHeight;
+                    bool withinVertical   = top  >= 0 && bottom <= pageHeight;
 
-                    if (withinHorizontal && withinVertical)
+                    if (!withinHorizontal || !withinVertical)
                     {
-                        Console.WriteLine($"Shape ID {shape.ID} is within page bounds after translation.");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Shape ID {shape.ID} is OUT OF BOUNDS after translation:");
-                        if (!withinHorizontal)
-                            Console.WriteLine($"  Horizontal: left={left:F2}, right={right:F2}, pageWidth={pageWidth:F2}");
-                        if (!withinVertical)
-                            Console.WriteLine($"  Vertical:   bottom={bottom:F2}, top={top:F2}, pageHeight={pageHeight:F2}");
+                        Console.WriteLine($"Shape ID {shape.ID} on page {page.Name} is out of bounds after translation.");
+                        Console.WriteLine($"  Left: {left}, Right: {right} (Page Width: {pageWidth})");
+                        Console.WriteLine($"  Top: {top}, Bottom: {bottom} (Page Height: {pageHeight})");
                     }
                 }
             }
 
-            // Save the modified diagram to a new file.
-            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "translated_output.vsdx");
+            // Optionally, save the modified diagram to a new file.
+            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", 
+                                             Path.GetFileNameWithoutExtension(inputPath) + "_translated.vsdx");
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Modified diagram saved to: {outputPath}");
+            Console.WriteLine($"Translated diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

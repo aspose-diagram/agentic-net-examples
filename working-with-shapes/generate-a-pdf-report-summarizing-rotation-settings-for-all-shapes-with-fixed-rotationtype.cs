@@ -8,7 +8,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
@@ -18,80 +18,77 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: check input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
-            return;
-        }
-
-        // Guard: ensure output directory exists.
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block.
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Prepare report lines.
+                // Collect report lines.
                 List<string> reportLines = new List<string>();
                 reportLines.Add("Rotation Settings Report");
                 reportLines.Add($"Generated on: {DateTime.Now}");
                 reportLines.Add(string.Empty);
 
-                int pageNumber = 0;
-                // Iterate through all pages.
+                // Iterate through all pages and shapes.
                 foreach (Page page in diagram.Pages)
                 {
-                    pageNumber++; // Manual page index because Page.Index does not exist.
-
-                    // Iterate through all shapes on the page.
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip logically deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Retrieve the rotation type.
-                        RotationTypeValue rotationType = shape.ThreeDFormat.RotationType.Value;
-
-                        // Consider only shapes with a defined (fixed) rotation type.
+                        // Check if the shape has a fixed RotationType (i.e., not Undefined).
+                        var rotationType = shape.ThreeDFormat.RotationType.Value;
                         if (rotationType != RotationTypeValue.Undefined)
                         {
-                            // Build a summary line for the shape.
-                            string line = $"Page {pageNumber}, Shape ID {shape.ID}, Name \"{shape.Name}\", " +
-                                          $"RotationType: {rotationType}, " +
-                                          $"XAngle: {shape.ThreeDFormat.RotationXAngle.Value}, " +
-                                          $"YAngle: {shape.ThreeDFormat.RotationYAngle.Value}, " +
-                                          $"ZAngle: {shape.ThreeDFormat.RotationZAngle.Value}";
-                            reportLines.Add(line);
+                            // Retrieve rotation angles.
+                            double angleX = shape.ThreeDFormat.RotationXAngle.Value;
+                            double angleY = shape.ThreeDFormat.RotationYAngle.Value;
+                            double angleZ = shape.ThreeDFormat.RotationZAngle.Value;
+
+                            // Add shape information to the report.
+                            reportLines.Add($"Page ID {page.ID}, Shape ID {shape.ID}, Name \"{shape.Name}\":");
+                            reportLines.Add($"  RotationType = {rotationType}");
+                            reportLines.Add($"  RotationX = {angleX}°, RotationY = {angleY}°, RotationZ = {angleZ}°");
+                            reportLines.Add(string.Empty);
                         }
                     }
                 }
 
-                // If no shapes matched, add a placeholder line.
-                if (reportLines.Count == 3) // only header lines present
-                {
-                    reportLines.Add("No shapes with a fixed RotationType were found.");
-                }
+                // Create a PDF document using Aspose.Pdf (fully qualified names to avoid ambiguity).
+                var pdfDoc = new Aspose.Pdf.Document();
+                var pdfPage = pdfDoc.Pages.Add();
 
-                // Create a PDF document using Aspose.Pdf (fully qualified to avoid namespace conflicts).
-                Aspose.Pdf.Document pdfDoc = new Aspose.Pdf.Document();
+                // Positioning variables for text layout.
+                float cursorY = 800f;
+                const float startX = 50f;
+                const float lineHeight = 15f;
+                const float marginBottom = 50f;
 
-                // Add a page to the PDF.
-                Aspose.Pdf.Page pdfPage = pdfDoc.Pages.Add();
-
-                // Add each report line as a separate text fragment.
+                // Add each line as a TextFragment.
                 foreach (string line in reportLines)
                 {
-                    Aspose.Pdf.Text.TextFragment tf = new Aspose.Pdf.Text.TextFragment(line);
-                    tf.TextState.FontSize = 12; // readable font size
-                    pdfPage.Paragraphs.Add(tf);
+                    // If we run out of space on the current page, add a new one.
+                    if (cursorY < marginBottom)
+                    {
+                        pdfPage = pdfDoc.Pages.Add();
+                        cursorY = 800f;
+                    }
+
+                    var textFragment = new Aspose.Pdf.Text.TextFragment(line);
+                    textFragment.Position = new Aspose.Pdf.Text.Position(startX, cursorY);
+                    textFragment.TextState.FontSize = 12;
+                    pdfPage.Paragraphs.Add(textFragment);
+
+                    cursorY -= lineHeight;
                 }
 
                 // Save the PDF report.
@@ -100,7 +97,8 @@ class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

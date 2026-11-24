@@ -1,48 +1,59 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Text.Json;
 using Aspose.Diagram;
 
 class Program
 {
-    // Container for theme settings per shape type
-    private class ThemeConfig
-    {
-        public PresetThemeValue PresetTheme { get; set; }
-        public PresetThemeVariantValue? Variant { get; set; }
-        public PresetQuickStyleValue? QuickStyle { get; set; }
-    }
-
     static void Main(string[] args)
     {
-        // Expect three arguments: diagram file, config file, output file
+        // Expect three arguments: config file path, input diagram path, output diagram path
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <configPath> <outputPath>");
+            Console.Error.WriteLine("Usage: Program <config.json> <input.vsdx> <output.vsdx>");
             return;
         }
 
-        string diagramPath = args[0];
-        string configPath = args[1];
-        string outputPath = args[2];
+        string configPath = args[0];
+        string inputDiagramPath = args[1];
+        string outputDiagramPath = args[2];
 
         // Guard against missing files
-        if (!File.Exists(diagramPath))
-        {
-            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
-            return;
-        }
         if (!File.Exists(configPath))
         {
             Console.Error.WriteLine($"Configuration file not found: {configPath}");
             return;
         }
+        if (!File.Exists(inputDiagramPath))
+        {
+            Console.Error.WriteLine($"Input diagram file not found: {inputDiagramPath}");
+            return;
+        }
 
-        // Load the diagram inside a using block with error handling
+        // Load configuration mapping shape type names to preset theme names
+        Dictionary<string, string> themeMap;
+        try
+        {
+            string json = File.ReadAllText(configPath);
+            themeMap = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+            if (themeMap == null)
+            {
+                Console.Error.WriteLine("Configuration file is empty or invalid.");
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to read or parse configuration file: {ex.Message}");
+            return;
+        }
+
+        // Load the Visio diagram
         Diagram diagram;
         try
         {
-            diagram = new Diagram(diagramPath);
+            diagram = new Diagram(inputDiagramPath);
         }
         catch (Exception ex)
         {
@@ -50,94 +61,47 @@ class Program
             return;
         }
 
-        // Parse configuration file into a dictionary keyed by shape TypeValue
-        // Expected line format (ignore empty lines and lines starting with '#'):
-        // ShapeType=PresetTheme,Variant,QuickStyle
-        var themeMap = new Dictionary<TypeValue, ThemeConfig>();
-        try
-        {
-            foreach (string rawLine in File.ReadAllLines(configPath))
-            {
-                string line = rawLine.Trim();
-                if (string.IsNullOrEmpty(line) || line.StartsWith("#"))
-                    continue; // Skip comments/blank lines
-
-                string[] parts = line.Split('=', 2);
-                if (parts.Length != 2)
-                    continue; // Invalid line, skip
-
-                string shapeTypeStr = parts[0].Trim();
-                string[] values = parts[1].Split(',', StringSplitOptions.RemoveEmptyEntries);
-                if (values.Length < 1)
-                    continue; // No theme specified, skip
-
-                // Parse shape type enum
-                if (!Enum.TryParse(shapeTypeStr, true, out TypeValue shapeType))
-                    continue; // Unknown shape type, skip
-
-                // Parse preset theme (mandatory)
-                if (!Enum.TryParse(values[0].Trim(), true, out PresetThemeValue presetTheme))
-                    continue; // Invalid theme, skip
-
-                // Parse variant (optional)
-                PresetThemeVariantValue? variant = null;
-                if (values.Length > 1 && Enum.TryParse(values[1].Trim(), true, out PresetThemeVariantValue parsedVariant))
-                    variant = parsedVariant;
-
-                // Parse quick style (optional)
-                PresetQuickStyleValue? quickStyle = null;
-                if (values.Length > 2 && Enum.TryParse(values[2].Trim(), true, out PresetQuickStyleValue parsedQuickStyle))
-                    quickStyle = parsedQuickStyle;
-
-                // Store in dictionary
-                themeMap[shapeType] = new ThemeConfig
-                {
-                    PresetTheme = presetTheme,
-                    Variant = variant,
-                    QuickStyle = quickStyle
-                };
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error reading configuration: {ex.Message}");
-            return;
-        }
-
-        // Apply themes to shapes based on their TypeValue
+        // Iterate through all pages and shapes, applying themes based on shape type
         try
         {
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    if (themeMap.TryGetValue(shape.Type, out ThemeConfig cfg))
+                    // Determine the shape type as string (e.g., "Rectangle", "Ellipse")
+                    string shapeTypeName = shape.Type.ToString();
+
+                    // Check if a theme is defined for this shape type
+                    if (themeMap.TryGetValue(shapeTypeName, out string themeName))
                     {
-                        // Apply preset theme (write‑only)
-                        shape.PresetTheme = cfg.PresetTheme;
+                        // Parse the theme name to the PresetThemeValue enum
+                        if (Enum.TryParse<PresetThemeValue>(themeName, out PresetThemeValue presetTheme))
+                        {
+                            // Apply the preset theme to the shape
+                            shape.PresetTheme = presetTheme;
 
-                        // Apply variant if provided
-                        if (cfg.Variant.HasValue)
-                            shape.PresetThemeVariant = cfg.Variant.Value;
-
-                        // Apply quick style if provided
-                        if (cfg.QuickStyle.HasValue)
-                            shape.PresetThemeQuickStyle = cfg.QuickStyle.Value;
+                            // Optionally set a default variant (can be customized later)
+                            shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                        }
+                        else
+                        {
+                            Console.Error.WriteLine($"Invalid theme name '{themeName}' for shape type '{shapeTypeName}'.");
+                        }
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error applying themes: {ex.Message}");
+            Console.Error.WriteLine($"Error while applying themes: {ex.Message}");
             return;
         }
 
         // Save the modified diagram
         try
         {
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+            diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputDiagramPath}");
         }
         catch (Exception ex)
         {

@@ -1,60 +1,48 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length < 1)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
-            return;
-        }
+        // Determine input and output file paths from command‑line arguments or use defaults.
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args.Length > 1 ? args[1] : Path.Combine(Path.GetDirectoryName(inputPath) ?? "", Path.GetFileNameWithoutExtension(inputPath) + "_ParentsOnly.vsdx");
-
-        // Guard: ensure the input file exists
+        // Guard: ensure the input file exists before proceeding.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through each page in the diagram
+            // Iterate through each page in the diagram.
             foreach (Page page in diagram.Pages)
             {
-                // Collect IDs of shapes that have no child shapes
-                var shapesToDelete = new System.Collections.Generic.List<long>();
+                // Collect IDs of shapes that are NOT groups (i.e., have no child shapes).
+                List<long> shapesToDelete = new List<long>();
 
-                // Iterate over all shapes on the current page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip shapes that are already marked as deleted
+                    // Skip shapes already marked as deleted.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // TODO: Determine if the shape has child shapes.
-                    // The appropriate Aspose.Diagram API should be used here to check
-                    // whether the shape is a group or contains nested shapes.
-                    // If the shape has no child shapes, add its ID to shapesToDelete.
-
-                    bool hasChildren = false; // Placeholder result; replace with actual check.
-
-                    if (!hasChildren)
+                    // Keep only group shapes (parents). Non‑group shapes are scheduled for removal.
+                    if (shape.Type != TypeValue.Group)
                     {
                         shapesToDelete.Add(shape.ID);
                     }
                 }
 
-                // Mark collected shapes as deleted
+                // Mark the collected shapes as deleted.
                 foreach (long shapeId in shapesToDelete)
                 {
                     Shape shp = page.Shapes.GetShape(shapeId);
@@ -65,12 +53,13 @@ class Program
                 }
             }
 
-            // Save the modified diagram, keeping only parent (group) shapes
+            // Save the modified diagram to the output path in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
+            // Write any errors that occur during processing to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

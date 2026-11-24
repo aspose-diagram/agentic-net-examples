@@ -6,16 +6,16 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command line arguments.
+        // Validate that a diagram file path was provided
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
+            Console.Error.WriteLine("Error: No diagram file path provided.");
             return;
         }
 
         string diagramPath = args[0];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing file
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Error: File not found - {diagramPath}");
@@ -24,66 +24,48 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(diagramPath);
-
-            int totalConnectors = 0;
-            int undefinedJumpStyleCount = 0;
-
-            // Iterate through all pages.
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block (mandatory pattern)
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Iterate through all shapes on the page.
-                foreach (Shape shape in page.Shapes)
+                bool hasUndefinedJumpStyle = false;
+
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip deleted shapes.
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Identify connector shapes (1-D shapes).
-                    if (shape.OneD)
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        totalConnectors++;
-
-                        // Ensure the Layout object exists.
-                        if (shape.Layout == null)
-                        {
-                            Console.Error.WriteLine($"Warning: Shape ID {shape.ID} on page '{page.Name}' has no Layout object.");
-                            undefinedJumpStyleCount++;
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
                             continue;
-                        }
 
-                        // Retrieve the line jump style value.
-                        var jumpStyleValue = shape.Layout.ConLineJumpStyle.Value;
-
-                        // Check for undefined jump style.
-                        if (jumpStyleValue == ConLineJumpStyleValue.Undefined)
+                        // Identify connector shapes (1‑D shapes)
+                        if (shape.OneD && shape.Type == TypeValue.Shape)
                         {
-                            Console.Error.WriteLine($"Connector ID {shape.ID} on page '{page.Name}' has undefined line jump style.");
-                            undefinedJumpStyleCount++;
+                            // Ensure the Layout object and ConLineJumpStyle cell exist
+                            if (shape.Layout != null && shape.Layout.ConLineJumpStyle != null)
+                            {
+                                // Check if the line jump style is undefined
+                                if (shape.Layout.ConLineJumpStyle.Value == ConLineJumpStyleValue.Undefined)
+                                {
+                                    hasUndefinedJumpStyle = true;
+                                    Console.WriteLine($"Connector ID {shape.ID} on page \"{page.Name}\" has undefined line jump style.");
+                                }
+                            }
                         }
                     }
                 }
-            }
 
-            // Summary output.
-            Console.WriteLine($"Validation completed. Total connectors examined: {totalConnectors}.");
-            Console.WriteLine($"Connectors with undefined line jump style: {undefinedJumpStyleCount}.");
-
-            // Optionally, you could treat undefined styles as a failure.
-            if (undefinedJumpStyleCount > 0)
-            {
-                Console.Error.WriteLine("Validation failed: some connectors have undefined line jump styles.");
-            }
-            else
-            {
-                Console.WriteLine("All connectors have defined line jump styles.");
+                if (!hasUndefinedJumpStyle)
+                {
+                    Console.WriteLine("Validation passed: All connectors have defined line jump styles.");
+                }
             }
         }
         catch (Exception ex)
         {
-            // Log any unexpected errors.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Report any errors that occur during processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

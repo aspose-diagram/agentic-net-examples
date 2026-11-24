@@ -1,12 +1,13 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Validate input arguments.
         if (args.Length == 0)
         {
             Console.Error.WriteLine("Please provide the path to the source Visio file as the first argument.");
@@ -15,149 +16,152 @@ class Program
 
         string sourcePath = args[0];
 
-        // Guard: ensure the source file exists
+        // Guard: ensure the source file exists.
         if (!File.Exists(sourcePath))
         {
             Console.Error.WriteLine($"Source file not found: {sourcePath}");
             return;
         }
 
-        // Temporary file used to create a clone of the diagram
-        string tempClonePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".vsdx");
-
         try
         {
-            // Load the original diagram and save a temporary clone
+            // Load the original diagram inside a using block.
             using (Diagram originalDiagram = new Diagram(sourcePath))
             {
-                originalDiagram.Save(tempClonePath, SaveFileFormat.Vsdx);
-            }
-
-            // Load the cloned diagram
-            using (Diagram clonedDiagram = new Diagram(tempClonePath))
-            {
-                // Load the original diagram again for comparison
-                using (Diagram originalDiagram = new Diagram(sourcePath))
+                // Clone the diagram by saving to a memory stream and loading back.
+                Diagram clonedDiagram;
+                using (MemoryStream ms = new MemoryStream())
                 {
-                    // Verify page count consistency
+                    // Save the original diagram to the memory stream in VSDX format.
+                    originalDiagram.Save(ms, SaveFileFormat.Vsdx);
+                    ms.Position = 0; // Reset stream position for reading.
+
+                    // Load the cloned diagram from the memory stream.
+                    clonedDiagram = new Diagram(ms);
+                }
+
+                // Ensure the cloned diagram is disposed after use.
+                using (clonedDiagram)
+                {
+                    bool allMatch = true;
+
+                    // Verify both diagrams have the same number of pages.
                     if (originalDiagram.Pages.Count != clonedDiagram.Pages.Count)
                     {
                         Console.Error.WriteLine("Page count mismatch between original and cloned diagrams.");
-                        return;
+                        allMatch = false;
                     }
 
-                    // Helper local function to compare two values (converted to string)
-                    bool CellsEqual(string cellName, object originalValue, object clonedValue, int pageIdx, int shapeIdx)
+                    int pageCount = Math.Min(originalDiagram.Pages.Count, clonedDiagram.Pages.Count);
+
+                    for (int p = 0; p < pageCount; p++)
                     {
-                        string origStr = originalValue?.ToString();
-                        string cloneStr = clonedValue?.ToString();
+                        Page originalPage = originalDiagram.Pages[p];
+                        Page clonedPage = clonedDiagram.Pages[p];
 
-                        if (origStr != cloneStr)
-                        {
-                            Console.Error.WriteLine($"Mismatch in {cellName} on page {pageIdx + 1}, shape index {shapeIdx + 1}.");
-                            Console.Error.WriteLine($"Original: {origStr ?? "null"}, Cloned: {cloneStr ?? "null"}");
-                            return false;
-                        }
-                        return true;
-                    }
-
-                    // Iterate through each page by index
-                    for (int pageIndex = 0; pageIndex < originalDiagram.Pages.Count; pageIndex++)
-                    {
-                        Page originalPage = originalDiagram.Pages[pageIndex];
-                        Page clonedPage = clonedDiagram.Pages[pageIndex];
-
-                        // Verify shape count consistency on the current page
+                        // Verify both pages have the same number of shapes.
                         if (originalPage.Shapes.Count != clonedPage.Shapes.Count)
                         {
-                            Console.Error.WriteLine($"Shape count mismatch on page {pageIndex + 1}.");
-                            return;
+                            Console.Error.WriteLine($"Shape count mismatch on page {p + 1}.");
+                            allMatch = false;
+                            continue;
                         }
 
-                        // Compare each shape's inherited fill values
-                        for (int shapeIdx = 0; shapeIdx < originalPage.Shapes.Count; shapeIdx++)
+                        int shapeCount = originalPage.Shapes.Count;
+
+                        for (int s = 0; s < shapeCount; s++)
                         {
-                            Shape originalShape = originalPage.Shapes[shapeIdx];
-                            Shape clonedShape = clonedPage.Shapes[shapeIdx];
+                            Shape originalShape = originalPage.Shapes[s];
+                            Shape clonedShape = clonedPage.Shapes[s];
 
-                            bool allMatch = true;
-                            allMatch &= CellsEqual("FillForegnd",
-                                originalShape.InheritFill.FillForegnd.Value,
-                                clonedShape.InheritFill.FillForegnd.Value,
-                                pageIndex, shapeIdx);
-                            allMatch &= CellsEqual("FillBkgnd",
-                                originalShape.InheritFill.FillBkgnd.Value,
-                                clonedShape.InheritFill.FillBkgnd.Value,
-                                pageIndex, shapeIdx);
-                            allMatch &= CellsEqual("FillPattern",
-                                originalShape.InheritFill.FillPattern.Value,
-                                clonedShape.InheritFill.FillPattern.Value,
-                                pageIndex, shapeIdx);
-                            allMatch &= CellsEqual("ShdwForegnd",
-                                originalShape.InheritFill.ShdwForegnd.Value,
-                                clonedShape.InheritFill.ShdwForegnd.Value,
-                                pageIndex, shapeIdx);
-                            allMatch &= CellsEqual("ShdwBkgnd",
-                                originalShape.InheritFill.ShdwBkgnd.Value,
-                                clonedShape.InheritFill.ShdwBkgnd.Value,
-                                pageIndex, shapeIdx);
-                            allMatch &= CellsEqual("ShdwPattern",
-                                originalShape.InheritFill.ShdwPattern.Value,
-                                clonedShape.InheritFill.ShdwPattern.Value,
-                                pageIndex, shapeIdx);
-                            allMatch &= CellsEqual("ShapeShdwType",
-                                originalShape.InheritFill.ShapeShdwType.Value,
-                                clonedShape.InheritFill.ShapeShdwType.Value,
-                                pageIndex, shapeIdx);
-                            allMatch &= CellsEqual("ShapeShdwObliqueAngle",
-                                originalShape.InheritFill.ShapeShdwObliqueAngle.Value,
-                                clonedShape.InheritFill.ShapeShdwObliqueAngle.Value,
-                                pageIndex, shapeIdx);
-                            allMatch &= CellsEqual("ShapeShdwOffsetX",
-                                originalShape.InheritFill.ShapeShdwOffsetX.Value,
-                                clonedShape.InheritFill.ShapeShdwOffsetX.Value,
-                                pageIndex, shapeIdx);
-                            allMatch &= CellsEqual("ShapeShdwOffsetY",
-                                originalShape.InheritFill.ShapeShdwOffsetY.Value,
-                                clonedShape.InheritFill.ShapeShdwOffsetY.Value,
-                                pageIndex, shapeIdx);
-                            allMatch &= CellsEqual("ShapeShdwScaleFactor",
-                                originalShape.InheritFill.ShapeShdwScaleFactor.Value,
-                                clonedShape.InheritFill.ShapeShdwScaleFactor.Value,
-                                pageIndex, shapeIdx);
+                            // Compare each relevant fill inheritance property.
+                            if (!CompareCell(
+                                    originalShape.InheritFill.FillForegnd.Value ?? string.Empty,
+                                    clonedShape.InheritFill.FillForegnd.Value ?? string.Empty,
+                                    $"Page {p + 1}, Shape {s + 1} - FillForegnd"))
+                                allMatch = false;
 
-                            if (!allMatch)
-                            {
-                                Console.Error.WriteLine("Fill inheritance values differ between original and cloned diagrams.");
-                                return;
-                            }
+                            if (!CompareCell(
+                                    originalShape.InheritFill.FillBkgnd.Value ?? string.Empty,
+                                    clonedShape.InheritFill.FillBkgnd.Value ?? string.Empty,
+                                    $"Page {p + 1}, Shape {s + 1} - FillBkgnd"))
+                                allMatch = false;
+
+                            if (!CompareCell(
+                                    originalShape.InheritFill.FillPattern.Value.ToString(),
+                                    clonedShape.InheritFill.FillPattern.Value.ToString(),
+                                    $"Page {p + 1}, Shape {s + 1} - FillPattern"))
+                                allMatch = false;
+
+                            if (!CompareCell(
+                                    originalShape.InheritFill.ShdwForegnd.Value ?? string.Empty,
+                                    clonedShape.InheritFill.ShdwForegnd.Value ?? string.Empty,
+                                    $"Page {p + 1}, Shape {s + 1} - ShdwForegnd"))
+                                allMatch = false;
+
+                            if (!CompareCell(
+                                    originalShape.InheritFill.ShdwBkgnd.Value ?? string.Empty,
+                                    clonedShape.InheritFill.ShdwBkgnd.Value ?? string.Empty,
+                                    $"Page {p + 1}, Shape {s + 1} - ShdwBkgnd"))
+                                allMatch = false;
+
+                            if (!CompareCell(
+                                    originalShape.InheritFill.ShdwPattern.Value.ToString(),
+                                    clonedShape.InheritFill.ShdwPattern.Value.ToString(),
+                                    $"Page {p + 1}, Shape {s + 1} - ShdwPattern"))
+                                allMatch = false;
+
+                            if (!CompareCell(
+                                    originalShape.InheritFill.ShapeShdwType.Value.ToString(),
+                                    clonedShape.InheritFill.ShapeShdwType.Value.ToString(),
+                                    $"Page {p + 1}, Shape {s + 1} - ShapeShdwType"))
+                                allMatch = false;
+
+                            if (!CompareCell(
+                                    originalShape.InheritFill.ShapeShdwObliqueAngle.Value.ToString(),
+                                    clonedShape.InheritFill.ShapeShdwObliqueAngle.Value.ToString(),
+                                    $"Page {p + 1}, Shape {s + 1} - ShapeShdwObliqueAngle"))
+                                allMatch = false;
+
+                            if (!CompareCell(
+                                    originalShape.InheritFill.ShapeShdwOffsetX.Value.ToString(),
+                                    clonedShape.InheritFill.ShapeShdwOffsetX.Value.ToString(),
+                                    $"Page {p + 1}, Shape {s + 1} - ShapeShdwOffsetX"))
+                                allMatch = false;
+
+                            if (!CompareCell(
+                                    originalShape.InheritFill.ShapeShdwOffsetY.Value.ToString(),
+                                    clonedShape.InheritFill.ShapeShdwOffsetY.Value.ToString(),
+                                    $"Page {p + 1}, Shape {s + 1} - ShapeShdwOffsetY"))
+                                allMatch = false;
                         }
                     }
 
-                    // If execution reaches here, all fill inheritance values match
-                    Console.WriteLine("All fill inheritance values are consistent between the original and cloned diagrams.");
+                    if (allMatch)
+                    {
+                        Console.WriteLine("All fill inheritance values match between the original and cloned diagrams.");
+                    }
+                    else
+                    {
+                        Console.Error.WriteLine("Discrepancies were found in fill inheritance values.");
+                    }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Capture any Aspose or runtime exceptions
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
-        finally
+    }
+
+    // Helper method to compare two cell values and report mismatches.
+    private static bool CompareCell(string originalValue, string clonedValue, string context)
+    {
+        if (!string.Equals(originalValue, clonedValue, StringComparison.Ordinal))
         {
-            // Clean up the temporary clone file if it exists
-            if (File.Exists(tempClonePath))
-            {
-                try
-                {
-                    File.Delete(tempClonePath);
-                }
-                catch
-                {
-                    // Suppress any cleanup errors
-                }
-            }
+            Console.Error.WriteLine($"{context}: Original = '{originalValue}', Cloned = '{clonedValue}'");
+            return false;
         }
+        return true;
     }
 }

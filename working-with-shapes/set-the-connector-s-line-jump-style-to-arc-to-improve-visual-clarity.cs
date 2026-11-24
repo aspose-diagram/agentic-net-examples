@@ -2,23 +2,15 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
-            return;
-        }
+        // Determine input file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -27,33 +19,41 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block (Diagram implements IDisposable).
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through all pages and shapes to find connectors
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through all pages in the diagram.
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page.
-                    foreach (Shape shape in page.Shapes)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Identify 1-D connector shapes
+                    if (shape.OneD)
                     {
-                        // Process only 1‑D connector shapes that are not deleted.
-                        if (shape.OneD && shape.Del == BOOL.False)
-                        {
-                            // Set the connector's line jump style to Arc and force jumps to appear.
-                            shape.SetConnectorJumpValue(ConLineJumpCodeValue.Always, ConLineJumpStyleValue.Arc);
-                        }
+                        // Set the line jump style to Arc
+                        shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Arc;
                     }
                 }
-
-                // Save the modified diagram in VSDX format.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
+
+            // Prepare output file path
+            string directory = Path.GetDirectoryName(inputPath) ?? "";
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+            string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_ArcJump.vsdx");
+
+            // Save the modified diagram
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
+            Console.WriteLine($"Diagram saved with Arc line jump style: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

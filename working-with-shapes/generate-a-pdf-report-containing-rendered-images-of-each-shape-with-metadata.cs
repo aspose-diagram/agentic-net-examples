@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -7,81 +8,107 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument) and output PDF path (second argument)
-        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPdfPath = args.Length > 1 ? args[1] : "ShapeReport.pdf";
-
-        // Guard against missing input file
-        if (!File.Exists(diagramPath))
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> [output.pdf]");
             return;
         }
 
+        string diagramPath = args[0];
+        string outputPdfPath = args.Length > 1 ? args[1] : "ShapesReport.pdf";
+
+        // Guard against missing input file.
+        if (!File.Exists(diagramPath))
+        {
+            Console.Error.WriteLine($"Input file not found: {diagramPath}");
+            return;
+        }
+
+        // Temporary folder for shape images.
+        string tempImageFolder = Path.Combine(Path.GetTempPath(), "ShapeImages_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempImageFolder);
+
+        // List to keep image streams open until PDF is saved.
+        List<FileStream> openImageStreams = new List<FileStream>();
+
         try
         {
-            // Load the Visio diagram inside a using block as required by the API
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Create a new PDF document (fully qualified to avoid namespace clash).
+            Aspose.Pdf.Document pdfDoc = new Aspose.Pdf.Document();
+
+            // Iterate through each page and each shape.
+            foreach (Page page in diagram.Pages)
             {
-                // Create a new PDF document (fully qualified to avoid namespace ambiguity)
-                Aspose.Pdf.Document pdfDocument = new Aspose.Pdf.Document();
-
-                // Iterate through each page in the diagram
-                foreach (Page page in diagram.Pages)
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through each shape on the current page
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip shapes that are marked as deleted
-                        if (shape.Del == BOOL.True)
-                            continue;
+                    // Prepare metadata.
+                    string shapeId = shape.ID.ToString();
+                    string shapeName = shape.Name ?? "N/A";
+                    string masterName = shape.Master != null ? shape.Master.Name : "N/A";
 
-                        // Prepare a temporary PNG file for the shape image
-                        string tempImagePath = Path.Combine(Path.GetTempPath(),
-                            $"shape_{shape.ID}_{Guid.NewGuid()}.png");
+                    // Export the shape to a PNG image.
+                    string imagePath = Path.Combine(tempImageFolder, $"shape_{shapeId}.png");
+                    ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                    shape.ToImage(imagePath, imgOptions);
 
-                        // Export the shape to PNG using ImageSaveOptions
-                        ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                        shape.ToImage(tempImagePath, imgOptions);
+                    // Open the image file stream.
+                    FileStream imgStream = new FileStream(imagePath, FileMode.Open, FileAccess.Read);
+                    openImageStreams.Add(imgStream);
 
-                        // Add a new page to the PDF for this shape
-                        Aspose.Pdf.Page pdfPage = pdfDocument.Pages.Add();
+                    // Add a new page to the PDF for this shape.
+                    Aspose.Pdf.Page pdfPage = pdfDoc.Pages.Add();
 
-                        // Insert the shape image into the PDF page
-                        using (FileStream imgStream = File.OpenRead(tempImagePath))
-                        {
-                            Aspose.Pdf.Image pdfImage = new Aspose.Pdf.Image
-                            {
-                                ImageStream = imgStream,
-                                // Scale the image to fit within the page width (leaving margins)
-                                FixWidth = pdfPage.PageInfo.Width - 40
-                            };
-                            pdfPage.Paragraphs.Add(pdfImage);
-                        }
+                    // Insert the image into the PDF page.
+                    Aspose.Pdf.Image pdfImage = new Aspose.Pdf.Image();
+                    pdfImage.ImageStream = imgStream;
+                    // Position the image at the top‑left corner.
+                    pdfImage.FixHeight = 400; // Adjust as needed.
+                    pdfImage.FixWidth = 400;
+                    pdfPage.Paragraphs.Add(pdfImage);
 
-                        // Delete the temporary image file
-                        try { File.Delete(tempImagePath); } catch { /* ignore cleanup errors */ }
-
-                        // Build metadata string for the shape
-                        string masterName = shape.Master != null ? shape.Master.Name : "N/A";
-                        string shapeName = !string.IsNullOrWhiteSpace(shape.Name) ? shape.Name : "N/A";
-                        string metadata = $"Shape ID: {shape.ID}, Name: {shapeName}, Master: {masterName}";
-
-                        // Add metadata as a text fragment below the image
-                        Aspose.Pdf.Text.TextFragment textFragment = new Aspose.Pdf.Text.TextFragment(metadata);
-                        textFragment.Margin = new Aspose.Pdf.MarginInfo { Top = 10, Bottom = 10 };
-                        pdfPage.Paragraphs.Add(textFragment);
-                    }
+                    // Add metadata text below the image.
+                    string metaText = $"Shape ID: {shapeId}\nName: {shapeName}\nMaster: {masterName}";
+                    Aspose.Pdf.Text.TextFragment tf = new Aspose.Pdf.Text.TextFragment(metaText);
+                    // Position the text fragment just below the image.
+                    tf.Position = new Aspose.Pdf.Text.Position(0, pdfImage.FixHeight + 10);
+                    pdfPage.Paragraphs.Add(tf);
                 }
-
-                // Save the assembled PDF report
-                pdfDocument.Save(outputPdfPath);
-                Console.WriteLine($"PDF report generated successfully at '{outputPdfPath}'.");
             }
+
+            // Save the assembled PDF report.
+            pdfDoc.Save(outputPdfPath);
+            Console.WriteLine($"PDF report generated successfully: {outputPdfPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine("An error occurred during processing:");
+            Console.Error.WriteLine(ex.Message);
+        }
+        finally
+        {
+            // Ensure all opened image streams are closed.
+            foreach (var stream in openImageStreams)
+            {
+                try { stream.Close(); } catch { /* ignore */ }
+            }
+
+            // Clean up temporary images.
+            try
+            {
+                if (Directory.Exists(tempImageFolder))
+                {
+                    Directory.Delete(tempImageFolder, true);
+                }
+            }
+            catch (Exception cleanupEx)
+            {
+                Console.Error.WriteLine("Failed to clean up temporary files:");
+                Console.Error.WriteLine(cleanupEx.Message);
+            }
         }
     }
 }

@@ -7,66 +7,51 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
-            return;
-        }
+        // Define the output file path
+        string outputPath = "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
-        if (!File.Exists(inputPath))
+        // Ensure the output directory exists
+        string outputDir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+        if (!Directory.Exists(outputDir))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
             return;
         }
 
         try
         {
-            // Load the existing Visio diagram inside a using block as required.
-            using (Diagram diagram = new Diagram(inputPath))
+            // Create a new empty diagram inside a using block as required by Aspose.Diagram
+            using (Diagram diagram = new Diagram())
             {
-                // Ensure the diagram has at least one page.
-                if (diagram.Pages.Count == 0)
-                {
-                    Console.Error.WriteLine("The diagram contains no pages.");
-                    return;
-                }
-
-                // Get the first page.
+                // Get the first (default) page
                 Page page = diagram.Pages[0];
 
-                // Define position for the new rectangle (in inches).
+                // Add a rectangle shape to the page
+                // Parameters: pinX, pinY, masterName, isCalculate
                 double pinX = 2.0;
                 double pinY = 2.0;
                 string masterName = "Rectangle";
+                bool isCalculate = false;
+                long shapeId = page.AddShape(pinX, pinY, masterName, isCalculate);
 
-                // Add a new rectangle shape to the page.
-                // The fourth parameter is a plain bool (isCalculate), not a BOOL enum.
-                long shapeId = page.AddShape(pinX, pinY, masterName, false);
-
-                // Retrieve the newly added shape instance.
-                Shape newShape = page.Shapes.GetShape(shapeId);
+                // Retrieve the newly added shape using its ID
+                Shape shape = page.Shapes.GetShape(shapeId);
 
                 // Assign a preset theme to the shape.
-                // The requested "flowchart" theme is not available in the current API.
-                // As a substitute, we use the available Bubble theme and document the change.
-                newShape.PresetTheme = PresetThemeValue.Bubble; // Substitute for Flowchart theme.
+                // The "Flowchart" preset theme is not available in the current API.
+                // Using a known theme as a placeholder; replace with the correct enum when available.
+                shape.PresetTheme = PresetThemeValue.Bubble; // TODO: replace with Flowchart theme when supported
 
-                // Optionally assign a theme variant.
-                newShape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-
-                // Save the modified diagram to the specified output path in VSDX format.
+                // Save the diagram to the specified file in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

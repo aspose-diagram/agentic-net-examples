@@ -1,72 +1,80 @@
 using System;
 using System.IO;
-using System.Text.RegularExpressions;
+using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (modify as needed)
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputCsvFile>");
             return;
         }
-        // Output CSV file path
-        string outputPath = "shape_ids.csv";
 
-        // Guard: ensure input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
+        }
+
+        // Ensure the output directory exists.
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
         }
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the diagram inside a using block as required by the API.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Prepare a list to hold matching shape IDs
-                var matchingIds = new System.Collections.Generic.List<long>();
+                // Collect IDs of shapes whose NameU matches the pattern "Node_*".
+                List<long> matchingIds = new List<long>();
 
-                // Regular expression for the pattern "Node_*"
-                var regex = new Regex(@"^Node_.*$", RegexOptions.Compiled);
-
-                // Iterate through all pages and shapes
-                foreach (Page page in diagram.Pages)
+                // Iterate over all pages in the diagram.
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                 {
+                    Page page = diagram.Pages[pageIndex];
+
+                    // Iterate over all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the shape has a NameU before matching
-                        if (!string.IsNullOrEmpty(shape.NameU) && regex.IsMatch(shape.NameU))
+                        // Guard against null names and check the prefix.
+                        if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU.StartsWith("Node_"))
                         {
+                            // Shape.ID is of type long.
                             matchingIds.Add(shape.ID);
                         }
                     }
                 }
 
-                // Write the IDs to a CSV file
-                using (var writer = new StreamWriter(outputPath, false))
+                // Write the collected IDs to a CSV file.
+                using (StreamWriter writer = new StreamWriter(outputPath, false))
                 {
-                    // Write CSV header
+                    // Optional header.
                     writer.WriteLine("ShapeID");
-                    // Write each ID on a new line
+
                     foreach (long id in matchingIds)
                     {
                         writer.WriteLine(id);
                     }
                 }
 
-                Console.WriteLine($"Extracted {matchingIds.Count} shape IDs to '{outputPath}'.");
+                Console.WriteLine($"Extracted {matchingIds.Count} shape IDs to \"{outputPath}\".");
             }
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

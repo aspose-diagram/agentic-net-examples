@@ -6,20 +6,9 @@ using Aspose.Diagram;
 
 class Program
 {
-    // Model class to hold inheritance information for a shape
-    private class ShapeInheritanceInfo
-    {
-        public int PageIndex { get; set; }
-        public long ShapeId { get; set; }
-        public string NameU { get; set; }
-        public string MasterName { get; set; }
-        public bool InheritFill { get; set; }
-        public bool InheritLine { get; set; }
-    }
-
     static void Main(string[] args)
     {
-        // Expect two arguments: input Visio file and output JSON file
+        // Expect two arguments: input Visio file path and output JSON file path
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputJsonPath>");
@@ -29,7 +18,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -38,47 +27,51 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
                 var inheritanceList = new List<ShapeInheritanceInfo>();
 
                 // Iterate through all pages
-                for (int pageIdx = 0; pageIdx < diagram.Pages.Count; pageIdx++)
+                foreach (Page page in diagram.Pages)
                 {
-                    Page page = diagram.Pages[pageIdx];
-
-                    // Iterate through all shapes on the current page
-                    for (int shapeIdx = 0; shapeIdx < page.Shapes.Count; shapeIdx++)
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        Shape shape = page.Shapes[shapeIdx];
+                        // Prepare inheritance flags
+                        bool fillInherited = false;
+                        bool lineInherited = false;
 
-                        // Determine fill inheritance by comparing current fill foregnd with inherited value
-                        bool inheritFill = false;
-                        if (shape.InheritFill != null && shape.Fill != null && shape.InheritFill.FillForegnd != null && shape.Fill.FillForegnd != null)
+                        // Check fill inheritance if InheritFill is available
+                        if (shape.InheritFill != null && shape.Fill != null &&
+                            shape.InheritFill.FillForegnd != null && shape.Fill.FillForegnd != null)
                         {
-                            inheritFill = shape.Fill.FillForegnd.Value == shape.InheritFill.FillForegnd.Value;
+                            // Compare the FillForegnd values (case‑insensitive)
+                            fillInherited = string.Equals(
+                                shape.Fill.FillForegnd.Value,
+                                shape.InheritFill.FillForegnd.Value,
+                                StringComparison.OrdinalIgnoreCase);
                         }
 
-                        // Determine line inheritance by comparing current line color with inherited value
-                        bool inheritLine = false;
-                        if (shape.InheritLine != null && shape.Line != null && shape.InheritLine.LineColor != null && shape.Line.LineColor != null)
+                        // Check line inheritance if InheritLine is available
+                        if (shape.InheritLine != null && shape.Line != null &&
+                            shape.InheritLine.LineColor != null && shape.Line.LineColor != null)
                         {
-                            inheritLine = shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value;
+                            // Compare the LineColor values (case‑insensitive)
+                            lineInherited = string.Equals(
+                                shape.Line.LineColor.Value,
+                                shape.InheritLine.LineColor.Value,
+                                StringComparison.OrdinalIgnoreCase);
                         }
 
-                        // Collect information into the model
-                        var info = new ShapeInheritanceInfo
+                        // Collect information for this shape
+                        inheritanceList.Add(new ShapeInheritanceInfo
                         {
-                            PageIndex = pageIdx,
-                            ShapeId = shape.ID,
+                            ShapeId = shape.ID,          // Shape.ID is a long
                             NameU = shape.NameU,
-                            MasterName = shape.Master != null ? shape.Master.Name : string.Empty,
-                            InheritFill = inheritFill,
-                            InheritLine = inheritLine
-                        };
-
-                        inheritanceList.Add(info);
+                            FillInherited = fillInherited,
+                            LineInherited = lineInherited
+                        });
                     }
                 }
 
@@ -88,7 +81,7 @@ class Program
 
                 // Write JSON to the output file
                 File.WriteAllText(outputPath, json);
-                Console.WriteLine($"Inheritance settings have been serialized to: {outputPath}");
+                Console.WriteLine($"Shape inheritance settings have been serialized to: {outputPath}");
             }
         }
         catch (Exception ex)
@@ -96,5 +89,14 @@ class Program
             // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
+    }
+
+    // Helper class to hold shape inheritance information for JSON serialization
+    private class ShapeInheritanceInfo
+    {
+        public long ShapeId { get; set; }
+        public string NameU { get; set; }
+        public bool FillInherited { get; set; }
+        public bool LineInherited { get; set; }
     }
 }

@@ -8,94 +8,105 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate that a Visio file path was provided
-        if (args.Length == 0)
+        // Validate command‑line arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputFolder> [archivePath]");
             return;
         }
 
         string inputPath = args[0];
+        string outputFolder = args[1];
+        string archivePath = args.Length >= 3 ? args[2] : Path.Combine(outputFolder, "ShapesDXF.zip");
 
-        // Guard against missing input file
+        // Guard: ensure the input Visio file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Prepare a folder to store the exported shape files
-        string exportFolder = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "ShapeExports");
-        try
+        // Guard: ensure the output folder exists (create if necessary)
+        if (!Directory.Exists(outputFolder))
         {
-            if (!Directory.Exists(exportFolder))
-                Directory.CreateDirectory(exportFolder);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to create export folder: {ex.Message}");
-            return;
+            try
+            {
+                Directory.CreateDirectory(outputFolder);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create output folder: {ex.Message}");
+                return;
+            }
         }
 
-        // Load the Visio diagram inside a using block as required
         try
         {
+            // Load the Visio diagram inside a using block (mandatory pattern)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                int shapeCounter = 0;
-                int pageNumber = 0;
-
-                // Iterate through all pages (Page does not have an Index property, so we use a manual counter)
+                // Iterate over each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    pageNumber++;
-
-                    // Iterate through all shapes on the current page
+                    // Iterate over each shape on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted
+                        // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        shapeCounter++;
-
-                        // Build a unique file name for the shape export
-                        string shapeFileName = $"Shape_{shapeCounter}_Page_{pageNumber}_ID_{shape.ID}.svg";
-                        string shapeFilePath = Path.Combine(exportFolder, shapeFileName);
-
-                        // Export the shape geometry to SVG (DXF export is not supported; SVG is used as the closest alternative)
-                        try
+                        // Create a new empty diagram to hold the single shape
+                        using (Diagram shapeDiagram = new Diagram())
                         {
-                            SVGSaveOptions svgOptions = new SVGSaveOptions();
-                            // Export only the current shape; no additional page settings are required for shape-level export
-                            shape.ToSvg(shapeFilePath, svgOptions);
-                        }
-                        catch (Exception exportEx)
-                        {
-                            Console.Error.WriteLine($"Failed to export shape ID {shape.ID} on page {pageNumber}: {exportEx.Message}");
+                            // Create a new Shape instance and copy the source shape into it
+                            Shape copiedShape = new Shape();
+                            copiedShape.Copy(shape);
+
+                            // Add the copied shape to the new diagram's active page
+                            shapeDiagram.ActivePage.Shapes.Add(copiedShape);
+
+                            // Build the DXF file path for this shape
+                            string dxfFileName = $"Shape_{shape.ID}.dxf";
+                            string dxfPath = Path.Combine(outputFolder, dxfFileName);
+
+                            // Save the single‑shape diagram as DXF
+                            shapeDiagram.Save(dxfPath, SaveFileFormat.Dxf);
                         }
                     }
                 }
+            }
 
-                // After exporting all shapes, create a ZIP archive of the SVG files
-                string zipPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? string.Empty, "ShapeExports.zip");
-                try
+            // Archive all generated DXF files into a zip file
+            try
+            {
+                // Remove existing archive if it already exists
+                if (File.Exists(archivePath))
                 {
-                    if (File.Exists(zipPath))
-                        File.Delete(zipPath);
+                    File.Delete(archivePath);
+                }
 
-                    ZipFile.CreateFromDirectory(exportFolder, zipPath);
-                    Console.WriteLine($"Export completed. SVG files are archived at: {zipPath}");
-                }
-                catch (Exception zipEx)
+                using (FileStream zipToOpen = new FileStream(archivePath, FileMode.Create))
+                using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Create))
                 {
-                    Console.Error.WriteLine($"Failed to create ZIP archive: {zipEx.Message}");
+                    // Add each DXF file from the output folder to the archive
+                    string[] dxfFiles = Directory.GetFiles(outputFolder, "*.dxf");
+                    foreach (string dxfFile in dxfFiles)
+                    {
+                        string entryName = Path.GetFileName(dxfFile);
+                        archive.CreateEntryFromFile(dxfFile, entryName);
+                    }
                 }
+
+                Console.WriteLine($"DXF files have been archived to: {archivePath}");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error creating ZIP archive: {ex.Message}");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
+            Console.Error.WriteLine($"Error processing Visio diagram: {ex.Message}");
         }
     }
 }

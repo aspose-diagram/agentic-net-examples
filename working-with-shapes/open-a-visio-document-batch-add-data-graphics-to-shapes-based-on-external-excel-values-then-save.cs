@@ -8,89 +8,100 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: Visio file path and Excel CSV file path
+        // Expect two arguments: input Visio file path and input CSV (Excel) file path
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath> <ExcelCsvFilePath>");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath> <CsvFilePath>");
             return;
         }
 
         string visioPath = args[0];
-        string excelCsvPath = args[1];
+        string csvPath = args[1];
+        string outputPath = Path.Combine(Path.GetDirectoryName(visioPath) ?? "", "output.vsdx");
 
-        // Guard: check Visio file existence
+        // Guard against missing files
         if (!File.Exists(visioPath))
         {
             Console.Error.WriteLine($"Visio file not found: {visioPath}");
             return;
         }
-
-        // Guard: check Excel CSV file existence
-        if (!File.Exists(excelCsvPath))
+        if (!File.Exists(csvPath))
         {
-            Console.Error.WriteLine($"Excel CSV file not found: {excelCsvPath}");
+            Console.Error.WriteLine($"CSV file not found: {csvPath}");
             return;
         }
 
+        // Load external data from CSV into a dictionary (key: shape NameU, value: data value)
+        Dictionary<string, string> shapeDataMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         try
         {
-            // Load the Visio diagram inside a using block as required
+            foreach (string line in File.ReadAllLines(csvPath))
+            {
+                // Skip empty lines
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
+
+                // Expect format: ShapeName,Value
+                string[] parts = line.Split(new[] { ',' }, 2);
+                if (parts.Length != 2)
+                    continue; // malformed line, ignore
+
+                string shapeName = parts[0].Trim();
+                string value = parts[1].Trim();
+                if (!shapeDataMap.ContainsKey(shapeName))
+                    shapeDataMap.Add(shapeName, value);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error reading CSV file: {ex.Message}");
+            return;
+        }
+
+        // Open the Visio document and apply data graphics
+        try
+        {
             using (Diagram diagram = new Diagram(visioPath))
             {
-                // Read the external Excel values (assumed CSV for simplicity)
-                // Expected format per line: ShapeName,DataGraphicValue
-                var dataMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                foreach (string line in File.ReadAllLines(excelCsvPath))
-                {
-                    // Skip empty lines
-                    if (string.IsNullOrWhiteSpace(line))
-                        continue;
-
-                    string[] parts = line.Split(',');
-                    if (parts.Length >= 2)
-                    {
-                        string shapeName = parts[0].Trim();
-                        string graphicValue = parts[1].Trim();
-                        dataMap[shapeName] = graphicValue;
-                    }
-                }
-
-                // Iterate through all pages and shapes to apply data graphics (as custom properties)
+                // Iterate over all pages
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate over all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Ensure the shape is not marked for deletion
+                        // Skip logically deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Match shape by its universal name
-                        if (!string.IsNullOrEmpty(shape.NameU) && dataMap.TryGetValue(shape.NameU, out string value))
+                        // Match shape by its NameU property
+                        if (!string.IsNullOrEmpty(shape.NameU) && shapeDataMap.TryGetValue(shape.NameU, out string dataValue))
                         {
-                            // Add a custom property to store the data graphic value
-                            // This serves as a placeholder since explicit DataGraphic APIs are not available in the reference
+                            // Add a custom property named "DataValue" with the external value
                             Prop prop = new Prop();
-                            prop.Name = "DataGraphic";
-                            prop.Label.Value = "Data Graphic";
-                            prop.Value.Val = value;
+                            prop.Name = "DataValue";
+                            prop.Label.Value = "Data Value";
+                            prop.Value.Val = dataValue;
                             prop.Type.Value = TypePropValue.String;
                             shape.Props.Add(prop);
+
+                            // Example: set a red fill if the value contains "Critical"
+                            if (dataValue.IndexOf("Critical", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                // FillForegnd is a cell that accepts a color string like "#FF0000"
+                                shape.Fill.FillForegnd.Value = "#FF0000";
+                            }
                         }
                     }
                 }
 
-                // Save the modified diagram to a new file
-                string outputPath = Path.Combine(
-                    Path.GetDirectoryName(visioPath) ?? string.Empty,
-                    Path.GetFileNameWithoutExtension(visioPath) + "_Updated.vsdx");
-
+                // Save the modified diagram to a new file (VSDX format)
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"Error processing Visio document: {ex.Message}");
         }
     }
 }

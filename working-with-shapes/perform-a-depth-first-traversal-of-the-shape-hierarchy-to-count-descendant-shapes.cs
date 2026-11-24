@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -9,7 +10,7 @@ class Program
         // Validate input arguments
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            Console.Error.WriteLine("Please provide the path to the Visio diagram file as the first argument.");
             return;
         }
 
@@ -24,53 +25,53 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block (mandatory)
+            // Load the diagram inside a using block (mandatory pattern)
             using (Diagram diagram = new Diagram(diagramPath))
             {
-                int totalDescendants = 0;
+                // Manual page counter because Page does not have an Index property
+                int pageNumber = 0;
 
                 // Iterate through each page in the diagram
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                foreach (Page page in diagram.Pages)
                 {
-                    Page page = diagram.Pages[pageIndex];
+                    pageNumber++;
+                    Console.WriteLine($"Processing Page {pageNumber} (Name: {page.Name})...");
 
                     // Iterate through top‑level shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Count all descendant shapes of the current shape using depth‑first traversal
+                        // Count all descendant shapes using depth‑first traversal
                         int descendantCount = CountDescendants(shape);
-                        totalDescendants += descendantCount;
+
+                        Console.WriteLine($"Shape ID {shape.ID} (Name: {shape.Name}) has {descendantCount} descendant(s).");
                     }
                 }
-
-                // Output the result
-                Console.WriteLine($"Total number of descendant shapes (depth‑first): {totalDescendants}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Report any errors that occur during processing
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 
     /// <summary>
     /// Recursively counts all descendant shapes of the given shape using depth‑first traversal.
     /// </summary>
-    /// <param name="shape">The parent shape.</param>
-    /// <returns>The number of descendant shapes.</returns>
+    /// <param name="shape">The shape whose descendants are to be counted.</param>
+    /// <returns>The total number of descendant shapes.</returns>
     private static int CountDescendants(Shape shape)
     {
         int count = 0;
 
-        // Group shapes contain child shapes in the Shapes collection.
-        // For non‑group shapes there are no descendants.
-        if (shape.Type == TypeValue.Group && shape.Shapes != null)
+        // Guard against null Shapes collection (non‑group shapes)
+        if (shape.Shapes != null)
         {
+            // Iterate through each child shape
             foreach (Shape child in shape.Shapes)
             {
                 // Count the child itself
-                count += 1;
+                count++;
 
                 // Recursively count the child's descendants
                 count += CountDescendants(child);

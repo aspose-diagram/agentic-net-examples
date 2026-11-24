@@ -1,7 +1,7 @@
 using System;
 using System.IO;
-using System.Diagnostics;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -26,7 +26,7 @@ class Program
             return;
         }
 
-        // Guard: ensure the output folder exists or create it.
+        // Ensure the output directory exists (create if necessary).
         if (!Directory.Exists(outputFolder))
         {
             try
@@ -35,7 +35,7 @@ class Program
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"Failed to create output folder '{outputFolder}': {ex.Message}");
+                Console.Error.WriteLine($"Failed to create output directory: {ex.Message}");
                 return;
             }
         }
@@ -45,55 +45,52 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Collect up to 100 non‑deleted shapes from all pages.
+            // Collect up to 100 non‑deleted shapes from the diagram.
             List<Shape> shapesToConvert = new List<Shape>();
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
                     // Skip logically deleted shapes.
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    shapesToConvert.Add(shape);
-                    if (shapesToConvert.Count >= 100)
-                        break;
+                    if (shape.Del == BOOL.False)
+                    {
+                        shapesToConvert.Add(shape);
+                        if (shapesToConvert.Count >= 100)
+                            break;
+                    }
                 }
                 if (shapesToConvert.Count >= 100)
                     break;
             }
 
-            int totalShapes = shapesToConvert.Count;
-            if (totalShapes == 0)
+            int shapeCount = shapesToConvert.Count;
+            if (shapeCount == 0)
             {
                 Console.WriteLine("No shapes found to convert.");
                 return;
             }
 
-            // Prepare SVG save options (default configuration).
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
-
-            // Measure conversion time.
+            // Measure the time taken to convert the collected shapes to SVG.
             Stopwatch sw = Stopwatch.StartNew();
 
-            for (int i = 0; i < totalShapes; i++)
+            foreach (Shape shape in shapesToConvert)
             {
-                Shape shape = shapesToConvert[i];
-                string outputPath = Path.Combine(outputFolder, $"shape_{i + 1}.svg");
+                // Build a unique file name for each shape's SVG output.
+                string svgPath = Path.Combine(outputFolder, $"shape_{shape.ID}.svg");
 
-                // Convert the shape to SVG.
-                shape.ToSvg(outputPath, svgOptions);
+                // Convert the shape to SVG using default SVGSaveOptions.
+                shape.ToSvg(svgPath, new SVGSaveOptions());
             }
 
             sw.Stop();
 
-            // Log the performance result.
-            Console.WriteLine($"Converted {totalShapes} shapes to SVG in {sw.Elapsed.TotalMilliseconds} ms.");
+            // Log the duration and number of processed shapes.
+            Console.WriteLine($"Converted {shapeCount} shape(s) to SVG in {sw.Elapsed.TotalMilliseconds} ms.");
         }
         catch (Exception ex)
         {
             // Log any Aspose or I/O errors.
-            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
+            Console.Error.WriteLine($"Error during processing: {ex.Message}");
         }
     }
 }

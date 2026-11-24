@@ -6,30 +6,30 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: input file, page name, output file
+        // Expect three arguments: input Visio file, output Visio file, and target page name.
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioPath> <pageName> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <pageName>");
             return;
         }
 
         string inputPath = args[0];
-        string pageName = args[1];
-        string outputPath = args[2];
+        string outputPath = args[1];
+        string pageName = args[2];
 
-        // Guard against missing input file
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Retrieve the specified page; GetPage returns null if not found
+                // Retrieve the specified page by name.
                 Page page = diagram.Pages.GetPage(pageName);
                 if (page == null)
                 {
@@ -37,30 +37,29 @@ class Program
                     return;
                 }
 
-                // Iterate over all shapes on the page
+                // Iterate over all shapes on the page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip logically deleted shapes
+                    // Skip deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Identify group shapes using the Type property (IsGroup does not exist)
+                    // Identify group shapes. Use Type == TypeValue.Group as a reliable check.
                     if (shape.Type == TypeValue.Group)
                     {
-                        // Rotate the group by adding 30 degrees to its current angle
-                        double currentAngle = shape.XForm.Angle.Value;
-                        shape.XForm.Angle.Value = currentAngle + 30.0;
+                        // Rotate the group shape by 30 degrees using SetAngle.
+                        shape.SetAngle(30.0);
                     }
                 }
 
-                // Save the modified diagram to the output path using VSDX format
+                // Save the modified diagram to the output path in VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

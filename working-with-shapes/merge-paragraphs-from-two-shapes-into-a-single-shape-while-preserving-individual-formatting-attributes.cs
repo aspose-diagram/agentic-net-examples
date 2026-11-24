@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -15,79 +16,61 @@ class Program
         }
         string outputPath = "merged_output.vsdx";
 
-        // Guard against missing input file
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // IDs of the two source shapes to merge (replace with actual IDs)
+        // IDs of the two shapes to merge (replace with actual IDs)
         long shapeId1 = 1; // first shape ID
         long shapeId2 = 2; // second shape ID
 
         try
         {
-            // Load the source diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Assume we work with the first page
-            Page page = diagram.Pages[0];
-
-            // Retrieve the two source shapes
-            Shape shape1 = page.Shapes.GetShape(shapeId1);
-            Shape shape2 = page.Shapes.GetShape(shapeId2);
-
-            if (shape1 == null || shape2 == null)
+            // Load the diagram inside a using block (required pattern)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine("One or both source shapes could not be found.");
-                return;
-            }
+                // Assume both shapes are on the first page
+                Page page = diagram.Pages[0];
 
-            // Create a new rectangle shape that will hold the merged paragraphs
-            // Parameters: pinX, pinY, master name, page index
-            long newShapeId = diagram.AddShape(2.0, 2.0, "Rectangle", 0);
-            Shape targetShape = page.Shapes.GetShape(newShapeId);
+                // Retrieve the shapes by their IDs
+                Shape shape1 = page.Shapes.GetShape(shapeId1);
+                Shape shape2 = page.Shapes.GetShape(shapeId2);
 
-            if (targetShape == null)
-            {
-                Console.Error.WriteLine("Failed to create target shape.");
-                return;
-            }
-
-            // OPTIONAL: Clear any existing paragraphs/characters in the target shape
-            // (If Clear() is not available, this block can be omitted)
-            try { targetShape.Paras.Clear(); } catch { }
-            try { targetShape.Chars.Clear(); } catch { }
-
-            // Helper method to copy paragraphs and characters from a source shape
-            void CopyContent(Shape source)
-            {
-                // Copy paragraphs preserving their formatting
-                for (int i = 0; i < source.Paras.Count; i++)
+                // Validate that both shapes were found
+                if (shape1 == null || shape2 == null)
                 {
-                    // Add the paragraph object directly; this retains its formatting
-                    targetShape.Paras.Add(source.Paras[i]);
+                    Console.Error.WriteLine("One or both shape IDs were not found on the first page.");
+                    return;
                 }
 
-                // Copy character runs preserving their formatting
-                for (int i = 0; i < source.Chars.Count; i++)
+                // Merge paragraphs from shape2 into shape1 while preserving formatting
+                for (int i = 0; i < shape2.Paras.Count; i++)
                 {
-                    targetShape.Chars.Add(source.Chars[i]);
+                    // Retrieve the source paragraph
+                    var sourcePara = shape2.Paras[i];
+
+                    // Clone the paragraph to keep its formatting intact
+                    var clonedPara = (Para)sourcePara.Clone();
+
+                    // Add the cloned paragraph to the first shape's paragraph collection
+                    shape1.Paras.Add(clonedPara);
                 }
+
+                // Optionally hide the second shape after merging
+                shape2.Del = BOOL.True;
+
+                // Save the modified diagram to the output file (must specify format)
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
 
-            // Merge paragraphs from the first shape
-            CopyContent(shape1);
-            // Merge paragraphs from the second shape
-            CopyContent(shape2);
-
-            // Save the modified diagram
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Merged diagram saved to: {outputPath}");
+            Console.WriteLine($"Paragraphs merged successfully. Output saved to: {outputPath}");
         }
         catch (Exception ex)
         {
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

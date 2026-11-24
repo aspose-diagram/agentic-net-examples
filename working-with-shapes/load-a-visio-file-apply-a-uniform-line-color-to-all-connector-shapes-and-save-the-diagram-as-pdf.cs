@@ -7,51 +7,64 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define input and output file paths (can be passed via command line arguments)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.pdf";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
+            return;
+        }
 
-        // Guard: ensure the input Visio file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages in the diagram
+                // Define the uniform line color (hex RGB). Change as needed.
+                const string uniformLineColor = "#FF0000"; // Red
+
+                // Iterate through all pages and shapes.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Shapes collection is zero‑based; iterate safely.
+                    for (int i = 0; i < page.Shapes.Count; i++)
                     {
-                        // Identify connector shapes (1-D shapes)
+                        Shape shape = page.Shapes[i];
+
+                        // Identify connector shapes: they are 1‑D shapes.
                         if (shape.OneD)
                         {
-                            // Apply a uniform line color (e.g., red) to the connector
-                            shape.Line.LineColor.Value = "#FF0000";
+                            // Apply the uniform line color.
+                            shape.Line.LineColor.Value = uniformLineColor;
                         }
                     }
                 }
 
-                // Configure PDF save options
+                // Prepare PDF save options.
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
-                // Explicitly set the save format to PDF as required
+                // Explicitly set the format tracker.
                 pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                // Optional: set a fallback font.
+                pdfOptions.DefaultFont = "Arial";
 
-                // Save the modified diagram as PDF
+                // Save the modified diagram as PDF.
                 diagram.Save(outputPath, pdfOptions);
             }
 
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing to the error stream
+            // Report any errors that occur during processing.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
@@ -16,50 +16,56 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure input file exists
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load diagram inside a using block as required
+            // Load the diagram inside a using block as required by the API.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages
+                // Iterate over all pages in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page
+                    // Iterate over all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip logically deleted shapes
+                        // Skip logically deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Example calculation: scale PinX and PinY by 1.1
-                        double calculatedPinX = shape.XForm.PinX.Value * 1.1;
-                        double calculatedPinY = shape.XForm.PinY.Value * 1.1;
+                        // Example calculation: offset the current PinX/Y by arbitrary values.
+                        double calculatedPinX = shape.XForm.PinX.Value + 0.12345;
+                        double calculatedPinY = shape.XForm.PinY.Value + 0.67890;
 
-                        // Round to two decimal places
-                        double roundedPinX = Math.Round(calculatedPinX, 2);
-                        double roundedPinY = Math.Round(calculatedPinY, 2);
-
-                        // Apply rounded values back to the shape
-                        shape.XForm.PinX.Value = roundedPinX;
-                        shape.XForm.PinY.Value = roundedPinY;
+                        // Round the calculated values to two decimal places before applying.
+                        shape.XForm.PinX.Value = RoundToTwoDecimalPlaces(calculatedPinX);
+                        shape.XForm.PinY.Value = RoundToTwoDecimalPlaces(calculatedPinY);
                     }
                 }
 
-                // Save the modified diagram to the specified output path
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Rounds a double value to two decimal places using AwayFromZero rounding.
+    /// </summary>
+    /// <param name="value">The value to round.</param>
+    /// <returns>The rounded value.</returns>
+    private static double RoundToTwoDecimalPlaces(double value)
+    {
+        return Math.Round(value, 2, MidpointRounding.AwayFromZero);
     }
 }

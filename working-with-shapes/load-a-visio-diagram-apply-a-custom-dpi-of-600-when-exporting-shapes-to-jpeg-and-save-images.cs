@@ -7,62 +7,85 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument) or default placeholder
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Output directory for JPEG images (second argument) or default folder
-        string outputDir = args.Length > 1 ? args[1] : "output_images";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputFolder>");
+            return;
+        }
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputFolder = args[1];
+
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Ensure the output directory exists
+        // Guard: ensure the output folder exists (create if necessary).
         try
         {
-            Directory.CreateDirectory(outputDir);
+            if (!Directory.Exists(outputFolder))
+                Directory.CreateDirectory(outputFolder);
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error creating output directory \"{outputDir}\": {ex.Message}");
+            Console.Error.WriteLine($"Failed to create output folder '{outputFolder}': {ex.Message}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Configure image save options for JPEG with custom DPI (Resolution)
-            ImageSaveOptions imageOptions = new ImageSaveOptions(SaveFileFormat.Jpeg);
-            // Set DPI to 600 (Resolution property defines DPI)
-            imageOptions.Resolution = 600;
-
-            // Iterate through each page in the diagram
-            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+            // Load the Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Page page = diagram.Pages[pageIndex];
-
-                // Iterate through each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                // Configure image export options with a custom DPI of 600.
+                ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Jpeg)
                 {
-                    // Build a unique file name for each shape image
-                    string shapeFileName = $"{Path.GetFileNameWithoutExtension(inputPath)}_page{pageIndex + 1}_shape{shape.ID}.jpg";
-                    string shapeFilePath = Path.Combine(outputDir, shapeFileName);
+                    // Set the resolution (DPI) for the exported image.
+                    Resolution = 600f,
+                    // Set JPEG quality (0‑100). 100 = best quality.
+                    JpegQuality = 100,
+                    // Do not export hidden shapes.
+                    ExportHiddenPage = false
+                };
 
-                    // Export the shape to JPEG using the configured options
-                    shape.ToImage(shapeFilePath, imageOptions);
+                // Iterate through each page.
+                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                {
+                    Page page = diagram.Pages[pageIndex];
+
+                    // Iterate through each shape on the page.
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Build a unique file name for the shape image.
+                        string shapeFileName = $"{Path.GetFileNameWithoutExtension(inputPath)}_Page{pageIndex + 1}_Shape{shape.ID}.jpg";
+                        string shapeFilePath = Path.Combine(outputFolder, shapeFileName);
+
+                        try
+                        {
+                            // Export the current shape to JPEG using the configured options.
+                            shape.ToImage(shapeFilePath, imgOptions);
+                            Console.WriteLine($"Exported shape ID {shape.ID} to '{shapeFilePath}'.");
+                        }
+                        catch (Exception shapeEx)
+                        {
+                            Console.Error.WriteLine($"Failed to export shape ID {shape.ID} on page {pageIndex + 1}: {shapeEx.Message}");
+                        }
+                    }
                 }
             }
-
-            Console.WriteLine("Shape export completed successfully.");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram related errors
-            Console.Error.WriteLine($"An error occurred during processing: {ex.Message}");
+            // Catch any errors that occur during diagram loading or processing.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

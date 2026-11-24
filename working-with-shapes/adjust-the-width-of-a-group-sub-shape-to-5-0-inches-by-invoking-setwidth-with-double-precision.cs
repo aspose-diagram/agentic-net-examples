@@ -15,7 +15,7 @@ class Program
         }
         string outputPath = "output.vsdx";
 
-        // Guard against missing input file
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -28,35 +28,36 @@ class Program
             Diagram diagram = new Diagram(inputPath);
 
             // Flag to indicate whether the target sub‑shape was found
-            bool subShapeAdjusted = false;
+            bool subShapeFound = false;
 
             // Iterate through all pages to locate the sub‑shape inside a group
             foreach (Page page in diagram.Pages)
             {
-                // Attempt to retrieve the sub‑shape by name, searching within groups as well
-                // Replace "SubShapeName" with the actual NameU of the target sub‑shape
+                // Attempt to retrieve the sub‑shape by its name (including inside groups)
+                // Replace "SubShapeName" with the actual name of the sub‑shape you want to modify
                 Shape subShape = page.Shapes.GetShapeIncludingChild("SubShapeName");
-                if (subShape != null && subShape.Del == BOOL.False)
+                if (subShape != null)
                 {
-                    // Adjust the width of the sub‑shape to 5.0 inches using SetWidth
+                    // Adjust the width of the sub‑shape to 5.0 inches using SetWidth(double)
                     subShape.SetWidth(5.0);
-                    subShapeAdjusted = true;
-                    break; // Assuming only one such shape needs adjustment
+                    subShapeFound = true;
+                    break; // Exit after modifying the first matching shape
                 }
             }
 
-            if (!subShapeAdjusted)
+            if (!subShapeFound)
             {
-                Console.Error.WriteLine("Target sub‑shape not found or could not be adjusted.");
-                // Continue to save the diagram unchanged if desired, or exit
+                Console.Error.WriteLine("Sub‑shape not found in the diagram.");
+                return;
             }
 
             // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
+            // Write any Aspose.Diagram errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

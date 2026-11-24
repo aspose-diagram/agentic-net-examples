@@ -17,10 +17,10 @@ class Program
         string inputPath = args[0];
         string outputSvgPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
@@ -32,7 +32,7 @@ class Program
                 // Ensure the diagram contains at least one page.
                 if (diagram.Pages.Count == 0)
                 {
-                    Console.Error.WriteLine("The diagram does not contain any pages.");
+                    Console.Error.WriteLine("Error: The diagram contains no pages.");
                     return;
                 }
 
@@ -42,21 +42,21 @@ class Program
                 // Ensure the page contains at least one shape.
                 if (page.Shapes.Count == 0)
                 {
-                    Console.Error.WriteLine("The first page does not contain any shapes.");
+                    Console.Error.WriteLine("Error: The first page contains no shapes.");
                     return;
                 }
 
                 // Retrieve the first shape on the page.
                 Shape shape = page.Shapes[0];
 
-                // Configure SVG export options.
-                SVGSaveOptions svgOptions = new SVGSaveOptions();
-
-                // Export the shape to a temporary SVG file.
+                // Temporary file to let Aspose write the SVG.
                 string tempSvgPath = Path.GetTempFileName();
-                shape.ToSvg(tempSvgPath, svgOptions);
 
-                // Read the SVG content from the temporary file.
+                // Export the shape to SVG using Aspose's ToSvg method.
+                // This overload writes the SVG file directly.
+                shape.ToSvg(tempSvgPath, new SVGSaveOptions());
+
+                // Read the generated SVG content.
                 string svgContent = File.ReadAllText(tempSvgPath);
 
                 // Write the SVG string to the desired output file.

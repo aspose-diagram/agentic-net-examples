@@ -6,23 +6,29 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (can be passed as command‑line arguments)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
-        // Guard: ensure the source Visio file exists
-        if (!File.Exists(inputPath))
+        // Validate input arguments
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
-        // Load the diagram inside a using block as required
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: ensure input file exists
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
         try
         {
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram contains at least one page
+                // Ensure there is at least one page
                 if (diagram.Pages.Count == 0)
                 {
                     Console.Error.WriteLine("The diagram contains no pages.");
@@ -32,60 +38,59 @@ class Program
                 // Work with the first page
                 Page page = diagram.Pages[0];
 
-                // Find the first non‑deleted shape to duplicate
-                Shape originalShape = null;
+                // Find the first non-deleted shape to duplicate
+                Shape sourceShape = null;
                 foreach (Shape shape in page.Shapes)
                 {
-                    if (shape.Del == BOOL.False)
+                    if (shape.Del == BOOL.False && shape.Master != null)
                     {
-                        originalShape = shape;
+                        sourceShape = shape;
                         break;
                     }
                 }
 
-                if (originalShape == null)
+                if (sourceShape == null)
                 {
                     Console.Error.WriteLine("No suitable shape found to duplicate.");
                     return;
                 }
 
-                // Ensure the shape has an associated master (template)
-                if (originalShape.Master == null)
-                {
-                    Console.Error.WriteLine("The selected shape does not have a master and cannot be duplicated.");
-                    return;
-                }
+                // Retrieve master name from the source shape
+                string masterName = sourceShape.Master.Name;
 
-                // Retrieve the master name to use for the new shape
-                string masterName = originalShape.Master.Name;
+                // Retrieve original position
+                double originalPinX = sourceShape.XForm.PinX.Value;
+                double originalPinY = sourceShape.XForm.PinY.Value;
 
-                // Get the original shape position
-                double originalPinX = originalShape.XForm.PinX.Value;
-                double originalPinY = originalShape.XForm.PinY.Value;
+                // Define offset for the duplicated shape (e.g., 1 inch right and down)
+                double offsetX = 1.0;
+                double offsetY = 1.0;
 
-                // Define an offset (in inches) for the duplicated shape's position
-                const double offset = 1.0;
-                double newPinX = originalPinX + offset;
-                double newPinY = originalPinY + offset;
+                // Add a new shape using the same master and adjusted position
+                // page.AddShape returns the new shape's ID (long)
+                long newShapeId = page.AddShape(originalPinX + offsetX, originalPinY + offsetY, masterName);
 
-                // Add a new shape using the same master; isCalculate set to false
-                long newShapeId = page.AddShape(newPinX, newPinY, masterName, false);
-
-                // Retrieve the newly added shape (optional, for further adjustments)
+                // Retrieve the newly added shape instance
                 Shape newShape = page.Shapes.GetShape((int)newShapeId);
                 if (newShape == null)
                 {
                     Console.Error.WriteLine("Failed to retrieve the newly added shape.");
+                    return;
                 }
 
-                // Save the modified diagram to the output file
+                // Optional: copy size from source shape
+                newShape.XForm.Width.Value = sourceShape.XForm.Width.Value;
+                newShape.XForm.Height.Value = sourceShape.XForm.Height.Value;
+
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

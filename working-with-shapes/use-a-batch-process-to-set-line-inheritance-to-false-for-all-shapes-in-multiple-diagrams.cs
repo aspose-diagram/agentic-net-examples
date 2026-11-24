@@ -6,85 +6,102 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine the folder containing diagram files.
-        string folderPath;
-        if (args.Length > 0)
+        // Validate input arguments
+        if (args.Length == 0)
         {
-            folderPath = args[0];
-        }
-        else
-        {
-            Console.Write("Enter the path to the folder containing Visio diagrams: ");
-            folderPath = Console.ReadLine();
-        }
-
-        // Guard: ensure the folder exists.
-        if (string.IsNullOrWhiteSpace(folderPath) || !Directory.Exists(folderPath))
-        {
-            Console.Error.WriteLine("Folder does not exist: " + folderPath);
+            Console.Error.WriteLine("Please provide the folder path containing Visio files as the first argument.");
             return;
         }
 
-        // Define supported Visio file extensions.
-        string[] extensions = new[] { "*.vsdx", "*.vsd", "*.vdx", "*.vsx", "*.vtx", "*.vssx", "*.vstx" };
+        string folderPath = args[0];
 
-        // Collect all diagram files matching the extensions.
-        var diagramFiles = new System.Collections.Generic.List<string>();
-        foreach (var ext in extensions)
+        // Guard: check if the folder exists
+        if (!Directory.Exists(folderPath))
         {
-            diagramFiles.AddRange(Directory.GetFiles(folderPath, ext, SearchOption.TopDirectoryOnly));
-        }
-
-        if (diagramFiles.Count == 0)
-        {
-            Console.WriteLine("No Visio diagram files found in the specified folder.");
+            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
             return;
         }
 
-        // Process each diagram file.
-        foreach (var filePath in diagramFiles)
+        // Supported Visio file extensions
+        string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx", ".vssx", ".vss", ".vstm", ".vst" };
+
+        // Get all files with supported extensions
+        string[] files = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
+        foreach (string filePath in files)
         {
-            // Guard: ensure the file still exists before processing.
+            string ext = Path.GetExtension(filePath);
+            if (Array.IndexOf(extensions, ext, 0, extensions.Length) < 0)
+                continue; // Skip unsupported files
+
+            // Guard: ensure the file exists
             if (!File.Exists(filePath))
             {
-                Console.Error.WriteLine("File not found (skipping): " + filePath);
+                Console.Error.WriteLine($"File not found: {filePath}");
                 continue;
             }
 
             try
             {
-                // Load the diagram.
+                // Load the diagram
                 Diagram diagram = new Diagram(filePath);
 
-                // Iterate through all pages.
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the page.
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip logically deleted shapes.
+                        // Skip logically deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Disable line inheritance by assigning the current line color to itself.
-                        // This breaks the inheritance chain for the line color.
+                        // Disable line inheritance by assigning current line color to itself
+                        // This breaks the inheritance chain as per Aspose guidelines
                         shape.Line.LineColor.Value = shape.Line.LineColor.Value;
                     }
                 }
 
-                // Save the modified diagram, overwriting the original file.
-                diagram.Save(filePath, SaveFileFormat.Vsdx);
+                // Determine appropriate save format based on original extension
+                SaveFileFormat format = GetSaveFormat(ext);
 
-                // Release resources.
-                diagram.Dispose();
+                // Save the modified diagram, overwriting the original file
+                diagram.Save(filePath, format);
 
-                Console.WriteLine("Processed and saved: " + filePath);
+                Console.WriteLine($"Processed and saved: {filePath}");
             }
             catch (Exception ex)
             {
-                // Log any errors that occur during processing.
                 Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
             }
+        }
+    }
+
+    // Helper method to map file extension to SaveFileFormat enum
+    private static SaveFileFormat GetSaveFormat(string extension)
+    {
+        switch (extension.ToLower())
+        {
+            case ".vsdx":
+                return SaveFileFormat.Vsdx;
+            case ".vsd":
+                return SaveFileFormat.Vsd;
+            case ".vdx":
+                return SaveFileFormat.Vdx;
+            case ".vsx":
+                return SaveFileFormat.Vsx;
+            case ".vtx":
+                return SaveFileFormat.Vtx;
+            case ".vssx":
+                return SaveFileFormat.Vssx;
+            case ".vss":
+                return SaveFileFormat.Vss;
+            case ".vstm":
+                return SaveFileFormat.Vstm;
+            case ".vst":
+                return SaveFileFormat.Vst;
+            default:
+                // Default to Vsdx if unknown extension
+                return SaveFileFormat.Vsdx;
         }
     }
 }

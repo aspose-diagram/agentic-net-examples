@@ -6,20 +6,34 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length < 2)
+        // Validate command‑line arguments: input file, output file, source shape ID, target shape ID
+        if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <sourceShapeId> <targetShapeId>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
+        string sourceIdStr = args[2];
+        string targetIdStr = args[3];
 
-        // Guard: ensure input file exists
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Parse shape IDs
+        if (!long.TryParse(sourceIdStr, out long sourceShapeId))
+        {
+            Console.Error.WriteLine($"Invalid source shape ID: {sourceIdStr}");
+            return;
+        }
+        if (!long.TryParse(targetIdStr, out long targetShapeId))
+        {
+            Console.Error.WriteLine($"Invalid target shape ID: {targetIdStr}");
             return;
         }
 
@@ -28,94 +42,95 @@ class Program
             // Load the source Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram has at least one page
-            if (diagram.Pages.Count == 0)
+            // Locate source shape
+            Shape sourceShape = null;
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
+                // Try to get the shape by ID from the current page
+                if (sourceShape == null)
+                {
+                    try { sourceShape = page.Shapes.GetShape(sourceShapeId); } catch { }
+                }
+                if (targetShape == null)
+                {
+                    try { targetShape = page.Shapes.GetShape(targetShapeId); } catch { }
+                }
+                if (sourceShape != null && targetShape != null) break;
+            }
+
+            if (sourceShape == null)
+            {
+                Console.Error.WriteLine($"Source shape with ID {sourceShapeId} not found.");
+                return;
+            }
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine($"Target shape with ID {targetShapeId} not found.");
                 return;
             }
 
-            // Get the first page
-            Page page = diagram.Pages[0];
+            // Clear existing custom properties on the target shape (optional, depending on requirements)
+            targetShape.Props.Clear();
 
-            // Ensure the page has at least one shape to copy from
-            if (page.Shapes.Count == 0)
-            {
-                Console.Error.WriteLine("The page contains no shapes.");
-                return;
-            }
-
-            // Select the first shape as the source shape
-            Shape sourceShape = page.Shapes[0];
-
-            // Verify the source shape has a master (required for adding a new shape)
-            if (sourceShape.Master == null)
-            {
-                Console.Error.WriteLine("Source shape does not have an associated master.");
-                return;
-            }
-
-            // Add a new shape on the same page using the same master as the source shape
-            // Position it slightly offset from the source shape
-            double offsetX = 2.0; // inches
-            double newPinX = sourceShape.XForm.PinX.Value + offsetX;
-            double newPinY = sourceShape.XForm.PinY.Value;
-            long newShapeId = page.AddShape(newPinX, newPinY, sourceShape.Master.Name, false);
-
-            // Retrieve the newly added target shape
-            Shape targetShape = page.Shapes.GetShape(newShapeId);
-
-            // Copy custom properties (Props) from source to target
+            // Copy each custom property from source to target
             foreach (Prop srcProp in sourceShape.Props)
             {
                 // Create a new property and copy all relevant fields
                 Prop newProp = new Prop();
-                newProp.Name = srcProp.Name;
-                newProp.Label.Value = srcProp.Label.Value;
-                newProp.Prompt.Value = srcProp.Prompt.Value;
-                newProp.Type.Value = srcProp.Type.Value;
-                newProp.Value.Val = srcProp.Value.Val;
+                newProp.Name = srcProp.Name;                     // Property name
+                newProp.Label.Value = srcProp.Label.Value;       // Label (display name)
+                newProp.Prompt.Value = srcProp.Prompt.Value;     // Prompt (optional description)
+                newProp.Type.Value = srcProp.Type.Value;         // Data type (e.g., String, Number)
+                newProp.Value.Val = srcProp.Value.Val;           // Actual value
 
                 // Add the new property to the target shape
                 targetShape.Props.Add(newProp);
             }
 
-            // Verify that all custom properties were copied correctly
-            foreach (Prop srcProp in sourceShape.Props)
+            // Verify that the target shape now contains identical custom properties
+            bool integrityOk = true;
+            if (sourceShape.Props.Count != targetShape.Props.Count)
             {
-                bool found = false;
-                foreach (Prop tgtProp in targetShape.Props)
+                integrityOk = false;
+                Console.Error.WriteLine("Property count mismatch after copying.");
+            }
+            else
+            {
+                for (int i = 0; i < sourceShape.Props.Count; i++)
                 {
-                    if (tgtProp.Name == srcProp.Name)
+                    Prop src = sourceShape.Props[i];
+                    Prop tgt = targetShape.Props[i];
+
+                    if (src.Name != tgt.Name ||
+                        src.Label.Value != tgt.Label.Value ||
+                        src.Prompt.Value != tgt.Prompt.Value ||
+                        src.Type.Value != tgt.Type.Value ||
+                        src.Value.Val != tgt.Value.Val)
                     {
-                        // Compare each field for equality
-                        if (tgtProp.Label.Value != srcProp.Label.Value ||
-                            tgtProp.Prompt.Value != srcProp.Prompt.Value ||
-                            tgtProp.Type.Value != srcProp.Type.Value ||
-                            tgtProp.Value.Val != srcProp.Value.Val)
-                        {
-                            throw new Exception($"Property mismatch for '{srcProp.Name}'.");
-                        }
-                        found = true;
+                        integrityOk = false;
+                        Console.Error.WriteLine($"Mismatch found in property '{src.Name}'.");
                         break;
                     }
                 }
-
-                if (!found)
-                {
-                    throw new Exception($"Property '{srcProp.Name}' was not found in the target shape.");
-                }
             }
 
-            Console.WriteLine("All custom properties were copied and verified successfully.");
+            if (integrityOk)
+            {
+                Console.WriteLine("Custom property copy verification succeeded.");
+            }
+            else
+            {
+                throw new Exception("Custom property copy verification failed.");
+            }
 
-            // Save the modified diagram to the specified output path
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any Aspose or runtime errors to the error stream
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }

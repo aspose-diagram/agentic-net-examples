@@ -9,7 +9,7 @@ class Program
         // Ensure a file path argument is provided
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the Visio file path as an argument.");
+            Console.Error.WriteLine("Please provide the Visio file path as a command-line argument.");
             return;
         }
 
@@ -27,7 +27,7 @@ class Program
             // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(filePath))
             {
-                // Verify successful initialization by checking the number of pages
+                // Verify successful initialization by checking the page count
                 int pageCount = diagram.Pages.Count;
                 Console.WriteLine($"Diagram loaded successfully. Page count: {pageCount}");
             }

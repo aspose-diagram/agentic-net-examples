@@ -6,8 +6,8 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args == null || args.Length < 2)
+        // Validate arguments.
+        if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <diagramPath> <shapeName>");
             return;
@@ -16,7 +16,7 @@ class Program
         string diagramPath = args[0];
         string targetShapeName = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the diagram file exists.
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Error: File not found - {diagramPath}");
@@ -25,42 +25,34 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required by the API.
+            // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(diagramPath))
             {
                 bool shapeFound = false;
-                long foundShapeId = 0L;
 
-                // Iterate through all pages in the diagram.
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                // Iterate through all pages and shapes to locate the shape by name.
+                foreach (Page page in diagram.Pages)
                 {
-                    Page page = diagram.Pages[pageIndex];
-
-                    // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
                         // Compare the shape's NameU (universal name) with the target name.
                         if (shape.NameU != null && shape.NameU.Equals(targetShapeName, StringComparison.OrdinalIgnoreCase))
                         {
-                            foundShapeId = shape.ID;
+                            // Shape ID is a long value.
+                            long shapeId = shape.ID;
+                            Console.WriteLine($"Shape found. Name: {targetShapeName}, ID: {shapeId}");
                             shapeFound = true;
                             break;
                         }
                     }
 
                     if (shapeFound)
-                    {
                         break;
-                    }
                 }
 
-                if (shapeFound)
+                if (!shapeFound)
                 {
-                    Console.WriteLine($"Shape \"{targetShapeName}\" found with ID: {foundShapeId}");
-                }
-                else
-                {
-                    Console.WriteLine($"Shape \"{targetShapeName}\" was not found in the diagram.");
+                    Console.WriteLine($"Shape with name \"{targetShapeName}\" was not found in the diagram.");
                 }
             }
         }

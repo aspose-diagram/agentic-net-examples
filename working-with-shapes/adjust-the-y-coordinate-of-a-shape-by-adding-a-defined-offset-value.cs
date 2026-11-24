@@ -6,35 +6,29 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input diagram path, shape ID, Y offset value
-        if (args.Length < 3)
+        // Validate arguments: input file, shape name, Y offset, output file
+        if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <shapeId> <yOffset>");
+            Console.Error.WriteLine("Usage: <input.vsdx> <shapeNameU> <yOffset> <output.vsdx>");
             return;
         }
 
         string inputPath = args[0];
-        string shapeIdArg = args[1];
-        string offsetArg = args[2];
+        string targetShapeName = args[1];
+        string offsetStr = args[2];
+        string outputPath = args[3];
 
-        // Guard: verify input file exists
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Parse shape ID
-        if (!long.TryParse(shapeIdArg, out long shapeId))
+        // Parse offset value
+        if (!double.TryParse(offsetStr, out double yOffset))
         {
-            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdArg}'.");
-            return;
-        }
-
-        // Parse Y offset
-        if (!double.TryParse(offsetArg, out double yOffset))
-        {
-            Console.Error.WriteLine($"Error: Invalid Y offset '{offsetArg}'.");
+            Console.Error.WriteLine($"Invalid Y offset value: {offsetStr}");
             return;
         }
 
@@ -43,43 +37,46 @@ class Program
             // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            Shape targetShape = null;
+            bool shapeFound = false;
 
-            // Search for the shape by ID across all pages
+            // Iterate through all pages and shapes to locate the target shape by NameU
             foreach (Page page in diagram.Pages)
             {
-                // GetShape expects an int ID; cast safely
-                if (shapeId <= int.MaxValue && shapeId >= int.MinValue)
+                foreach (Shape shape in page.Shapes)
                 {
-                    Shape shape = page.Shapes.GetShape((int)shapeId);
-                    if (shape != null && shape.Del == BOOL.False)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Compare the universal name of the shape
+                    if (shape.NameU == targetShapeName)
                     {
-                        targetShape = shape;
+                        // Adjust the Y coordinate (PinY) by adding the offset
+                        shape.XForm.PinY.Value = shape.XForm.PinY.Value + yOffset;
+                        shapeFound = true;
+                        // Assuming shape names are unique; break out of loops
                         break;
                     }
                 }
+
+                if (shapeFound)
+                    break;
             }
 
-            if (targetShape == null)
+            if (!shapeFound)
             {
-                Console.Error.WriteLine($"Error: Shape with ID {shapeId} not found.");
+                Console.Error.WriteLine($"Shape with NameU '{targetShapeName}' not found.");
                 return;
             }
 
-            // Adjust the Y coordinate (PinY) by adding the offset
-            targetShape.XForm.PinY.Value += yOffset;
-
-            // Prepare output path
-            string outputPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "output.vsdx");
-
-            // Save the modified diagram
+            // Save the modified diagram to the specified output path
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Shape ID {shapeId} Y coordinate adjusted by {yOffset}. Saved to {outputPath}");
+            Console.WriteLine($"Shape Y coordinate adjusted by {yOffset}. Saved to {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,92 +1,68 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length < 1)
+        // Validate input file path
+        string diagramPath = args.Length > 0 ? args[0] : "input.vsdx";
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine("Usage: Program <VisioFilePath> [ShapeId]");
+            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
             return;
-        }
-
-        string filePath = args[0];
-        // Guard: ensure the Visio file exists
-        if (!File.Exists(filePath))
-        {
-            Console.Error.WriteLine($"Error: File not found - {filePath}");
-            return;
-        }
-
-        // Optional shape ID argument (default to 1)
-        long shapeId = 1;
-        if (args.Length >= 2 && long.TryParse(args[1], out long parsedId))
-        {
-            shapeId = parsedId;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block (mandatory)
-            using (Diagram diagram = new Diagram(filePath))
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Get the first page (index 0)
+            if (diagram.Pages.Count == 0)
             {
-                // Get the first page (index 0)
-                Page page = diagram.Pages[0];
-
-                // Retrieve the shape by its ID
-                Shape shape = page.Shapes.GetShape(shapeId);
-                if (shape == null)
-                {
-                    Console.Error.WriteLine($"Error: Shape with ID {shapeId} not found on the first page.");
-                    return;
-                }
-
-                // Read the line dash pattern enum value
-                // LinePattern.Value returns a LinePatternValue enum; cast to int for mapping
-                int patternCode = (int)shape.Line.LinePattern.Value;
-
-                // Map the numeric code to a descriptive string
-                string description = MapLinePatternToDescription(patternCode);
-
-                // Display the result
-                Console.WriteLine($"Shape ID: {shapeId}");
-                Console.WriteLine($"Line dash style code: {patternCode}");
-                Console.WriteLine($"Line dash style description: {description}");
+                Console.Error.WriteLine("Error: The diagram contains no pages.");
+                return;
             }
+            Page page = diagram.Pages[0];
+
+            // Get a shape by its ID (using 1 as an example)
+            // Adjust the ID as needed for your specific diagram
+            Shape shape = page.Shapes.GetShape(1);
+            if (shape == null)
+            {
+                Console.Error.WriteLine("Error: Shape with ID 1 not found on the first page.");
+                return;
+            }
+
+            // Read the line dash style index
+            // LinePattern.Value returns a double; cast to int for mapping
+            int dashIndex = (int)shape.Line.LinePattern.Value;
+
+            // Map the dash index to a descriptive string
+            string dashDescription = dashIndex switch
+            {
+                0 => "Solid",
+                1 => "Dash",
+                2 => "Dot",
+                3 => "Dash-Dot",
+                4 => "Dash-Dot-Dot",
+                5 => "Long Dash",
+                6 => "Long Dash-Dot",
+                7 => "Long Dash-Dot-Dot",
+                _ => $"Unknown (index {dashIndex})"
+            };
+
+            // Display the result
+            Console.WriteLine($"Shape ID: {shape.ID}");
+            Console.WriteLine($"Line dash style index: {dashIndex}");
+            Console.WriteLine($"Descriptive dash style: {dashDescription}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error console
+            // Output any errors that occur during processing
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Maps Visio line pattern numeric codes to human‑readable descriptions.
-    /// </summary>
-    /// <param name="code">The numeric line pattern code.</param>
-    /// <returns>A descriptive string for the dash style.</returns>
-    private static string MapLinePatternToDescription(int code)
-    {
-        // Visio uses integer codes for line patterns; map common values
-        switch (code)
-        {
-            case 0:
-                return "Solid";
-            case 1:
-                return "Dash";
-            case 2:
-                return "Dot";
-            case 3:
-                return "DashDot";
-            case 4:
-                return "DashDotDot";
-            default:
-                return "Unknown";
         }
     }
 }

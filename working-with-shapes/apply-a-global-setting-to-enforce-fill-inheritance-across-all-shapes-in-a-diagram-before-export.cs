@@ -7,51 +7,57 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as command‑line arguments.
-        if (args.Length < 2)
+        // Validate command‑line arguments.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
+        // Determine output path (same folder, suffix "_InheritFill.vsdx").
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_InheritFill.vsdx");
+
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load the Visio diagram inside a using block (ensures proper disposal).
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Iterate through all pages.
                 foreach (Page page in diagram.Pages)
                 {
                     // Iterate through all shapes on the current page.
-                    for (int i = 0; i < page.Shapes.Count; i++)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        Shape shape = page.Shapes[i];
-
-                        // Enforce fill inheritance for the shape.
-                        // According to Aspose.Diagram guidelines, setting the Ufe.F property to "INHERITED()"
-                        // enables fill inheritance.
-                        shape.Fill.FillForegnd.Ufe.F = "INHERITED()";
+                        // Ensure the Fill and FillForegnd objects are not null.
+                        if (shape.Fill != null && shape.Fill.FillForegnd != null && shape.Fill.FillForegnd.Ufe != null)
+                        {
+                            // Enforce fill inheritance for the shape.
+                            shape.Fill.FillForegnd.Ufe.F = "INHERITED()";
+                        }
                     }
                 }
 
-                // Save the modified diagram to the specified output path in VSDX format.
+                // Save the modified diagram to the output file using VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
+
+            Console.WriteLine($"Diagram saved with enforced fill inheritance to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

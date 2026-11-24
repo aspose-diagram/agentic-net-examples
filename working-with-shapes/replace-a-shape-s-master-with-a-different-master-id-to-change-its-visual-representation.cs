@@ -1,84 +1,104 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args == null || args.Length < 3)
+        // Determine input Visio file path
+        string inputPath;
+        if (args.Length > 0)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <shapeId> <newMasterId>");
-            return;
+            inputPath = args[0];
+        }
+        else
+        {
+            Console.Write("Enter the path to the Visio file: ");
+            inputPath = Console.ReadLine();
         }
 
-        // Input diagram file path.
-        string inputPath = args[0];
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
-        // Parse shape ID (long) and new master ID (int).
-        if (!long.TryParse(args[1], out long shapeId))
+        // Prompt for the shape ID whose master will be replaced
+        Console.Write("Enter the Shape ID (numeric) to modify: ");
+        string shapeIdInput = Console.ReadLine();
+        if (!long.TryParse(shapeIdInput, out long targetShapeId))
         {
-            Console.Error.WriteLine("Error: Invalid shape ID. It must be a numeric value.");
+            Console.Error.WriteLine("Error: Invalid Shape ID.");
             return;
         }
 
-        if (!int.TryParse(args[2], out int newMasterId))
-        {
-            Console.Error.WriteLine("Error: Invalid master ID. It must be a numeric value.");
-            return;
-        }
+        // Prompt for the new master name to apply
+        Console.Write("Enter the new Master name to assign to the shape: ");
+        string newMasterName = Console.ReadLine();
 
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Retrieve the target master; if it does not exist GetMaster will return null.
-                Master targetMaster = diagram.Masters.GetMaster(newMasterId);
-                if (targetMaster == null)
+                // Locate the shape with the specified ID across all pages
+                Shape targetShape = null;
+                foreach (Page page in diagram.Pages)
                 {
-                    Console.Error.WriteLine($"Error: Master with ID {newMasterId} does not exist in the diagram.");
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        if (shape.ID == targetShapeId)
+                        {
+                            targetShape = shape;
+                            break;
+                        }
+                    }
+                    if (targetShape != null)
+                        break;
+                }
+
+                if (targetShape == null)
+                {
+                    Console.Error.WriteLine($"Error: Shape with ID {targetShapeId} not found.");
                     return;
                 }
 
-                // Retrieve the shape by its ID from the first page.
-                if (diagram.Pages.Count == 0)
+                // Retrieve the new master by name
+                Master newMaster = diagram.Masters.GetMasterByName(newMasterName);
+                if (newMaster == null)
                 {
-                    Console.Error.WriteLine("Error: The diagram contains no pages.");
+                    Console.Error.WriteLine($"Error: Master named \"{newMasterName}\" does not exist in the diagram.");
                     return;
                 }
 
-                Shape shape = diagram.Pages[0].Shapes.GetShape(shapeId);
-                if (shape == null)
+                // Replace the shape's master with the new master
+                // Ensure the shape currently has a master before replacement
+                if (targetShape.Master != null)
                 {
-                    Console.Error.WriteLine($"Error: Shape with ID {shapeId} not found on the first page.");
+                    targetShape.Master = newMaster;
+                    Console.WriteLine($"Shape ID {targetShapeId} master replaced with \"{newMasterName}\".");
+                }
+                else
+                {
+                    Console.Error.WriteLine("Error: Target shape does not have an existing master to replace.");
                     return;
                 }
 
-                // Replace the shape's master with the new master.
-                shape.Master = targetMaster;
+                // Prepare output file path
+                string directory = Path.GetDirectoryName(inputPath);
+                string filenameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+                string outputPath = Path.Combine(directory, $"{filenameWithoutExt}_modified.vsdx");
 
-                // Prepare output file path.
-                string directory = Path.GetDirectoryName(inputPath) ?? string.Empty; // Ensure non‑null directory.
-                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
-                string outputPath = Path.Combine(directory, fileNameWithoutExt + "_modified.vsdx");
-
-                // Save the modified diagram using the correct overload.
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Shape (ID: {shapeId}) master replaced with Master ID {newMasterId}.");
                 Console.WriteLine($"Modified diagram saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
+            // Capture any Aspose.Diagram or I/O errors
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

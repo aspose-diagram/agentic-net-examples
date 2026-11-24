@@ -1,57 +1,80 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (provide via command line or use defaults)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
-
-        // Guard: ensure the source diagram exists
-        if (!File.Exists(inputPath))
+        // Expect three arguments: input diagram path, output diagram path, circle radius
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> <radius>");
             return;
         }
 
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string radiusArg = args[2];
+
+        // Guard: check input file existence
+        if (!File.Exists(inputPath))
+        {
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Parse radius
+        if (!double.TryParse(radiusArg, out double radius) || radius <= 0)
+        {
+            Console.Error.WriteLine("Invalid radius value. It must be a positive number.");
+            return;
+        }
+
+        // Load the diagram inside a using block (mandatory pattern)
         try
         {
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Ensure there is at least one page to work with
+                Page page;
+                if (diagram.Pages.Count > 0)
+                {
+                    page = diagram.Pages[0];
+                }
+                else
+                {
+                    // Create and add a new blank page
+                    page = new Page();
+                    diagram.Pages.Add(page);
+                }
 
-            // Use the active page (first page) to add the circle
-            Page page = diagram.ActivePage;
+                // Determine the center of the page (using page dimensions)
+                double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
+                double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
+                double centerX = pageWidth / 2.0;
+                double centerY = pageHeight / 2.0;
 
-            // Define the desired radius for the circle
-            double radius = 2.0; // example radius in diagram units
+                // Diameter of the circle
+                double diameter = radius * 2.0;
 
-            // Width and height of the ellipse must be twice the radius to form a circle
-            double width = radius * 2;
-            double height = radius * 2;
+                // Draw an ellipse with equal width and height => a circle
+                // DrawEllipse returns the shape ID (long)
+                long shapeId = page.DrawEllipse(centerX, centerY, diameter, diameter);
 
-            // Position of the circle's center (PinX, PinY). Adjust as needed.
-            double pinX = 5.0;
-            double pinY = 5.0;
+                // Retrieve the newly created shape (optional, shown for completeness)
+                Shape circleShape = page.Shapes.GetShape(shapeId);
+                // No additional modifications are required; the shape is already a circle
 
-            // Add an ellipse master shape; setting isCalculate to false (no immediate layout)
-            long shapeId = page.AddShape(pinX, pinY, width, height, "Ellipse", false);
-
-            // Retrieve the newly added shape for any further customization (optional)
-            Shape circleShape = page.Shapes.GetShape(shapeId);
-
-            // Example: set the shape's line color to black (optional customization)
-            // Note: Fill and line properties use specific members; here we set line weight as an example.
-            circleShape.Line.LineWeight.Value = 0.03; // line weight in inches
-
-            // Save the modified diagram to the output file in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                // Save the modified diagram to the specified output path in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Circle with radius {radius} added and diagram saved to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any Aspose or runtime errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

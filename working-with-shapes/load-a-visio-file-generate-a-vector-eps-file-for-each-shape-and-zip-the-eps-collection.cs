@@ -9,98 +9,80 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 2)
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputZipPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputZipPath = args[1];
 
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
-        // Create a temporary folder for individual EPS (SVG used as substitute) files.
-        string tempFolder = Path.Combine(Path.GetTempPath(), "ShapeEps_" + Guid.NewGuid().ToString("N"));
-        try
-        {
-            Directory.CreateDirectory(tempFolder);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to create temporary folder: {ex.Message}");
-            return;
-        }
+        // Define output locations.
+        string outputDirectory = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "ShapeExports");
+        string zipPath = Path.Combine(Path.GetDirectoryName(inputPath) ?? "", "Shapes.zip");
 
         try
         {
-            // Load the Visio diagram inside a using block (Diagram does not implement IDisposable, but this follows the required pattern).
-            using (Diagram diagram = new Diagram(inputPath))
+            // Ensure the export directory exists.
+            if (!Directory.Exists(outputDirectory))
+                Directory.CreateDirectory(outputDirectory);
+
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(inputPath);
+
+            // Iterate through each page and each shape.
+            for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
             {
-                // Iterate over pages using an index because Page does not have an Index property.
-                for (int pageIdx = 0; pageIdx < diagram.Pages.Count; pageIdx++)
+                Page page = diagram.Pages[pageIndex];
+
+                // Enumerate shapes on the current page.
+                for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
                 {
-                    Page page = diagram.Pages[pageIdx];
+                    Shape shape = page.Shapes[shapeIndex];
 
-                    // Iterate over each shape on the current page.
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip shapes that are marked as deleted.
-                        if (shape.Del == BOOL.True)
-                            continue;
+                    // Build a unique file name for the exported vector graphic.
+                    string shapeFileName = $"Page{pageIndex + 1}_Shape{shape.ID}.svg";
+                    string shapeFilePath = Path.Combine(outputDirectory, shapeFileName);
 
-                        // Build a unique file name for the exported shape.
-                        // EPS export is not directly supported by Aspose.Diagram; SVG is used as the closest vector alternative.
-                        string shapeFileName = $"page{pageIdx + 1}_shape{shape.ID}.svg";
-                        string shapeFilePath = Path.Combine(tempFolder, shapeFileName);
-
-                        // Export the shape to SVG (vector format) using ImageSaveOptions.
-                        ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Svg);
-                        shape.ToImage(shapeFilePath, saveOptions);
-                    }
+                    // Export the shape to a vector format.
+                    // NOTE: Aspose.Diagram does not provide direct EPS export.
+                    // SVG is used as the closest vector alternative.
+                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Svg);
+                    shape.ToImage(shapeFilePath, saveOptions);
                 }
             }
 
-            // If the output ZIP already exists, delete it to avoid exceptions.
-            if (File.Exists(outputZipPath))
-            {
-                try
-                {
-                    File.Delete(outputZipPath);
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Unable to delete existing ZIP file: {ex.Message}");
-                    return;
-                }
-            }
+            // Create a ZIP archive containing all exported files.
+            if (File.Exists(zipPath))
+                File.Delete(zipPath); // Remove existing ZIP if present.
 
-            // Create a ZIP archive containing all exported shape files.
-            ZipFile.CreateFromDirectory(tempFolder, outputZipPath);
-            Console.WriteLine($"Successfully created ZIP archive: {outputZipPath}");
+            ZipFile.CreateFromDirectory(outputDirectory, zipPath, CompressionLevel.Optimal, false);
+
+            Console.WriteLine($"Successfully exported shapes and created ZIP archive at \"{zipPath}\".");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred during processing: {ex.Message}");
+            // Capture any errors from Aspose.Diagram or I/O operations.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
         finally
         {
-            // Clean up the temporary folder.
+            // Optional cleanup: delete the temporary export folder.
             try
             {
-                if (Directory.Exists(tempFolder))
-                {
-                    Directory.Delete(tempFolder, true);
-                }
+                if (Directory.Exists(outputDirectory))
+                    Directory.Delete(outputDirectory, true);
             }
-            catch (Exception cleanupEx)
+            catch
             {
-                Console.Error.WriteLine($"Failed to clean up temporary files: {cleanupEx.Message}");
+                // Suppress any cleanup errors.
             }
         }
     }

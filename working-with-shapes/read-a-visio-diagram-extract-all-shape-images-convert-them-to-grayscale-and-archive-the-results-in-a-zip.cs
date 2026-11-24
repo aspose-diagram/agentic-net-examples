@@ -4,6 +4,7 @@ using System.IO.Compression;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Drawing;
+using Aspose.Drawing.Imaging;
 
 class Program
 {
@@ -16,24 +17,24 @@ class Program
             return;
         }
 
-        string visioPath = args[0];
-        string zipPath = args[1];
+        string inputPath = args[0];
+        string outputZipPath = args[1];
 
-        // Guard against missing input file
-        if (!File.Exists(visioPath))
+        // Guard: check input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {visioPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         // Create a temporary directory for extracted images
-        string tempDir = Path.Combine(Path.GetTempPath(), "VisioImages_" + Guid.NewGuid().ToString("N"));
+        string tempDir = Path.Combine(Path.GetTempPath(), "VisioShapeImages_" + Guid.NewGuid().ToString());
         Directory.CreateDirectory(tempDir);
 
         try
         {
-            // Load the Visio diagram inside a using block as required
-            using (Diagram diagram = new Diagram(visioPath))
+            // Load the Visio diagram inside a using block (mandatory)
+            using (Diagram diagram = new Diagram(inputPath))
             {
                 // Iterate through all pages
                 foreach (Page page in diagram.Pages)
@@ -41,19 +42,18 @@ class Program
                     // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip logically deleted shapes
+                        // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Prepare a unique file name for the shape image
-                        string imageFileName = $"page_{page.ID}_shape_{shape.ID}.png";
+                        // Build a unique file name for the shape image
+                        string imageFileName = $"Page{page.ID}_Shape{shape.ID}.png";
                         string imagePath = Path.Combine(tempDir, imageFileName);
 
+                        // Export the shape to PNG
                         try
                         {
-                            // Export the shape to PNG using Aspose.Diagram
-                            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                            shape.ToImage(imagePath, imgOptions);
+                            shape.ToImage(imagePath, new ImageSaveOptions(SaveFileFormat.Png));
                         }
                         catch (Exception ex)
                         {
@@ -61,29 +61,43 @@ class Program
                             continue;
                         }
 
+                        // Convert the exported PNG to grayscale using Aspose.Drawing
                         try
                         {
-                            // Load the exported image using Aspose.Drawing and convert to grayscale
-                            using (Bitmap bitmap = new Bitmap(imagePath))
+                            using (Aspose.Drawing.Image original = Aspose.Drawing.Image.FromFile(imagePath))
                             {
-                                for (int y = 0; y < bitmap.Height; y++)
+                                using (Aspose.Drawing.Bitmap grayBitmap = new Aspose.Drawing.Bitmap(original.Width, original.Height))
                                 {
-                                    for (int x = 0; x < bitmap.Width; x++)
+                                    using (Aspose.Drawing.Graphics graphics = Aspose.Drawing.Graphics.FromImage(grayBitmap))
                                     {
-                                        // Get original pixel color
-                                        Color original = bitmap.GetPixel(x, y);
-                                        // Compute luminance using Rec. 601 formula
-                                        int gray = (int)(0.299 * original.R + 0.587 * original.G + 0.114 * original.B);
-                                        // Clamp to byte range
-                                        gray = Math.Max(0, Math.Min(255, gray));
-                                        // Create grayscale color preserving alpha
-                                        Color grayColor = Color.FromArgb(original.A, gray, gray, gray);
-                                        // Set the pixel back
-                                        bitmap.SetPixel(x, y, grayColor);
+                                        // Define a grayscale color matrix
+                                        float[][] matrixItems = new float[][]
+                                        {
+                                            new float[] {0.3f, 0.3f, 0.3f, 0, 0},
+                                            new float[] {0.59f, 0.59f, 0.59f, 0, 0},
+                                            new float[] {0.11f, 0.11f, 0.11f, 0, 0},
+                                            new float[] {0, 0, 0, 1, 0},
+                                            new float[] {0, 0, 0, 0, 1}
+                                        };
+                                        Aspose.Drawing.Imaging.ColorMatrix colorMatrix = new Aspose.Drawing.Imaging.ColorMatrix(matrixItems);
+                                        Aspose.Drawing.Imaging.ImageAttributes imgAttr = new Aspose.Drawing.Imaging.ImageAttributes();
+                                        imgAttr.SetColorMatrix(colorMatrix);
+
+                                        // Draw the original image onto the bitmap using the grayscale matrix
+                                        graphics.DrawImage(
+                                            original,
+                                            new Aspose.Drawing.Rectangle(0, 0, original.Width, original.Height),
+                                            0,
+                                            0,
+                                            original.Width,
+                                            original.Height,
+                                            Aspose.Drawing.GraphicsUnit.Pixel,
+                                            imgAttr);
                                     }
+
+                                    // Overwrite the original file with the grayscale image
+                                    grayBitmap.Save(imagePath, Aspose.Drawing.Imaging.ImageFormat.Png);
                                 }
-                                // Overwrite the original image with the grayscale version
-                                bitmap.Save(imagePath);
                             }
                         }
                         catch (Exception ex)
@@ -94,15 +108,31 @@ class Program
                 }
             }
 
-            // Create ZIP archive from the temporary directory
-            if (File.Exists(zipPath))
-                File.Delete(zipPath);
-            ZipFile.CreateFromDirectory(tempDir, zipPath);
-            Console.WriteLine($"Images extracted and archived to: {zipPath}");
+            // Create ZIP archive of all grayscale images
+            try
+            {
+                using (FileStream zipToOpen = new FileStream(outputZipPath, FileMode.Create))
+                {
+                    using (ZipArchive archive = new ZipArchive(zipToOpen, ZipArchiveMode.Create))
+                    {
+                        foreach (string filePath in Directory.GetFiles(tempDir))
+                        {
+                            string entryName = Path.GetFileName(filePath);
+                            archive.CreateEntryFromFile(filePath, entryName);
+                        }
+                    }
+                }
+
+                Console.WriteLine($"Images successfully archived to: {outputZipPath}");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to create ZIP archive: {ex.Message}");
+            }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
         }
         finally
         {
@@ -110,7 +140,9 @@ class Program
             try
             {
                 if (Directory.Exists(tempDir))
+                {
                     Directory.Delete(tempDir, true);
+                }
             }
             catch
             {

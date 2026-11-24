@@ -7,16 +7,18 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate command‑line arguments: input file, target shape NameU, output file
+        if (args.Length < 3)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <shapeNameU> <output.vsdx>");
             return;
         }
-        string outputPath = "output.vsdx";
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string targetShapeName = args[1];
+        string outputPath = args[2];
+
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -25,62 +27,63 @@ class Program
 
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Ensure the diagram has at least one page
-            if (diagram.Pages.Count == 0)
+            // Load the Visio diagram inside a using block (mandatory pattern)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
-            }
+                // Variables to hold the target shape and its original geometry
+                Shape targetShape = null;
+                double originalPinX = 0, originalPinY = 0, originalWidth = 0, originalHeight = 0;
 
-            // Work with the first page
-            Page page = diagram.Pages[0];
-
-            // Find the first shape on the page (skip master shapes)
-            Shape targetShape = null;
-            foreach (Shape s in page.Shapes)
-            {
-                // Ensure the shape is not a master placeholder
-                if (s.Master != null)
+                // Locate the shape by its NameU across all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    targetShape = s;
-                    break;
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // NameU is a plain string; compare directly
+                        if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU == targetShapeName)
+                        {
+                            targetShape = shape;
+                            // Store original geometry values
+                            originalPinX = shape.XForm.PinX.Value;
+                            originalPinY = shape.XForm.PinY.Value;
+                            originalWidth = shape.XForm.Width.Value;
+                            originalHeight = shape.XForm.Height.Value;
+                            break;
+                        }
+                    }
+                    if (targetShape != null)
+                        break;
                 }
+
+                if (targetShape == null)
+                {
+                    Console.Error.WriteLine($"Shape with NameU \"{targetShapeName}\" not found.");
+                    return;
+                }
+
+                // Apply a preset theme to each page (example: Bubble theme, Variant1)
+                foreach (Page page in diagram.Pages)
+                {
+                    // PresetTheme and PresetThemeVariant are write‑only properties
+                    page.PresetTheme = PresetThemeValue.Bubble;
+                    page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
+                }
+
+                // After the theme change, restore the original geometry to keep alignment
+                targetShape.XForm.PinX.Value = originalPinX;
+                targetShape.XForm.PinY.Value = originalPinY;
+                targetShape.XForm.Width.Value = originalWidth;
+                targetShape.XForm.Height.Value = originalHeight;
+
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
             }
-
-            if (targetShape == null)
-            {
-                Console.Error.WriteLine("No suitable shape found on the page.");
-                return;
-            }
-
-            // Store original geometry values before applying the theme
-            double originalPinX = targetShape.XForm.PinX.Value;
-            double originalPinY = targetShape.XForm.PinY.Value;
-            double originalWidth = targetShape.XForm.Width.Value;
-            double originalHeight = targetShape.XForm.Height.Value;
-
-            // Apply a preset theme to the page
-            // Note: PresetTheme and PresetThemeVariant are write‑only properties
-            page.PresetTheme = PresetThemeValue.Bubble;
-            page.PresetThemeVariant = PresetThemeVariantValue.Variant1;
-
-            // After the theme change, re‑apply the original geometry to keep alignment
-            targetShape.XForm.PinX.Value = originalPinX;
-            targetShape.XForm.PinY.Value = originalPinY;
-            targetShape.XForm.Width.Value = originalWidth;
-            targetShape.XForm.Height.Value = originalHeight;
-
-            // Save the modified diagram to the output file in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

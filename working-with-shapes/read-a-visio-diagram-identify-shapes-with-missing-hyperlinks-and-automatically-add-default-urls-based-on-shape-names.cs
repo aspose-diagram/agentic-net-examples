@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments.
+        // Validate arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
@@ -16,7 +16,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: check input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
@@ -25,45 +25,57 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block (mandatory pattern)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages.
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page.
+                    // Iterate through all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // If the shape has no hyperlinks, add a default one.
-                        // Hyperlinks collection provides a Count property.
-                        if (shape.Hyperlinks.Count == 0)
+                        // Skip shapes that already have at least one hyperlink
+                        if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
+                            continue;
+
+                        // Determine a default URL based on the shape's name (NameU)
+                        string shapeName = shape.NameU;
+                        if (string.IsNullOrEmpty(shapeName))
                         {
-                            // Create a new hyperlink instance.
-                            Hyperlink link = new Hyperlink();
-
-                            // Assign a name for the hyperlink (optional).
-                            link.Name = "DefaultLink";
-
-                            // Build a default URL based on the shape's NameU.
-                            // Ensure the URL is well‑formed.
-                            string safeName = Uri.EscapeDataString(shape.NameU ?? "shape");
-                            link.Address.Value = $"https://example.com/{safeName}";
-
-                            // Add the hyperlink to the shape's collection.
-                            shape.Hyperlinks.Add(link);
+                            // Fallback to a generic name if NameU is not set
+                            shapeName = "Shape";
                         }
+
+                        // Construct the default URL (example pattern)
+                        string defaultUrl = $"https://default.example.com/{shapeName}";
+
+                        // Create a new Hyperlink instance
+                        Hyperlink link = new Hyperlink();
+                        link.Name = "DefaultLink";
+                        link.Address.Value = defaultUrl;
+                        // Open in the same window (new window = false)
+                        link.NewWindow.Value = BOOL.False;
+
+                        // Add the hyperlink to the shape's collection
+                        shape.Hyperlinks.Add(link);
                     }
                 }
 
-                // Save the modified diagram to the specified output path.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            }
+                // Ensure the output directory exists
+                string outputDir = Path.GetDirectoryName(outputPath);
+                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                {
+                    Directory.CreateDirectory(outputDir);
+                }
 
-            Console.WriteLine("Processing completed successfully.");
+                // Save the modified diagram to the specified output path in VSDX format
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

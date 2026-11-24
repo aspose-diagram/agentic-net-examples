@@ -1,13 +1,13 @@
 using System;
 using System.IO;
-using System.Xml;
+using System.Xml.Linq;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputXmlPath>");
@@ -17,7 +17,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input Visio file exists
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,90 +26,87 @@ class Program
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Configure XML writer for pretty‑printed output
-            XmlWriterSettings settings = new XmlWriterSettings
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Indent = true,
-                IndentChars = "  ",
-                NewLineOnAttributes = false
-            };
+                // Create the root XML element.
+                XElement root = new XElement("Diagram");
 
-            // Create the XML document
-            using (XmlWriter writer = XmlWriter.Create(outputPath, settings))
-            {
-                writer.WriteStartDocument();
-                writer.WriteStartElement("Diagram");
-
-                // Iterate through each page in the diagram
+                // Iterate through each page in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    writer.WriteStartElement("Page");
-                    writer.WriteAttributeString("ID", page.ID.ToString());
-                    writer.WriteAttributeString("NameU", page.NameU ?? string.Empty);
-
-                    // Iterate through each shape on the current page
+                    // Iterate through each shape on the page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted (hidden) shapes
+                        // Skip deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        writer.WriteStartElement("Shape");
-                        writer.WriteAttributeString("ID", shape.ID.ToString());
-                        writer.WriteAttributeString("NameU", shape.NameU ?? string.Empty);
-                        writer.WriteAttributeString("Type", shape.Type.ToString());
+                        // Create an XML element for the shape, using its ID.
+                        XElement shapeElement = new XElement("Shape",
+                            new XAttribute("Id", shape.ID));
 
-                        // Ensure the shape has geometry (Geoms) data
-                        if (shape.Geoms != null && shape.Geoms.Count > 0)
+                        // Iterate through each geometry (Geom) of the shape.
+                        foreach (Geom geom in shape.Geoms)
                         {
-                            // Iterate through each geometry (Geom) of the shape
-                            for (int geomIdx = 0; geomIdx < shape.Geoms.Count; geomIdx++)
+                            XElement geomElement = new XElement("Geometry");
+
+                            // Iterate through each coordinate row in the geometry.
+                            foreach (object coord in geom.CoordinateCol)
                             {
-                                Geom geom = shape.Geoms[geomIdx];
-                                writer.WriteStartElement("Geom");
-                                writer.WriteAttributeString("Index", geomIdx.ToString());
+                                double? x = null;
+                                double? y = null;
 
-                                // Iterate through each coordinate within the geometry
-                                if (geom.CoordinateCol != null && geom.CoordinateCol.Count > 0)
+                                // Extract X and Y values from known coordinate types.
+                                if (coord is MoveTo moveTo)
                                 {
-                                    for (int coordIdx = 0; coordIdx < geom.CoordinateCol.Count; coordIdx++)
-                                    {
-                                        // Use dynamic to access X and Y of the coordinate (MoveTo, LineTo, etc.)
-                                        dynamic coord = geom.CoordinateCol[coordIdx];
-                                        writer.WriteStartElement("Coordinate");
-                                        writer.WriteAttributeString("Index", coordIdx.ToString());
-
-                                        // Write X and Y values
-                                        writer.WriteElementString("X", coord.X.Value.ToString());
-                                        writer.WriteElementString("Y", coord.Y.Value.ToString());
-
-                                        writer.WriteEndElement(); // Coordinate
-                                    }
+                                    x = moveTo.X.Value;
+                                    y = moveTo.Y.Value;
                                 }
+                                else if (coord is LineTo lineTo)
+                                {
+                                    x = lineTo.X.Value;
+                                    y = lineTo.Y.Value;
+                                }
+                                else if (coord is ArcTo arcTo)
+                                {
+                                    x = arcTo.X.Value;
+                                    y = arcTo.Y.Value;
+                                }
+                                else if (coord is EllipticalArcTo ellArc)
+                                {
+                                    x = ellArc.X.Value;
+                                    y = ellArc.Y.Value;
+                                }
+                                // Additional geometry types can be handled here if needed.
 
-                                writer.WriteEndElement(); // Geom
+                                // If coordinates were found, add a Point element.
+                                if (x.HasValue && y.HasValue)
+                                {
+                                    XElement point = new XElement("Point",
+                                        new XAttribute("X", x.Value),
+                                        new XAttribute("Y", y.Value));
+                                    geomElement.Add(point);
+                                }
                             }
+
+                            shapeElement.Add(geomElement);
                         }
 
-                        writer.WriteEndElement(); // Shape
+                        root.Add(shapeElement);
                     }
-
-                    writer.WriteEndElement(); // Page
                 }
 
-                writer.WriteEndElement(); // Diagram
-                writer.WriteEndDocument();
+                // Save the XML document to the specified output path.
+                XDocument doc = new XDocument(new XDeclaration("1.0", "utf-8", "yes"), root);
+                doc.Save(outputPath);
+                Console.WriteLine($"Geometry data exported successfully to: {outputPath}");
             }
-
-            Console.WriteLine($"Geometry data successfully exported to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

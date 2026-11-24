@@ -10,7 +10,7 @@ class Program
         // Validate command‑line arguments
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
@@ -26,7 +26,7 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block (required pattern)
+            // Load the Visio diagram inside a using block (required by the API)
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Verify that the diagram contains at least one page
@@ -36,47 +36,38 @@ class Program
                     return;
                 }
 
-                // Access the first page
-                Page firstPage = diagram.Pages[0];
+                // Get the first page
+                Page page = diagram.Pages[0];
 
                 // Verify that the page contains at least one shape
-                if (firstPage.Shapes.Count == 0)
+                if (page.Shapes.Count == 0)
                 {
                     Console.Error.WriteLine("The first page contains no shapes.");
                     return;
                 }
 
-                // Retrieve the first shape on the first page
-                Shape shape = firstPage.Shapes[0];
+                // Retrieve the first shape on the page
+                Shape shape = page.Shapes[0];
 
                 // ------------------------------------------------------------
-                // Directly modify theme‑related cells via the ShapeSheet.
-                // These assignments override theme defaults for this shape.
+                // Apply advanced theme customizations directly on the shape
                 // ------------------------------------------------------------
 
-                // Apply a preset theme to the shape (write‑only property)
+                // Set a preset theme for the shape (e.g., Bubble theme)
                 shape.PresetTheme = PresetThemeValue.Bubble;
 
-                // Apply a specific variant of the preset theme
-                shape.PresetThemeVariant = PresetThemeVariantValue.Variant3;
+                // Choose a theme variant (e.g., Variant2)
+                shape.PresetThemeVariant = PresetThemeVariantValue.Variant2;
 
-                // Apply a quick‑style variant of the preset theme
-                shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle2;
+                // Apply a quick‑style variant (e.g., VariantStyle3)
+                shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle3;
 
-                // Further customize the theme by setting style and color matrices
-                shape.SetPresetThemeStyleMatrics(PresetStyleMatricsValue.Style2, PresetColorMatricsValue.Color7);
-
-                // Adjust fill foreground transparency (0.0 = opaque, 1.0 = fully transparent)
-                shape.Fill.FillForegndTrans.Value = 0.20; // 20 % transparent (80 % opaque)
-
-                // Override the line color with a theme‑based blue (hex string)
-                shape.Line.LineColor.Value = "#0000FF";
-
-                // Increase line weight for visual emphasis (in inches)
-                shape.Line.LineWeight.Value = 0.03;
+                // Further refine the theme by specifying style and color matrices
+                // This method combines a style index with a color palette index.
+                shape.SetPresetThemeStyleMatrics(PresetStyleMatricsValue.Style2, PresetColorMatricsValue.Color5);
 
                 // ------------------------------------------------------------
-                // Save the modified diagram to the specified output path.
+                // Save the modified diagram
                 // ------------------------------------------------------------
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
@@ -84,7 +75,7 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error console.
+            // Report any errors that occur during processing
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

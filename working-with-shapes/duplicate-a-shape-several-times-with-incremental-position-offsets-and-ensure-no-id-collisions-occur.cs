@@ -6,102 +6,95 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: input file, output file, optional copy count and offset.
-        if (args.Length < 2)
+        // Input and output file paths (adjust as needed)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx> [copyCount] [offsetX] [offsetY]");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Parse optional parameters.
-        int copyCount = 5; // default number of duplicates
-        double offsetX = 1.0; // default X offset in inches
-        double offsetY = 0.0; // default Y offset in inches
-
-        if (args.Length >= 3 && int.TryParse(args[2], out int parsedCount) && parsedCount > 0)
-            copyCount = parsedCount;
-
-        if (args.Length >= 4 && double.TryParse(args[3], out double parsedOffsetX))
-            offsetX = parsedOffsetX;
-
-        if (args.Length >= 5 && double.TryParse(args[4], out double parsedOffsetY))
-            offsetY = parsedOffsetY;
-
         try
         {
-            // Load the diagram.
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram has at least one page.
+            // Ensure the diagram has at least one page
             if (diagram.Pages.Count == 0)
             {
                 Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Work with the first page.
+            // Work with the first page
             Page page = diagram.Pages[0];
 
-            // Find the first non-deleted shape to duplicate.
-            Shape sourceShape = null;
+            // Find the first non-deleted shape to duplicate
+            Shape originalShape = null;
             foreach (Shape shape in page.Shapes)
             {
                 if (shape.Del == BOOL.False)
                 {
-                    sourceShape = shape;
+                    originalShape = shape;
                     break;
                 }
             }
 
-            if (sourceShape == null)
+            if (originalShape == null)
             {
                 Console.Error.WriteLine("No non-deleted shape found to duplicate.");
                 return;
             }
 
-            // Store original geometry and master name.
-            double originalPinX = sourceShape.XForm.PinX.Value;
-            double originalPinY = sourceShape.XForm.PinY.Value;
-            double originalWidth = sourceShape.XForm.Width.Value;
-            double originalHeight = sourceShape.XForm.Height.Value;
-            string masterName = sourceShape.Master?.Name ?? "Rectangle"; // fallback to Rectangle if master is null
+            // Determine master name (fallback to a basic rectangle if master is missing)
+            string masterName = originalShape.Master != null ? originalShape.Master.Name : "Rectangle";
 
-            // Duplicate the shape multiple times with incremental offsets.
-            for (int i = 1; i <= copyCount; i++)
+            // Configuration for duplication
+            int numberOfCopies = 5;          // How many duplicates to create
+            double offsetX = 1.0;            // Horizontal offset per copy (in inches)
+            double offsetY = 1.0;            // Vertical offset per copy (in inches)
+
+            // Base position of the original shape
+            double basePinX = originalShape.XForm.PinX.Value;
+            double basePinY = originalShape.XForm.PinY.Value;
+
+            // Duplicate the shape with incremental offsets
+            for (int i = 1; i <= numberOfCopies; i++)
             {
-                double newPinX = originalPinX + i * offsetX;
-                double newPinY = originalPinY + i * offsetY;
+                // Calculate new position
+                double newPinX = basePinX + i * offsetX;
+                double newPinY = basePinY + i * offsetY;
 
-                // Add a new shape based on the same master.
-                long newShapeId = page.AddShape(newPinX, newPinY, originalWidth, originalHeight, masterName, false);
+                // Add a new shape using the same master; AddShape returns the new shape ID (long)
+                long newShapeId = page.AddShape(newPinX, newPinY, masterName, false);
 
-                // Retrieve the newly added shape.
+                // Retrieve the newly added shape
                 Shape newShape = page.Shapes.GetShape(newShapeId);
 
-                // Copy visual properties from the source shape.
-                newShape.Copy(sourceShape);
+                // Copy visual properties from the original shape to the new shape
+                // (Assumes Shape.Copy method exists as per documentation)
+                newShape.Copy(originalShape);
 
-                // Ensure the position reflects the incremental offset (copy may have overwritten it).
+                // Ensure the new shape retains the intended position (Copy may overwrite it)
                 newShape.XForm.PinX.Value = newPinX;
                 newShape.XForm.PinY.Value = newPinY;
             }
 
-            // Save the modified diagram.
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved with duplicated shapes to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
+            // Write any errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

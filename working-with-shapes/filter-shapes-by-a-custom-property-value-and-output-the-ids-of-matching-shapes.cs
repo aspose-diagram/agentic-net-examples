@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: diagram path, property name, property value
+        // Validate command‑line arguments: <diagramPath> <propertyName> <propertyValue>
         if (args.Length < 3)
         {
             Console.Error.WriteLine("Usage: Program <diagramPath> <propertyName> <propertyValue>");
@@ -17,7 +17,7 @@ class Program
         string targetPropName = args[1];
         string targetPropValue = args[2];
 
-        // Guard against missing file
+        // Guard: ensure the diagram file exists
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Error: File not found - {diagramPath}");
@@ -29,7 +29,7 @@ class Program
             // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Iterate through all pages
+            // Iterate through all pages in the diagram
             foreach (Page page in diagram.Pages)
             {
                 // Iterate through all shapes on the current page
@@ -43,10 +43,12 @@ class Program
                     foreach (Prop prop in shape.Props)
                     {
                         // Check for matching property name and value
-                        if (prop.Name == targetPropName && prop.Value != null && prop.Value.Val == targetPropValue)
+                        if (prop.Name == targetPropName &&
+                            prop.Value != null &&
+                            prop.Value.Val == targetPropValue)
                         {
                             // Output the shape's ID (long) to the console
-                            Console.WriteLine($"Shape ID: {shape.ID}");
+                            Console.WriteLine(shape.ID);
                             // No need to check other properties of this shape
                             break;
                         }
@@ -57,7 +59,7 @@ class Program
         catch (Exception ex)
         {
             // Write any Aspose or runtime errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

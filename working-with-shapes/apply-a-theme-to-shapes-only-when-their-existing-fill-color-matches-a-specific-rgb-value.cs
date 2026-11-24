@@ -6,71 +6,63 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 3)
+        // Expect two arguments: input diagram path and output diagram path
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <targetFillColorHex>");
-            Console.Error.WriteLine("Example: Program diagram.vsdx diagram_modified.vsdx #FF0000");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
-        string targetColor = args[2];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the diagram from the specified file
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages and shapes.
+            // Define the target fill color to match (hex string, case-insensitive)
+            const string targetFillColor = "#FF0000"; // Example: pure red
+
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
-                // Iterate using the shape collection count.
-                for (int i = 0; i < page.Shapes.Count; i++)
+                // Iterate through all shapes on the current page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Retrieve the shape ID via the collection.
-                    long shapeId = page.Shapes[i].ID;
-
-                    // Get the actual shape instance.
-                    Shape shape = page.Shapes.GetShape(shapeId);
-                    if (shape == null)
-                        continue; // Safety check.
-
-                    // Obtain the foreground fill color string (e.g., "#FF0000").
+                    // Retrieve the foreground fill color string (if any)
                     string fillColor = shape.Fill?.FillForegnd?.Value;
 
-                    // Compare with the target color (case‑insensitive).
+                    // If the fill color matches the target, apply a preset theme to the shape
                     if (!string.IsNullOrEmpty(fillColor) &&
-                        fillColor.Equals(targetColor, StringComparison.OrdinalIgnoreCase))
+                        string.Equals(fillColor, targetFillColor, StringComparison.OrdinalIgnoreCase))
                     {
-                        // Apply a preset theme to the matching shape.
-                        // Using Bubble theme as an example.
+                        // Apply a preset theme (Bubble) and a variant/quickstyle
                         shape.PresetTheme = PresetThemeValue.Bubble;
                         shape.PresetThemeVariant = PresetThemeVariantValue.Variant1;
                         shape.PresetThemeQuickStyle = PresetQuickStyleValue.VariantStyle1;
 
-                        Console.WriteLine($"Applied theme to shape ID {shapeId} on page {page.ID} (fill {fillColor}).");
+                        // Optionally, you can also set a quick style matrix if needed:
+                        // shape.SetPresetThemeStyleMatrics(PresetStyleMatricsValue.Style2, PresetColorMatricsValue.Color7);
                     }
                 }
             }
 
-            // Save the modified diagram to the specified output path.
+            // Save the modified diagram to the output path in VSDX format
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine("An error occurred while processing the diagram:");
-            Console.Error.WriteLine(ex.Message);
+            // Write any errors to the error console
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

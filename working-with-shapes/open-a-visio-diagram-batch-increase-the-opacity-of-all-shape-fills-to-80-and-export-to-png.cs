@@ -26,36 +26,31 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block (Diagram implements IDisposable).
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over all pages.
+                // Iterate over all pages in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate over all shapes on the page.
+                    // Iterate over all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes.
+                        // Skip logically deleted shapes.
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Ensure the shape has a Fill object before accessing it.
-                        if (shape.Fill != null)
-                        {
-                            // Set fill foreground transparency to 0.20 (80% opacity).
-                            shape.Fill.FillForegndTrans.Value = 0.20;
-                        }
+                        // Set fill opacity to 80% (i.e., 20% transparent).
+                        // FillForegndTrans.Value = 0.0 (fully opaque) to 1.0 (fully transparent).
+                        shape.Fill.FillForegndTrans.Value = 0.20;
                     }
                 }
 
-                // Prepare PNG export options.
+                // Configure PNG export options.
                 ImageSaveOptions pngOptions = new ImageSaveOptions(SaveFileFormat.Png);
 
-                // Export the modified diagram to PNG.
+                // Export the modified diagram to a PNG file.
                 diagram.Save(outputPath, pngOptions);
             }
-
-            Console.WriteLine($"Diagram processed and saved to PNG: {outputPath}");
         }
         catch (Exception ex)
         {

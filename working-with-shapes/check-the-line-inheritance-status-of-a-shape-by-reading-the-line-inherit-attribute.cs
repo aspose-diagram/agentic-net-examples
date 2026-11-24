@@ -1,13 +1,12 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: expect diagram path and shape NameU
+        // Validate arguments: expect diagram file path and shape name (NameU)
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <diagramPath> <shapeNameU>");
@@ -17,7 +16,7 @@ class Program
         string diagramPath = args[0];
         string targetShapeName = args[1];
 
-        // Guard: ensure the diagram file exists
+        // Guard: check if the diagram file exists
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Error: File not found - {diagramPath}");
@@ -26,55 +25,70 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block (required by API)
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Flag to indicate if the shape was found
+            bool shapeFound = false;
+
+            // Iterate through all pages and shapes to locate the target shape by NameU
+            foreach (Page page in diagram.Pages)
             {
-                Shape foundShape = null;
-
-                // Iterate through all pages to locate the shape by its NameU
-                foreach (Page page in diagram.Pages)
+                // Iterate using index to avoid potential enumeration issues
+                for (int i = 0; i < page.Shapes.Count; i++)
                 {
-                    foreach (Shape shape in page.Shapes)
+                    Shape shape = page.Shapes[i];
+
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Ensure the shape has a valid NameU before comparing
+                    if (shape.NameU != null && shape.NameU.Equals(targetShapeName, StringComparison.OrdinalIgnoreCase))
                     {
-                        // Skip logically deleted shapes
-                        if (shape.Del == BOOL.True)
-                            continue;
+                        shapeFound = true;
 
-                        // Compare the universal name directly (no .Value property)
-                        if (!string.IsNullOrEmpty(shape.NameU) && shape.NameU == targetShapeName)
+                        // Compare the line color with the inherited line color to determine inheritance
+                        // Matching values indicate the shape is using the inherited line formatting
+                        bool isLineInherited = false;
+
+                        // Guard against null Line or InheritLine (should not be null in normal cases)
+                        if (shape.Line != null && shape.InheritLine != null)
                         {
-                            foundShape = shape;
-                            break;
+                            // Compare line color values
+                            if (shape.Line.LineColor != null && shape.InheritLine.LineColor != null)
+                            {
+                                isLineInherited = shape.Line.LineColor.Value == shape.InheritLine.LineColor.Value;
+                            }
                         }
-                    }
 
-                    if (foundShape != null)
+                        // Output the result
+                        Console.WriteLine($"Shape '{targetShapeName}' found on page '{page.Name}'.");
+                        Console.WriteLine($"Line inheritance status: {(isLineInherited ? "Inherited" : "Custom")}");
+
+                        // Optionally, display the actual line color values for debugging
+                        string lineColor = shape.Line?.LineColor?.Value ?? "N/A";
+                        string inheritLineColor = shape.InheritLine?.LineColor?.Value ?? "N/A";
+                        Console.WriteLine($"Current Line Color: {lineColor}");
+                        Console.WriteLine($"Inherited Line Color: {inheritLineColor}");
+
+                        // Since the shape is found, we can exit the loops
                         break;
+                    }
                 }
 
-                if (foundShape == null)
-                {
-                    Console.Error.WriteLine($"Error: Shape with NameU '{targetShapeName}' not found.");
-                    return;
-                }
+                if (shapeFound)
+                    break;
+            }
 
-                // Retrieve the current line color and the inherited line color
-                string lineColor = foundShape.Line.LineColor.Value ?? string.Empty;
-                string inheritedLineColor = foundShape.InheritLine.LineColor.Value ?? string.Empty;
-
-                // Determine inheritance status by comparing the two values (case‑insensitive)
-                bool isLineInherited = string.Equals(lineColor, inheritedLineColor, StringComparison.OrdinalIgnoreCase);
-
-                // Output the results
-                Console.WriteLine($"Shape NameU: {targetShapeName}");
-                Console.WriteLine($"Line Color: {lineColor}");
-                Console.WriteLine($"Inherited Line Color: {inheritedLineColor}");
-                Console.WriteLine($"Is line inherited? {(isLineInherited ? "Yes" : "No")}");
+            if (!shapeFound)
+            {
+                Console.Error.WriteLine($"Error: Shape with NameU '{targetShapeName}' not found in the diagram.");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error console
+            // Capture any Aspose.Diagram or I/O exceptions and report them
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

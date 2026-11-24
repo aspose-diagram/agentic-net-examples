@@ -7,8 +7,16 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument or default)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        // Validate arguments: input diagram, preview image path, output diagram path
+        if (args.Length < 3)
+        {
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <previewImagePath> <outputDiagramPath>");
+            return;
+        }
+
+        string inputPath = args[0];
+        string previewPath = args[1];
+        string outputPath = args[2];
 
         // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
@@ -17,49 +25,47 @@ class Program
             return;
         }
 
-        // Paths for preview image and final saved diagram
-        string previewPath = "preview.png";
-        string outputPath = "output.vsdx";
-
         try
         {
-            // Load the diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Iterate through all pages and shapes to modify connector line jumps
-            foreach (Page page in diagram.Pages)
+            // Load the Visio diagram inside a using block (mandatory pattern)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Loop over shapes collection using indexer (required by API)
-                for (int i = 0; i < page.Shapes.Count; i++)
+                // Iterate through all pages and shapes to find dynamic connectors
+                foreach (Page page in diagram.Pages)
                 {
-                    Shape shape = page.Shapes[i];
-
-                    // Process only 1-D connector shapes
-                    if (shape.OneD)
+                    // Iterate over shapes collection
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Set the line jump style to 'Arc' for visual preview
-                        // ConLineJumpStyleValue is the native enumeration for line jumps
-                        shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Arc;
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Identify 1‑D connector shapes (dynamic connectors)
+                        if (shape.OneD && shape.Master != null && shape.Master.Name != null &&
+                            shape.Master.Name.Contains("Dynamic connector"))
+                        {
+                            // Set the line jump style to Arc for visual preview
+                            shape.Layout.ConLineJumpStyle.Value = ConLineJumpStyleValue.Arc;
+
+                            // Optionally set jump code (e.g., Always) – uncomment if needed
+                            // shape.Layout.ConLineJumpCode.Value = ConLineJumpCodeValue.Always;
+                        }
                     }
                 }
+
+                // Generate a visual preview of the diagram with the updated connector jumps
+                ImageSaveOptions previewOptions = new ImageSaveOptions(SaveFileFormat.Png);
+                diagram.Save(previewPath, previewOptions);
+                Console.WriteLine($"Preview image saved to: {previewPath}");
+
+                // Save the modified diagram to the desired output format (VSDX)
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Modified diagram saved to: {outputPath}");
             }
-
-            // ---------- Generate visual preview (PNG) ----------
-            // Create image save options for PNG format
-            ImageSaveOptions imgOptions = new ImageSaveOptions(SaveFileFormat.Png);
-
-            // Save the diagram as a PNG image to preview the connector jumps
-            diagram.Save(previewPath, imgOptions);
-            Console.WriteLine($"Preview image saved to: {previewPath}");
-
-            // ---------- Save the modified diagram ----------
-            // Save the updated diagram in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Modified diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

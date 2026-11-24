@@ -7,20 +7,36 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (modify as needed)
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Expect three arguments: input diagram path, output JSON path, shape ID, rotation angle (degrees)
+        if (args.Length < 4)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <outputJsonPath> <shapeId> <rotationDegrees>");
             return;
         }
-        // Output JSON report path
-        string jsonReportPath = "bounding_box_report.json";
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputJsonPath = args[1];
+        string shapeIdArg = args[2];
+        string rotationArg = args[3];
+
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file not found at '{inputPath}'.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Parse shape ID
+        if (!long.TryParse(shapeIdArg, out long shapeId))
+        {
+            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
+            return;
+        }
+
+        // Parse rotation angle
+        if (!double.TryParse(rotationArg, out double rotationDegrees))
+        {
+            Console.Error.WriteLine($"Invalid rotation angle: {rotationArg}");
             return;
         }
 
@@ -29,76 +45,63 @@ class Program
             // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure there is at least one page
+                // Assume operation on the first page
                 if (diagram.Pages.Count == 0)
                 {
-                    Console.Error.WriteLine("Error: The diagram contains no pages.");
+                    Console.Error.WriteLine("The diagram contains no pages.");
                     return;
                 }
 
-                // Work with the first page
-                Page page = diagram.Pages[0];
+                var page = diagram.Pages[0];
 
-                // Ensure the page has at least one shape
-                if (page.Shapes.Count == 0)
+                // Retrieve the shape by its structural ID
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape == null)
                 {
-                    Console.Error.WriteLine("Error: The first page contains no shapes.");
+                    Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
                     return;
                 }
 
-                // Retrieve the first shape on the page
-                Shape shape = page.Shapes[0];
+                // Rotate the shape to the specified angle (degrees)
+                shape.XForm.Angle.Value = rotationDegrees;
 
-                // Rotate the shape to a desired angle (e.g., 45 degrees)
-                double newAngle = 45.0;
-                shape.XForm.Angle.Value = newAngle;
-
-                // After rotation, capture the bounding box coordinates
-                // PinX and PinY represent the center of the shape
+                // Capture bounding box coordinates after rotation
                 double pinX = shape.XForm.PinX.Value;
                 double pinY = shape.XForm.PinY.Value;
                 double width = shape.XForm.Width.Value;
                 double height = shape.XForm.Height.Value;
 
-                // Calculate left, right, top, bottom (in inches)
-                double left = pinX - (width / 2.0);
-                double right = pinX + (width / 2.0);
-                double top = pinY + (height / 2.0);
-                double bottom = pinY - (height / 2.0);
+                double left = pinX - width / 2.0;
+                double right = pinX + width / 2.0;
+                double top = pinY + height / 2.0;
+                double bottom = pinY - height / 2.0;
 
-                // Prepare a report object
+                // Prepare report object
                 var report = new
                 {
-                    ShapeId = shape.ID,
-                    RotationAngle = newAngle,
+                    ShapeId = shapeId,
+                    RotationDegrees = rotationDegrees,
                     BoundingBox = new
                     {
                         Left = left,
-                        Top = top,
                         Right = right,
-                        Bottom = bottom,
-                        Width = width,
-                        Height = height
+                        Top = top,
+                        Bottom = bottom
                     }
                 };
 
-                // Serialize the report to JSON with indentation
+                // Serialize report to JSON with indentation
                 string json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
 
-                // Write the JSON report to the specified file
-                File.WriteAllText(jsonReportPath, json);
-                Console.WriteLine($"Bounding box report written to '{jsonReportPath}'.");
-
-                // Optional: save the modified diagram to a new file
-                string outputDiagramPath = "rotated_output.vsdx";
-                diagram.Save(outputDiagramPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Rotated diagram saved to '{outputDiagramPath}'.");
+                // Write JSON to the specified output file
+                File.WriteAllText(outputJsonPath, json);
+                Console.WriteLine($"Bounding box report written to: {outputJsonPath}");
             }
         }
         catch (Exception ex)
         {
-            // Capture any errors from Aspose.Diagram operations
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Capture any Aspose or I/O errors
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

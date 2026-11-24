@@ -20,34 +20,40 @@ class Program
         // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Configure PDF save options with compression to reduce file size.
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Configure PDF save options with compression to reduce file size.
-            PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Set the format tracker explicitly.
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-            // Explicitly set the format tracker.
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+                // Apply Flate (ZIP) compression to textual content.
+                pdfOptions.TextCompression = PdfTextCompression.Flate;
 
-            // Apply flate (ZIP) compression to text streams inside the PDF.
-            pdfOptions.TextCompression = PdfTextCompression.Flate;
+                // Optional: set a default fallback font.
+                pdfOptions.DefaultFont = "Arial";
 
-            // Optional: set a default font to avoid missing‑font warnings.
-            pdfOptions.DefaultFont = "Arial";
+                // Optional: reduce image quality for embedded raster images.
+                pdfOptions.JpegQuality = 75; // 0‑100, lower = higher compression.
 
-            // Save the diagram as a PDF using the configured options.
-            diagram.Save(outputPath, pdfOptions);
+                // Save the diagram as a PDF using the configured options.
+                diagram.Save(outputPath, pdfOptions);
+            }
+
+            Console.WriteLine($"PDF successfully saved to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
         }
     }
 }

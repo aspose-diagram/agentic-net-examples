@@ -1,97 +1,126 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Define input and output file paths.
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 4)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: <inputVisioPath> <deprecatedMasterName> <updatedMasterName> <outputVisioPath>");
             return;
         }
-        string outputPath = "output.vsdx";
 
-        // Guard: ensure the input file exists.
+        string inputPath = args[0];
+        string deprecatedMasterName = args[1];
+        string updatedMasterName = args[2];
+        string outputPath = args[3];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
-        // Names of the masters to replace.
-        string deprecatedMasterName = "OldMaster";   // TODO: set actual deprecated master name.
-        string updatedMasterName = "NewMaster";      // TODO: set actual updated master name.
-
         try
         {
             // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                int pageIndex = 0; // Index of the current page for AddShape calls.
+                // Verify that both masters exist in the diagram.
+                Master deprecatedMaster = null;
+                Master updatedMaster = null;
 
-                // Iterate through all pages in the diagram.
+                // Attempt to retrieve masters by name.
+                foreach (Master m in diagram.Masters)
+                {
+                    if (m.Name == deprecatedMasterName)
+                        deprecatedMaster = m;
+                    if (m.Name == updatedMasterName)
+                        updatedMaster = m;
+                }
+
+                if (deprecatedMaster == null)
+                {
+                    Console.Error.WriteLine($"Deprecated master \"{deprecatedMasterName}\" not found in the diagram.");
+                    return;
+                }
+
+                if (updatedMaster == null)
+                {
+                    Console.Error.WriteLine($"Updated master \"{updatedMasterName}\" not found in the diagram.");
+                    return;
+                }
+
+                // Iterate through all pages and replace shapes that use the deprecated master.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Collect shapes that use the deprecated master.
-                    List<Shape> shapesToReplace = new List<Shape>();
+                    // Collect shape IDs to replace to avoid modifying the collection while iterating.
+                    var shapesToReplace = new System.Collections.Generic.List<long>();
+
                     foreach (Shape shape in page.Shapes)
                     {
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Ensure the shape has an associated master.
                         if (shape.Master != null && shape.Master.Name == deprecatedMasterName)
                         {
-                            shapesToReplace.Add(shape);
+                            shapesToReplace.Add(shape.ID);
                         }
                     }
 
-                    // Replace each collected shape with a new shape based on the updated master.
-                    foreach (Shape oldShape in shapesToReplace)
+                    // Replace each identified shape.
+                    foreach (long shapeId in shapesToReplace)
                     {
-                        // Preserve geometry of the old shape.
+                        Shape oldShape = page.Shapes.GetShape(shapeId);
+
+                        // Preserve geometry.
                         double pinX = oldShape.XForm.PinX.Value;
                         double pinY = oldShape.XForm.PinY.Value;
                         double width = oldShape.XForm.Width.Value;
                         double height = oldShape.XForm.Height.Value;
 
-                        // Preserve text content of the old shape.
-                        List<Txt> oldTexts = new List<Txt>();
-                        foreach (object txtObj in oldShape.Text.Value)
-                        {
-                            if (txtObj is Txt txt)
-                            {
-                                oldTexts.Add(new Txt(txt.Text));
-                            }
-                        }
-
                         // Mark the old shape for deletion.
                         oldShape.Del = BOOL.True;
 
                         // Add a new shape using the updated master.
-                        long newShapeId = diagram.AddShape(pinX, pinY, width, height, updatedMasterName, pageIndex);
+                        long newShapeId = page.AddShape(pinX, pinY, updatedMasterName, false);
                         Shape newShape = page.Shapes.GetShape(newShapeId);
 
-                        // Copy text content to the new shape.
-                        newShape.Text.Value.Clear();
-                        foreach (Txt txt in oldTexts)
+                        // Apply the original size to the new shape.
+                        newShape.XForm.Width.Value = width;
+                        newShape.XForm.Height.Value = height;
+
+                        // Optionally, copy text from the old shape to the new one.
+                        if (oldShape.Text != null && oldShape.Text.Value != null && oldShape.Text.Value.Count > 0)
                         {
-                            newShape.Text.Value.Add(txt);
+                            // Clear existing text.
+                            newShape.Text.Value.Clear();
+
+                            // Copy each text segment.
+                            foreach (var txt in oldShape.Text.Value)
+                            {
+                                // The collection holds Txt objects; add them directly.
+                                newShape.Text.Value.Add(txt);
+                            }
                         }
                     }
-
-                    pageIndex++;
                 }
 
-                // Save the modified diagram to the output path in VSDX format.
+                // Save the modified diagram to the specified output path.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

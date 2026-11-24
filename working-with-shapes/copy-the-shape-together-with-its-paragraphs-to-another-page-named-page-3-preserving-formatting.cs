@@ -16,94 +16,76 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure input file exists
+        // Guard: check input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the source Visio diagram inside a using block as required
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the source Visio diagram
+            Diagram diagram = new Diagram(inputPath);
+
+            // Ensure the source diagram has at least one page and one shape
+            if (diagram.Pages.Count == 0)
             {
-                // Ensure there is at least one page in the diagram
-                if (diagram.Pages.Count == 0)
-                {
-                    Console.Error.WriteLine("The diagram contains no pages.");
-                    return;
-                }
-
-                // Use the first page as the source page
-                Page sourcePage = diagram.Pages[0];
-
-                // Find the first shape on the source page
-                Shape sourceShape = null;
-                foreach (Shape s in sourcePage.Shapes)
-                {
-                    sourceShape = s;
-                    break;
-                }
-
-                if (sourceShape == null)
-                {
-                    Console.Error.WriteLine("No shape found on the source page to copy.");
-                    return;
-                }
-
-                // Retrieve or create the target page named "Page-3"
-                Page targetPage = diagram.Pages.GetPage("Page-3");
-                if (targetPage == null)
-                {
-                    targetPage = new Page();
-                    targetPage.Name = "Page-3";
-                    diagram.Pages.Add(targetPage);
-                }
-
-                // Determine the master name of the source shape (fallback to "Rectangle")
-                string masterName = "Rectangle";
-                if (sourceShape.Master != null && !string.IsNullOrEmpty(sourceShape.Master.Name))
-                {
-                    masterName = sourceShape.Master.Name;
-                }
-
-                // Add a new shape on the target page using the same master and position
-                double pinX = sourceShape.XForm.PinX.Value;
-                double pinY = sourceShape.XForm.PinY.Value;
-                long newShapeId = targetPage.AddShape(pinX, pinY, masterName, false); // fourth argument is a bool
-
-                // Retrieve the newly added shape instance
-                Shape newShape = targetPage.Shapes.GetShape((int)newShapeId);
-                if (newShape == null)
-                {
-                    Console.Error.WriteLine("Failed to retrieve the newly added shape.");
-                    return;
-                }
-
-                // Copy formatting from source shape to the new shape
-                newShape.Copy(sourceShape);
-
-                // Preserve paragraphs (text formatting) from the source shape
-                // Clear any existing paragraphs in the new shape
-                newShape.Paras.Clear();
-
-                // Copy each paragraph from source to target
-                for (int i = 0; i < sourceShape.Paras.Count; i++)
-                {
-                    // Add the source paragraph reference to the new shape's paragraph collection
-                    // This preserves paragraph formatting; Aspose.Diagram stores paragraph objects by reference
-                    newShape.Paras.Add(sourceShape.Paras[i]);
-                }
-
-                // Save the modified diagram to the specified output path in VSDX format
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
             }
+
+            // Get the first page (source page) and its first shape as the shape to copy
+            Page sourcePage = diagram.Pages[0];
+            if (sourcePage.Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("The source page contains no shapes to copy.");
+                return;
+            }
+
+            // Retrieve the shape to copy using GetShape (shape IDs are long)
+            long sourceShapeId = sourcePage.Shapes[0].ID;
+            Shape sourceShape = sourcePage.Shapes.GetShape((int)sourceShapeId);
+
+            // ------------------------------------------------------------
+            // Create or retrieve the target page named "Page-3"
+            // ------------------------------------------------------------
+            Page targetPage = diagram.Pages.GetPage("Page-3");
+            if (targetPage == null)
+            {
+                // Page does not exist; create a new one
+                targetPage = new Page();
+                targetPage.Name = "Page-3";
+                diagram.Pages.Add(targetPage);
+            }
+
+            // ------------------------------------------------------------
+            // Copy the shape together with its paragraphs and formatting
+            // ------------------------------------------------------------
+            // Create a new empty shape instance
+            Shape copiedShape = new Shape();
+
+            // Copy all properties, including paragraphs, from the source shape
+            copiedShape.Copy(sourceShape);
+
+            // Optionally, adjust the position of the copied shape on the target page
+            // Here we place it at the same coordinates as the source shape
+            copiedShape.XForm.PinX.Value = sourceShape.XForm.PinX.Value;
+            copiedShape.XForm.PinY.Value = sourceShape.XForm.PinY.Value;
+
+            // Add the copied shape to the target page's shape collection
+            targetPage.Shapes.Add(copiedShape);
+
+            // ------------------------------------------------------------
+            // Save the modified diagram to the specified output path
+            // ------------------------------------------------------------
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Shape copied to page \"Page-3\" and diagram saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

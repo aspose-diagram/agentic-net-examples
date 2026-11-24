@@ -7,12 +7,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio file path (first argument) or default.
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        // Output SVG file path (second argument) or default.
-        string outputPath = args.Length > 1 ? args[1] : "output.svg";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputSvgPath>");
+            return;
+        }
 
-        // Guard: ensure the input file exists.
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -21,38 +26,34 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load the Visio diagram inside a using block.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over all pages in the diagram.
-                for (int pageIdx = 0; pageIdx < diagram.Pages.Count; pageIdx++)
+                // Iterate through all pages and shapes.
+                foreach (Page page in diagram.Pages)
                 {
-                    Page page = diagram.Pages[pageIdx];
-
-                    // Iterate over all shapes on the current page.
-                    for (int shapeIdx = 0; shapeIdx < page.Shapes.Count; shapeIdx++)
+                    for (int i = 0; i < page.Shapes.Count; i++)
                     {
-                        Shape shape = page.Shapes[shapeIdx];
+                        Shape shape = page.Shapes[i];
 
                         // Set connector routing style to orthogonal (right‑angle).
-                        // This property is applicable to connector shapes.
                         shape.Layout.ShapeRouteStyle.Value = ShapeRouteStyleValue.RightAngle;
                     }
                 }
 
-                // Configure SVG save options.
+                // Prepare SVG save options.
                 SVGSaveOptions svgOptions = new SVGSaveOptions();
 
-                // Save the modified diagram as SVG.
+                // Export the updated diagram to SVG.
                 diagram.Save(outputPath, svgOptions);
-            }
 
-            Console.WriteLine($"Diagram successfully saved as SVG to: {outputPath}");
+                Console.WriteLine($"Diagram successfully saved as SVG to: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
             // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

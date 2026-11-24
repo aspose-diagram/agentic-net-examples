@@ -6,71 +6,83 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as arguments.
-        if (args.Length < 2)
+        // Expect the input Visio file path as the first argument
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
 
-        // Guard: verify input file exists.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
+        // Prepare an output path with a "_modified" suffix
+        string outputPath = Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? string.Empty,
+            Path.GetFileNameWithoutExtension(inputPath) + "_modified.vsdx");
+
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                bool allShapesHaveMaster = true;
+                bool allShapesValid = true;
 
-                // Validate that every shape has a non‑null Master reference.
+                // Validate that every non-deleted shape has a non-null master reference
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
+                        // Skip logically deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Check master reference
                         if (shape.Master == null)
                         {
-                            Console.Error.WriteLine($"Shape ID {shape.ID} on page \"{page.Name}\" has a null Master reference.");
-                            allShapesHaveMaster = false;
+                            Console.Error.WriteLine(
+                                $"Validation error: Shape ID {shape.ID} on page \"{page.Name}\" has a null master reference.");
+                            allShapesValid = false;
                         }
                     }
                 }
 
-                if (!allShapesHaveMaster)
+                // Abort if validation failed
+                if (!allShapesValid)
                 {
-                    Console.Error.WriteLine("Validation failed: one or more shapes lack a Master reference. Bulk modifications will not be performed.");
+                    Console.Error.WriteLine("Validation failed: some shapes lack master references. No modifications applied.");
                     return;
                 }
 
-                // All shapes have valid Master references – proceed with bulk modifications.
+                // Bulk modification example: set fill foreground color to red for all shapes
                 foreach (Page page in diagram.Pages)
                 {
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Set fill foreground color to red (hex string).
-                        shape.Fill.FillForegnd.Value = "#FF0000";
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                        // Set line weight to 0.03 inches.
-                        shape.Line.LineWeight.Value = 0.03;
+                        // Master is guaranteed non-null after validation
+                        shape.Fill.FillForegnd.Value = "#FF0000"; // Red color
                     }
                 }
 
-                // Save the modified diagram to the specified output path.
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                Console.WriteLine($"Diagram successfully saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Report any errors that occur during processing
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

@@ -7,18 +7,18 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 1)
+        if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <input-diagram-file>");
+            Console.Error.WriteLine("Error: No input file path provided.");
             return;
         }
 
         string inputPath = args[0];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine($"Error: File not found – \"{inputPath}\"");
             return;
         }
 
@@ -27,7 +27,7 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            bool hasInvalidRotation = false;
+            bool anyInvalid = false;
 
             // Iterate through all pages.
             for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
@@ -44,16 +44,16 @@ class Program
                     // Retrieve the Y‑axis rotation angle.
                     double rotationY = shape.ThreeDFormat.RotationYAngle.Value;
 
-                    // Validate the rotation does not exceed 360 degrees.
+                    // Validate the angle does not exceed 360 degrees.
                     if (rotationY > 360.0)
                     {
-                        hasInvalidRotation = true;
-                        Console.WriteLine($"Warning: Shape ID {shape.ID} on page {pageIndex} has RotationYAngle = {rotationY}° (exceeds 360°).");
+                        anyInvalid = true;
+                        Console.WriteLine($"Page {pageIndex + 1}, Shape ID {shape.ID} has RotationYAngle = {rotationY}° (exceeds 360°).");
                     }
                 }
             }
 
-            if (!hasInvalidRotation)
+            if (!anyInvalid)
             {
                 Console.WriteLine("Validation passed: No shape exceeds a RotationYAngle of 360 degrees.");
             }

@@ -10,76 +10,65 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <pageIndex>");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath> <PageIndex>");
             return;
         }
 
-        string diagramPath = args[0];
+        string visioPath = args[0];
         string pageIndexArg = args[1];
 
-        // Guard: ensure the diagram file exists.
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the Visio file exists.
+        if (!File.Exists(visioPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            Console.Error.WriteLine($"Error: File not found - {visioPath}");
             return;
         }
 
-        // Guard: parse page index.
+        // Parse the page index argument.
         if (!int.TryParse(pageIndexArg, out int pageIndex) || pageIndex < 0)
         {
-            Console.Error.WriteLine("Error: Invalid page index.");
+            Console.Error.WriteLine("Error: PageIndex must be a non‑negative integer.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block (required for proper disposal).
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Load the Visio diagram.
+            Diagram diagram = new Diagram(visioPath);
+
+            // Validate the requested page index.
+            if (pageIndex >= diagram.Pages.Count)
             {
-                // Validate requested page index.
-                if (pageIndex >= diagram.Pages.Count)
-                {
-                    Console.Error.WriteLine($"Error: Page index {pageIndex} is out of range. Diagram contains {diagram.Pages.Count} pages.");
-                    return;
-                }
+                Console.Error.WriteLine($"Error: PageIndex {pageIndex} is out of range. Diagram has {diagram.Pages.Count} pages.");
+                return;
+            }
 
-                // Retrieve the specific page.
-                Page page = diagram.Pages[pageIndex];
+            // Retrieve the specific page.
+            Page page = diagram.Pages[pageIndex];
 
-                // Prepare HTML save options.
+            // Iterate over each shape on the page.
+            foreach (Shape shape in page.Shapes)
+            {
+                // Build a unique file name for the shape HTML output.
+                // Using shape ID ensures uniqueness even if shapes have the same name.
+                string outputFileName = $"page_{pageIndex + 1}_shape_{shape.ID}.html";
+
+                // Configure HTML export options.
                 HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
-                // Export only visible content and omit comments.
+                // Export only visible content; hidden pages are not relevant for shape export.
                 htmlOptions.ExportHiddenPage = false;
+                // Do not export comments to keep the HTML clean.
                 htmlOptions.IsExportComments = false;
-                // NOTE: HTMLSaveOptions does not expose an EmbeddedCss property.
-                // Embedded CSS is the default behavior for shape‑level HTML export in this API version.
 
-                // Export each shape on the page to its own HTML file.
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip shapes that are marked as deleted.
-                    if (shape.Del == BOOL.True)
-                        continue;
+                // Export the shape to an individual HTML file with embedded CSS.
+                shape.ToHTML(outputFileName, htmlOptions);
 
-                    // Build a unique file name for the shape using its ID.
-                    string shapeFileName = $"shape_{shape.ID}.html";
-
-                    try
-                    {
-                        // Export the shape to HTML with the configured options.
-                        shape.ToHTML(shapeFileName, htmlOptions);
-                        Console.WriteLine($"Exported shape ID {shape.ID} to {shapeFileName}");
-                    }
-                    catch (Exception exShape)
-                    {
-                        Console.Error.WriteLine($"Failed to export shape ID {shape.ID}: {exShape.Message}");
-                    }
-                }
+                Console.WriteLine($"Exported Shape ID {shape.ID} to {outputFileName}");
             }
         }
         catch (Exception ex)
         {
-            // Catch any errors that occur during diagram loading or processing.
+            // Write any Aspose or runtime errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

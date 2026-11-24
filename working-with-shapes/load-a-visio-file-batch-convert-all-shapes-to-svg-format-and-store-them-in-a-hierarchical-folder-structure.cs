@@ -2,33 +2,33 @@ using System;
 using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
+using Aspose.Diagram.AutoLayout;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate arguments: input Visio file and output root folder
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputFolder>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputRootFolder>");
             return;
         }
 
         string inputPath = args[0];
         string outputRoot = args[1];
 
-        // Guard: ensure the input Visio file exists.
+        // Guard: check input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Ensure the output root folder exists (create if necessary).
+        // Guard: ensure output root folder exists or create it
         try
         {
-            if (!Directory.Exists(outputRoot))
-                Directory.CreateDirectory(outputRoot);
+            Directory.CreateDirectory(outputRoot);
         }
         catch (Exception ex)
         {
@@ -38,62 +38,62 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Counter to generate fallback page folder names.
+                // Prepare auto-space options (required before exporting)
+                AutoSpaceOptions autoSpaceOptions = new AutoSpaceOptions
+                {
+                    DistanceInHorizontal = 0.5,
+                    DistanceInVertical = 0.5
+                };
+
+                // Manual page counter because Page does not have an Index property
                 int pageCounter = 1;
 
-                // Iterate through each page in the diagram.
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Determine a safe folder name for the page.
-                    string pageFolderName;
-                    if (!string.IsNullOrWhiteSpace(page.NameU))
+                    // Apply auto-spacing to the page's shapes
+                    page.AutoSpaceShapes(page.Shapes, autoSpaceOptions);
+
+                    // Determine a safe folder name for the page
+                    string pageFolderName = string.IsNullOrWhiteSpace(page.NameU)
+                        ? $"Page_{pageCounter}"
+                        : page.NameU;
+
+                    // Replace invalid path characters
+                    foreach (char c in Path.GetInvalidFileNameChars())
                     {
-                        pageFolderName = page.NameU;
-                    }
-                    else
-                    {
-                        pageFolderName = $"Page_{pageCounter}";
+                        pageFolderName = pageFolderName.Replace(c, '_');
                     }
 
-                    // Combine with the root output path and create the directory.
                     string pageFolderPath = Path.Combine(outputRoot, pageFolderName);
-                    try
-                    {
-                        Directory.CreateDirectory(pageFolderPath);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.Error.WriteLine($"Failed to create page folder '{pageFolderPath}': {ex.Message}");
-                        // Continue to next page if folder creation fails.
-                        pageCounter++;
-                        continue;
-                    }
+                    Directory.CreateDirectory(pageFolderPath);
 
-                    // Prepare SVG save options (reuse for all shapes).
-                    SVGSaveOptions svgOptions = new SVGSaveOptions();
-
-                    // Iterate through each shape on the current page.
+                    // Iterate through each shape on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted.
+                        // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Build a filename for the shape SVG using its unique ID.
+                        // Prepare SVG save options (default settings)
+                        SVGSaveOptions svgOptions = new SVGSaveOptions();
+
+                        // Build a file name for the shape SVG
                         string shapeFileName = $"Shape_{shape.ID}.svg";
-                        string shapeFilePath = Path.Combine(pageFolderPath, shapeFileName);
+                        string shapeOutputPath = Path.Combine(pageFolderPath, shapeFileName);
 
                         try
                         {
-                            // Export the shape to an SVG file.
-                            shape.ToSvg(shapeFilePath, svgOptions);
+                            // Export the shape to SVG
+                            shape.ToSvg(shapeOutputPath, svgOptions);
                         }
-                        catch (Exception ex)
+                        catch (Exception shapeEx)
                         {
-                            Console.Error.WriteLine($"Failed to export shape ID {shape.ID} on page '{pageFolderName}': {ex.Message}");
+                            Console.Error.WriteLine($"Failed to export shape ID {shape.ID} on page '{pageFolderName}': {shapeEx.Message}");
+                            // Continue with next shape
                         }
                     }
 
@@ -103,7 +103,7 @@ class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred while processing the diagram: {ex.Message}");
         }
     }
 }

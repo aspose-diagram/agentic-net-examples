@@ -6,52 +6,47 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Ensure a file path argument is provided.
+        // Verify that a file path argument was provided.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Error: No input file path specified.");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath>");
             return;
         }
 
         string filePath = args[0];
 
-        // Guard: verify the Visio file exists.
+        // Guard: ensure the specified Visio file exists.
         if (!File.Exists(filePath))
         {
-            Console.Error.WriteLine($"Error: File not found - {filePath}");
+            Console.Error.WriteLine($"File not found: {filePath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
-            using (Diagram diagram = new Diagram(filePath))
+            // Load the Visio diagram from the provided file path.
+            Diagram diagram = new Diagram(filePath);
+
+            // Iterate through each page in the diagram.
+            foreach (Page page in diagram.Pages)
             {
-                // Iterate through each page in the diagram.
-                foreach (Page page in diagram.Pages)
+                // Iterate through each shape on the current page.
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through each shape on the current page.
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        // Skip shapes that are marked as deleted.
-                        if (shape.Del == BOOL.True)
-                            continue;
+                    // Retrieve the shape's name; use empty string if null.
+                    string shapeName = shape.Name ?? string.Empty;
 
-                        // Retrieve the shape's name (use NameU; fallback to empty string if null).
-                        string shapeName = shape.NameU ?? string.Empty;
+                    // Count the number of paragraphs in the shape.
+                    int paragraphCount = shape.Paras.Count;
 
-                        // Count the number of paragraphs in the shape.
-                        int paragraphCount = shape.Paras.Count;
-
-                        // Output the shape name and its paragraph count.
-                        Console.WriteLine($"{shapeName}: {paragraphCount}");
-                    }
+                    // Output the shape name and paragraph count.
+                    Console.WriteLine($"Shape: {shapeName}, Paragraphs: {paragraphCount}");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any exceptions to the error stream.
+            // Write any errors that occur during processing to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

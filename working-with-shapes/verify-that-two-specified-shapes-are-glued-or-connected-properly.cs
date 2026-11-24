@@ -6,10 +6,10 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expecting three arguments: diagram file path, first shape ID, second shape ID
+        // Validate arguments count
         if (args.Length < 3)
         {
-            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeId1> <shapeId2>");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <shapeIdOne> <shapeIdTwo> [pageName]");
             return;
         }
 
@@ -27,38 +27,51 @@ class Program
             Console.Error.WriteLine($"Error: Invalid shape ID '{args[1]}'.");
             return;
         }
-
         if (!long.TryParse(args[2], out long shapeIdTwo))
         {
             Console.Error.WriteLine($"Error: Invalid shape ID '{args[2]}'.");
             return;
         }
 
+        // Optional page name
+        string pageName = args.Length >= 4 ? args[3] : null;
+
         try
         {
             // Load the Visio diagram
             Diagram diagram = new Diagram(diagramPath);
 
-            // Use the first page in the document (or you could select by name)
-            if (diagram.Pages.Count == 0)
+            // Retrieve the target page
+            Page page;
+            if (!string.IsNullOrEmpty(pageName))
             {
-                Console.Error.WriteLine("Error: The diagram contains no pages.");
-                return;
+                page = diagram.Pages.GetPage(pageName);
+                if (page == null)
+                {
+                    Console.Error.WriteLine($"Error: Page named '{pageName}' not found.");
+                    return;
+                }
             }
-
-            Page page = diagram.Pages[0];
+            else
+            {
+                // Use the first page if no name is provided
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("Error: Diagram contains no pages.");
+                    return;
+                }
+                page = diagram.Pages[0];
+            }
 
             // Retrieve the two shapes by their IDs
             Shape shapeOne = page.Shapes.GetShape(shapeIdOne);
             Shape shapeTwo = page.Shapes.GetShape(shapeIdTwo);
 
-            // Validate that both shapes were found
             if (shapeOne == null)
             {
                 Console.Error.WriteLine($"Error: Shape with ID {shapeIdOne} not found on page '{page.Name}'.");
                 return;
             }
-
             if (shapeTwo == null)
             {
                 Console.Error.WriteLine($"Error: Shape with ID {shapeIdTwo} not found on page '{page.Name}'.");
@@ -67,17 +80,40 @@ class Program
 
             // Verify if the shapes are glued
             bool areGlued = shapeOne.IsGlued(shapeTwo);
-            // Verify if the shapes are connected (e.g., via a connector)
-            bool areConnected = shapeOne.IsConnected(shapeTwo);
+            Console.WriteLine($"Glued check: Shape {shapeIdOne} {(areGlued ? "is" : "is NOT")} glued to Shape {shapeIdTwo}.");
 
-            // Output the verification results
-            Console.WriteLine($"Shape {shapeIdOne} (Name: {shapeOne.Name}) and Shape {shapeIdTwo} (Name: {shapeTwo.Name}) verification results:");
-            Console.WriteLine($"- Glued: {(areGlued ? "Yes" : "No")}");
-            Console.WriteLine($"- Connected: {(areConnected ? "Yes" : "No")}");
+            // Verify if the shapes are connected (via connector relationships)
+            // Retrieve all connected shape IDs for shapeOne
+            long[] connectedIds = shapeOne.ConnectedShapes(ConnectedShapesFlags.ConnectedShapesAllNodes, null);
+            bool areConnected = false;
+            if (connectedIds != null)
+            {
+                foreach (long id in connectedIds)
+                {
+                    if (id == shapeTwo.ID)
+                    {
+                        areConnected = true;
+                        break;
+                    }
+                }
+            }
+            Console.WriteLine($"Connection check: Shape {shapeIdOne} {(areConnected ? "is" : "is NOT")} connected to Shape {shapeIdTwo}.");
+
+            // Additional verification using IsConnected if available (fallback)
+            // Note: If the IsConnected method exists, it can be used directly.
+            // This block is kept for completeness; it will compile only if the method exists.
+            /*
+            try
+            {
+                bool isConnectedMethod = shapeOne.IsConnected(shapeTwo);
+                Console.WriteLine($"IsConnected method result: {isConnectedMethod}");
+            }
+            catch (MissingMethodException) { }
+            */
         }
         catch (Exception ex)
         {
-            // Capture any Aspose or runtime exceptions and report them
+            // Capture any Aspose or runtime errors
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

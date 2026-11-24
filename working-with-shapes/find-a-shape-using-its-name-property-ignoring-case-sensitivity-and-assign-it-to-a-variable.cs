@@ -6,62 +6,68 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Define the input Visio file path (first argument or default).
-        string inputPath = args.Length > 0 ? args[0] : "Drawing1.vsdx";
-
-        // Guard: ensure the file exists before proceeding.
-        if (!File.Exists(inputPath))
+        // Validate input arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine($"Error: The file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath> <ShapeNameToFind>");
             return;
         }
 
-        // Define the shape name to search for (case‑insensitive).
-        string targetShapeName = "TargetShapeName"; // TODO: replace with the actual shape name.
+        string visioPath = args[0];
+        string targetName = args[1];
 
-        // Variable to hold the found shape.
-        Shape foundShape = null;
+        // Guard: ensure the Visio file exists.
+        if (!File.Exists(visioPath))
+        {
+            Console.Error.WriteLine($"Error: File not found - {visioPath}");
+            return;
+        }
 
         try
         {
-            // Load the diagram inside a using block as required.
-            using (Diagram diagram = new Diagram(inputPath))
+            // Load the Visio diagram inside a using block (mandatory pattern).
+            using (Diagram diagram = new Diagram(visioPath))
             {
-                // Iterate through all pages in the diagram.
+                // Variable to hold the found shape.
+                Shape foundShape = null;
+
+                // Iterate through all pages and shapes to locate the shape by name (case‑insensitive).
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
+                        // Skip deleted shapes.
+                        if (shape.Del == BOOL.True)
+                            continue;
+
                         // Compare the shape's Name property ignoring case.
                         if (!string.IsNullOrEmpty(shape.Name) &&
-                            string.Equals(shape.Name, targetShapeName, StringComparison.OrdinalIgnoreCase))
+                            string.Equals(shape.Name, targetName, StringComparison.OrdinalIgnoreCase))
                         {
-                            // Assign the matching shape to the variable and exit loops.
                             foundShape = shape;
                             break;
                         }
                     }
 
-                    // If the shape was found, stop searching further pages.
                     if (foundShape != null)
                         break;
                 }
-            }
 
-            // Output the result.
-            if (foundShape != null)
-            {
-                Console.WriteLine($"Shape found: ID = {foundShape.ID}, Name = {foundShape.Name}");
-            }
-            else
-            {
-                Console.WriteLine($"Shape with name \"{targetShapeName}\" was not found.");
+                // Output the result.
+                if (foundShape != null)
+                {
+                    Console.WriteLine($"Shape found: ID={foundShape.ID}, Name=\"{foundShape.Name}\"");
+                    // The shape is now stored in the variable 'foundShape' and can be used for further processing.
+                }
+                else
+                {
+                    Console.WriteLine($"Shape with name \"{targetName}\" was not found in the diagram.");
+                }
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream.
+            // Write any Aspose or IO errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

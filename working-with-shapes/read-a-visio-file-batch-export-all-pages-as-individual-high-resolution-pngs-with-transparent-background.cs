@@ -7,66 +7,87 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length == 0)
+        // Validate arguments: first argument is the Visio file path, second (optional) is the output folder.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputFolder]");
             return;
         }
 
         string inputPath = args[0];
-
-        // Guard: ensure the input file exists
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
-        // Determine output directory (same as input file directory)
-        string outputDir = Path.GetDirectoryName(inputPath);
-        if (string.IsNullOrEmpty(outputDir))
+        // Determine output folder.
+        string outputFolder = args.Length >= 2 ? args[1] : Path.GetDirectoryName(inputPath);
+        if (string.IsNullOrEmpty(outputFolder))
         {
-            Console.Error.WriteLine("Unable to determine the output directory.");
-            return;
+            outputFolder = Directory.GetCurrentDirectory();
         }
 
+        // Ensure the output directory exists.
         try
         {
-            // Load the Visio diagram inside a using block as required
+            Directory.CreateDirectory(outputFolder);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error: Unable to create output directory \"{outputFolder}\": {ex.Message}");
+            return;
+        }
+
+        // Load the Visio diagram inside a using block as required.
+        try
+        {
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over each page and export it as a high‑resolution PNG
-                for (int i = 0; i < diagram.Pages.Count; i++)
+                // Iterate over all pages using explicit Page type (no var).
+                int pageIndex = 0;
+                foreach (Page page in diagram.Pages)
                 {
-                    // Retrieve the page (explicitly typed)
-                    Page page = diagram.Pages[i];
+                    // Prepare a safe file name for the page.
+                    string pageName = !string.IsNullOrEmpty(page.NameU) ? page.NameU : $"Page_{pageIndex + 1}";
+                    foreach (char c in Path.GetInvalidFileNameChars())
+                    {
+                        pageName = pageName.Replace(c, '_');
+                    }
 
-                    // Prepare the output file name for the current page
-                    string outputFileName = $"{Path.GetFileNameWithoutExtension(inputPath)}_Page_{i + 1}.png";
-                    string outputPath = Path.Combine(outputDir, outputFileName);
+                    string outputPath = Path.Combine(outputFolder, $"{pageName}_{pageIndex + 1}.png");
 
-                    // Configure image save options
-                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                    // Set a high resolution (e.g., 300 DPI)
-                    saveOptions.Resolution = 300f;
-                    // Enable anti‑aliasing for smoother rendering
-                    saveOptions.SmoothingMode = Aspose.Diagram.Saving.SmoothingMode.AntiAlias;
-                    // Export only the current page
-                    saveOptions.PageIndex = i;
-                    saveOptions.PageCount = 1;
+                    // Configure image save options for high‑resolution PNG.
+                    ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                    {
+                        // Export only the current page.
+                        PageIndex = pageIndex,
+                        PageCount = 1,
+                        // Set a high DPI resolution (e.g., 300 DPI).
+                        Resolution = 300f,
+                        // Enable anti‑aliasing for better quality.
+                        SmoothingMode = Aspose.Diagram.Saving.SmoothingMode.AntiAlias
+                    };
 
-                    // Save the page as PNG
-                    diagram.Save(outputPath, saveOptions);
+                    // Perform the export inside a try/catch to handle per‑page errors.
+                    try
+                    {
+                        diagram.Save(outputPath, saveOptions);
+                        Console.WriteLine($"Exported page {pageIndex + 1} to \"{outputPath}\"");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.Error.WriteLine($"Error exporting page {pageIndex + 1}: {ex.Message}");
+                    }
 
-                    Console.WriteLine($"Exported page {i + 1} to {outputPath}");
+                    pageIndex++;
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
         }
     }
 }

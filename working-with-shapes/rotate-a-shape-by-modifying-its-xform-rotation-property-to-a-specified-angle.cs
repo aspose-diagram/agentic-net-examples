@@ -6,75 +6,73 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: input file, output file, shape ID, rotation angle.
+        // Expect four arguments: input diagram path, shape name, rotation angle (degrees), output diagram path
         if (args.Length < 4)
         {
-            Console.Error.WriteLine("Usage: <program> <inputDiagramPath> <outputDiagramPath> <shapeId> <angleInDegrees>");
+            Console.Error.WriteLine("Usage: <inputPath> <shapeName> <angleDegrees> <outputPath>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-        string shapeIdArg = args[2];
-        string angleArg = args[3];
+        string shapeName = args[1];
+        string angleArg = args[2];
+        string outputPath = args[3];
 
-        // Guard: ensure the input file exists.
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Parse shape ID.
-        if (!int.TryParse(shapeIdArg, out int shapeId))
+        // Parse rotation angle
+        if (!double.TryParse(angleArg, out double angleDegrees))
         {
-            Console.Error.WriteLine($"Invalid shape ID: {shapeIdArg}");
-            return;
-        }
-
-        // Parse rotation angle (degrees).
-        if (!double.TryParse(angleArg, out double angleDeg))
-        {
-            Console.Error.WriteLine($"Invalid angle value: {angleArg}");
+            Console.Error.WriteLine($"Invalid rotation angle: {angleArg}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Locate the shape with the specified ID across all pages.
+            // Locate the shape by its NameU property
             Shape targetShape = null;
             foreach (Page page in diagram.Pages)
             {
-                // GetShape expects an integer ID.
-                Shape shape = page.Shapes.GetShape(shapeId);
-                if (shape != null)
+                foreach (Shape shape in page.Shapes)
                 {
-                    targetShape = shape;
-                    break;
+                    // Skip logically deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    if (shape.NameU == shapeName)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
                 }
+                if (targetShape != null)
+                    break;
             }
 
             if (targetShape == null)
             {
-                Console.Error.WriteLine($"Shape with ID {shapeId} not found in the diagram.");
+                Console.Error.WriteLine($"Shape with name '{shapeName}' not found.");
                 return;
             }
 
-            // Apply the rotation angle (degrees) to the shape's XForm.
-            targetShape.XForm.Angle.Value = angleDeg;
+            // Set the rotation angle (degrees) on the shape's XForm
+            targetShape.XForm.Angle.Value = angleDegrees;
 
-            // Save the modified diagram. Preserve the original format (VSDX assumed here).
+            // Save the modified diagram (using VSDX format)
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Shape ID {shapeId} rotated to {angleDeg} degrees and saved to {outputPath}.");
+            Console.WriteLine($"Shape '{shapeName}' rotated to {angleDegrees} degrees and saved to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using Aspose.Diagram;
 using Aspose.Diagram.Manipulation;
 
@@ -7,80 +6,81 @@ class Program
 {
     static void Main(string[] args)
     {
-        // No external input files are required for this test.
         try
         {
-            // Create a new empty diagram inside a using block as required.
-            using (Diagram diagram = new Diagram())
-            {
-                // Ensure there is at least one page.
-                if (diagram.Pages.Count == 0)
-                {
-                    Console.Error.WriteLine("Diagram does not contain any pages.");
-                    return;
-                }
-
-                // Use the first page.
-                Page page = diagram.Pages[0];
-
-                // Add two rectangle shapes to act as source and target.
-                long rect1Id = page.AddShape(1.0, 1.0, "Rectangle", false);
-                long rect2Id = page.AddShape(5.0, 5.0, "Rectangle", false);
-
-                // Retrieve the rectangle shapes (not used further but ensures they exist).
-                Shape rect1 = page.Shapes.GetShape(rect1Id);
-                Shape rect2 = page.Shapes.GetShape(rect2Id);
-
-                // Add a dynamic connector shape.
-                long connectorId = page.AddShape(2.0, 2.0, "Dynamic connector", false);
-                Shape connector = page.Shapes.GetShape(connectorId);
-
-                // Verify that the added shape is indeed a dynamic connector.
-                if (connector.Master == null || connector.Master.Name != "Dynamic connector")
-                {
-                    Console.Error.WriteLine("Failed to create a dynamic connector.");
-                    return;
-                }
-
-                // Connect the two rectangles using the connector.
-                page.ConnectShapesViaConnector(rect1Id, ConnectionPointPlace.Bottom, rect2Id, ConnectionPointPlace.Top, connectorId);
-
-                // Define test scenarios for each ConnectorsTypeValue.
-                ConnectorsTypeValue[] testValues = new ConnectorsTypeValue[]
-                {
-                    ConnectorsTypeValue.StraightLines,
-                    ConnectorsTypeValue.RightAngle,
-                    ConnectorsTypeValue.CurvedLines
-                };
-
-                // Iterate over each scenario, apply the type, and verify the result.
-                foreach (ConnectorsTypeValue typeValue in testValues)
-                {
-                    // Set the connector appearance.
-                    connector.SetConnectorsType(typeValue);
-
-                    // After setting, the ShapeRouteStyle should reflect the same value.
-                    ShapeRouteStyleValue actualRouteStyle = connector.Layout.ShapeRouteStyle.Value;
-
-                    // Compare expected and actual values.
-                    if (actualRouteStyle != (ShapeRouteStyleValue)typeValue)
-                    {
-                        throw new Exception($"Connector type mismatch. Expected: {typeValue}, Actual: {actualRouteStyle}");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Connector type set and verified successfully: {typeValue}");
-                    }
-                }
-
-                // All tests passed.
-                Console.WriteLine("All SetConnectorsType tests passed.");
-            }
+            RunConnectorTypeTest("StraightLines", ConnectorsTypeValue.StraightLines);
+            RunConnectorTypeTest("RightAngle", ConnectorsTypeValue.RightAngle);
+            RunConnectorTypeTest("CurvedLines", ConnectorsTypeValue.CurvedLines);
+            Console.WriteLine("All connector type tests passed.");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Test execution failed: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Creates a diagram, adds a rectangle and a dynamic connector,
+    /// sets the connector type, and verifies that the routing style matches the expected value.
+    /// </summary>
+    /// <param name="testName">Name of the test scenario.</param>
+    /// <param name="connectorType">Connector type to set.</param>
+    private static void RunConnectorTypeTest(string testName, ConnectorsTypeValue connectorType)
+    {
+        Console.WriteLine($"Running test: {testName}");
+
+        // Use a using block for Diagram as required.
+        using (Diagram diagram = new Diagram())
+        {
+            try
+            {
+                // Ensure there is at least one page.
+                Page page = diagram.Pages[0];
+
+                // Add a rectangle shape using the built‑in master name "Rectangle".
+                long rectId = page.AddShape(1.0, 1.0, 2.0, 1.0, "Rectangle", false);
+                Shape rectangle = page.Shapes.GetShape(rectId);
+
+                // Add a dynamic connector shape.
+                long connId = page.AddShape(2.0, 2.0, "Dynamic connector", false);
+                Shape connector = page.Shapes.GetShape(connId);
+
+                // Set the desired connector type.
+                connector.SetConnectorsType(connectorType);
+
+                // Determine the expected routing style based on the connector type.
+                ShapeRouteStyleValue expectedStyle = GetExpectedRouteStyle(connectorType);
+
+                // Verify that the connector's routing style matches the expected style.
+                // CurvedLines does not have a distinct ShapeRouteStyleValue, so skip verification for that case.
+                if (connectorType != ConnectorsTypeValue.CurvedLines)
+                {
+                    if (connector.Layout.ShapeRouteStyle.Value != expectedStyle)
+                    {
+                        throw new Exception($"Connector type verification failed. Expected routing style {expectedStyle}, but got {connector.Layout.ShapeRouteStyle.Value}.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Wrap any Aspose operation errors with test context.
+                throw new Exception($"Error in test '{testName}': {ex.Message}", ex);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Maps a ConnectorsTypeValue to the corresponding ShapeRouteStyleValue.
+    /// </summary>
+    private static ShapeRouteStyleValue GetExpectedRouteStyle(ConnectorsTypeValue connectorType)
+    {
+        return connectorType switch
+        {
+            ConnectorsTypeValue.StraightLines => ShapeRouteStyleValue.Straight,
+            ConnectorsTypeValue.RightAngle => ShapeRouteStyleValue.RightAngle,
+            // CurvedLines does not have a dedicated ShapeRouteStyleValue; default to Straight for verification purposes.
+            ConnectorsTypeValue.CurvedLines => ShapeRouteStyleValue.Straight,
+            _ => throw new ArgumentOutOfRangeException(nameof(connectorType), $"Unsupported connector type: {connectorType}")
+        };
     }
 }

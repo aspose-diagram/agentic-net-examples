@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -8,82 +7,82 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (use command‑line arguments or defaults)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output_with_index.vsdx";
+        // Validate arguments
+        if (args.Length < 1)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> [outputVisioPath]");
+            return;
+        }
 
-        // Guard: ensure the source Visio file exists
+        string inputPath = args[0];
+        string outputPath = args.Length > 1
+            ? args[1]
+            : Path.Combine(
+                Path.GetDirectoryName(inputPath) ?? "",
+                Path.GetFileNameWithoutExtension(inputPath) + "_with_index.vsdx");
+
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            // Build the index content: each line contains page number and shape names
-            StringBuilder indexBuilder = new StringBuilder();
-            indexBuilder.AppendLine("Index of Shapes");
-            indexBuilder.AppendLine("================");
-            indexBuilder.AppendLine();
-
-            // Iterate through all pages to collect shape information
-            for (int i = 0; i < diagram.Pages.Count; i++)
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                Page page = diagram.Pages[i];
-                int pageNumber = i + 1; // Visio pages are 1‑based for display
-
-                // Header for each page
-                indexBuilder.AppendLine($"Page {pageNumber}:");
-
-                // Iterate through shapes on the current page
-                foreach (Shape shape in page.Shapes)
+                // Build the index content: each line contains page number and shape name
+                var indexBuilder = new System.Text.StringBuilder();
+                int pageNumber = 1;
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // Use the universal name of the shape; fallback to ID if name is empty
-                    string shapeName = !string.IsNullOrWhiteSpace(shape.NameU)
-                        ? shape.NameU
-                        : $"Shape_{shape.ID}";
-
-                    indexBuilder.AppendLine($"  - {shapeName}");
+                        // Use the universal name of the shape; fallback to "(Unnamed)" if null
+                        string shapeName = shape.NameU ?? "(Unnamed)";
+                        indexBuilder.AppendLine($"Page {pageNumber}: {shapeName}");
+                    }
+                    pageNumber++;
                 }
 
-                indexBuilder.AppendLine(); // Blank line between pages
+                // Create a new page for the index
+                Page indexPage = new Page();
+                diagram.Pages.Add(indexPage);
+                // Move the new page to the first position (prepend)
+                indexPage.MoveTo(0);
+                indexPage.Name = "Index";
+
+                // Add a rectangle shape to hold the index text.
+                // Use the built‑in "Rectangle" master; position at (1,1) inches.
+                double pinX = 1.0;
+                double pinY = 1.0;
+                double rectWidth = 8.0; // inches
+                double rectHeight = Math.Max(1.0, indexBuilder.ToString().Split('\n').Length * 0.2);
+                long rectId = indexPage.AddShape(pinX, pinY, rectWidth, rectHeight, "Rectangle", false);
+                Shape rectShape = indexPage.Shapes.GetShape((int)rectId);
+
+                // Clear any existing text and set the multiline index content
+                rectShape.Text.Value.Clear();
+                rectShape.Text.Value.Add(new Txt(indexBuilder.ToString()));
+
+                // Ensure the rectangle size matches the desired dimensions
+                rectShape.XForm.Width.Value = rectWidth;
+                rectShape.XForm.Height.Value = rectHeight;
+
+                // Save the modified diagram with the index page prepended
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Diagram saved with index page: {outputPath}");
             }
-
-            // Create a new page that will hold the index
-            Page indexPage = new Page();
-            indexPage.NameU = "Index";
-
-            // Add the index page to the diagram and move it to the beginning
-            diagram.Pages.Add(indexPage);
-            indexPage.MoveTo(0); // Position the index page as the first page
-
-            // Add a rectangle shape that will contain the index text
-            // The fourth parameter (isCalculate) must be a plain bool, not BOOL
-            long shapeId = indexPage.AddShape(1.0, 1.0, "Rectangle", false);
-
-            // Retrieve the shape object to set its text
-            Shape indexShape = indexPage.Shapes.GetShape((int)shapeId);
-
-            // Clear any existing text and assign the generated index text
-            indexShape.Text.Value.Clear();
-            indexShape.Text.Value.Add(new Txt(indexBuilder.ToString()));
-
-            // Save the modified diagram with the new index page prepended
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

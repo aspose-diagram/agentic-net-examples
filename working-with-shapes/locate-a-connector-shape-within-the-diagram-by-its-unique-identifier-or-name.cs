@@ -6,17 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect two arguments: diagram file path and connector identifier or name.
+        // Validate arguments: expected <diagramPath> <connectorIdOrName>
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <diagramFilePath> <connectorIdOrName>");
+            Console.Error.WriteLine("Usage: Program <diagramPath> <connectorIdOrName>");
             return;
         }
 
         string diagramPath = args[0];
-        string searchTerm = args[1];
+        string identifier = args[1];
 
-        // Guard: ensure the diagram file exists.
+        // Guard: ensure the diagram file exists
         if (!File.Exists(diagramPath))
         {
             Console.Error.WriteLine($"Error: File not found - {diagramPath}");
@@ -25,67 +25,72 @@ class Program
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
-            using (Diagram diagram = new Diagram(diagramPath))
+            // Load the Visio diagram
+            Diagram diagram = new Diagram(diagramPath);
+
+            // Determine if the identifier is a numeric ID or a name
+            bool isIdSearch = long.TryParse(identifier, out long targetId);
+            string targetName = isIdSearch ? null : identifier;
+
+            bool found = false;
+
+            // Iterate through all pages
+            foreach (Page page in diagram.Pages)
             {
-                // Determine whether the search term is a numeric ID.
-                bool isIdSearch = long.TryParse(searchTerm, out long targetId);
-
-                bool found = false;
-
-                // Iterate through all pages in the diagram.
-                foreach (Page page in diagram.Pages)
+                // Iterate through all shapes on the page
+                foreach (Shape shape in page.Shapes)
                 {
-                    // Iterate through all shapes on the current page.
-                    foreach (Shape shape in page.Shapes)
+                    // Skip deleted shapes
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Identify connector shapes (OneD shapes)
+                    if (!shape.OneD)
+                        continue;
+
+                    // Check for match by ID
+                    if (isIdSearch && shape.ID == targetId)
                     {
-                        // Skip shapes that are marked as deleted.
-                        if (shape.Del == BOOL.True)
-                            continue;
-
-                        // Consider only connector shapes (1‑D shapes).
-                        if (!shape.OneD)
-                            continue;
-
-                        // Search by ID.
-                        if (isIdSearch && shape.ID == targetId)
-                        {
-                            Console.WriteLine("Connector found by ID:");
-                            Console.WriteLine($"Page NameU: {page.NameU}");
-                            Console.WriteLine($"Shape ID: {shape.ID}");
-                            Console.WriteLine($"Shape NameU: {shape.NameU}");
-                            found = true;
-                            break;
-                        }
-
-                        // Search by NameU (case‑sensitive).
-                        if (!isIdSearch && shape.NameU == searchTerm)
-                        {
-                            Console.WriteLine("Connector found by Name:");
-                            Console.WriteLine($"Page NameU: {page.NameU}");
-                            Console.WriteLine($"Shape ID: {shape.ID}");
-                            Console.WriteLine($"Shape NameU: {shape.NameU}");
-                            found = true;
-                            break;
-                        }
+                        PrintConnectorInfo(shape);
+                        found = true;
+                        break;
                     }
 
-                    if (found)
+                    // Check for match by NameU (shape name)
+                    if (!isIdSearch && shape.NameU == targetName)
+                    {
+                        PrintConnectorInfo(shape);
+                        found = true;
                         break;
+                    }
                 }
 
-                if (!found)
-                {
-                    Console.WriteLine(isIdSearch
-                        ? $"No connector with ID {targetId} was found."
-                        : $"No connector with name \"{searchTerm}\" was found.");
-                }
+                if (found)
+                    break;
+            }
+
+            if (!found)
+            {
+                Console.WriteLine(isIdSearch
+                    ? $"Connector with ID {targetId} not found."
+                    : $"Connector with name \"{targetName}\" not found.");
             }
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
+    }
+
+    // Helper method to output connector details
+    private static void PrintConnectorInfo(Shape connector)
+    {
+        Console.WriteLine("Connector found:");
+        Console.WriteLine($"  ID       : {connector.ID}");
+        Console.WriteLine($"  NameU    : {connector.NameU}");
+        // Master name may give additional context (e.g., "Dynamic connector")
+        string masterName = connector.Master?.Name ?? "N/A";
+        Console.WriteLine($"  Master   : {masterName}");
     }
 }

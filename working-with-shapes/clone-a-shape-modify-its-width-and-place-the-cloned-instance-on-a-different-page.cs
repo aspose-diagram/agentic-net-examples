@@ -1,112 +1,83 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: input diagram path, output diagram path, optional source page index, optional target page index
-        if (args.Length < 2)
+        // Input and output file paths
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath> [sourcePageIndex] [targetPageIndex]");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
+        string outputPath = "output.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Default page indices
-        int sourcePageIndex = 0; // first page
-        int targetPageIndex = 1; // second page
-
-        if (args.Length >= 3 && !int.TryParse(args[2], out sourcePageIndex))
-        {
-            Console.Error.WriteLine("Invalid source page index. It must be an integer.");
-            return;
-        }
-
-        if (args.Length >= 4 && !int.TryParse(args[3], out targetPageIndex))
-        {
-            Console.Error.WriteLine("Invalid target page index. It must be an integer.");
-            return;
-        }
-
-        // Guard: ensure input file exists
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the source diagram inside a using block for proper disposal
+            // Load the source diagram inside a using block (mandatory)
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Validate source page index
-                if (sourcePageIndex < 0 || sourcePageIndex >= diagram.Pages.Count)
+                // Ensure the diagram has at least one page
+                if (diagram.Pages.Count == 0)
                 {
-                    Console.Error.WriteLine($"Source page index {sourcePageIndex} is out of range. Diagram has {diagram.Pages.Count} page(s).");
+                    Console.Error.WriteLine("The diagram contains no pages.");
                     return;
                 }
 
-                // Retrieve the source page
-                Page sourcePage = diagram.Pages[sourcePageIndex];
+                // Source page (first page)
+                Page sourcePage = diagram.Pages[0];
 
-                // Ensure the source page contains at least one shape
+                // Ensure the source page has at least one shape
                 if (sourcePage.Shapes.Count == 0)
                 {
-                    Console.Error.WriteLine($"Source page (index {sourcePageIndex}) contains no shapes to clone.");
+                    Console.Error.WriteLine("The source page contains no shapes to clone.");
                     return;
                 }
 
                 // Retrieve the first shape on the source page
                 Shape sourceShape = sourcePage.Shapes[0];
 
-                // Ensure the shape has an associated master (required for cloning via master name)
-                if (sourceShape.Master == null)
-                {
-                    Console.Error.WriteLine("The selected shape does not have a master and cannot be cloned.");
-                    return;
-                }
+                // Create a new shape instance and copy the source shape's data
+                Shape clonedShape = new Shape();
+                clonedShape.Copy(sourceShape);
 
-                // Extract geometry and master information from the source shape
-                string masterName = sourceShape.Master.Name;
-                double pinX = sourceShape.XForm.PinX.Value;
-                double pinY = sourceShape.XForm.PinY.Value;
-                double width = sourceShape.XForm.Width.Value;
-                double height = sourceShape.XForm.Height.Value;
+                // Modify the cloned shape's width (example: set to 2.0 inches)
+                clonedShape.XForm.Width.Value = 2.0;
 
-                // Determine or create the target page
+                // Optionally adjust the cloned shape's position to avoid overlap
+                clonedShape.XForm.PinX.Value = sourceShape.XForm.PinX.Value + 2.0;
+                clonedShape.XForm.PinY.Value = sourceShape.XForm.PinY.Value;
+
+                // Determine target page (different from source page)
                 Page targetPage;
-                if (targetPageIndex < diagram.Pages.Count)
+                if (diagram.Pages.Count > 1)
                 {
-                    targetPage = diagram.Pages[targetPageIndex];
+                    // Use the second page if it exists
+                    targetPage = diagram.Pages[1];
                 }
                 else
                 {
-                    // Add blank pages until the desired index exists
-                    while (diagram.Pages.Count <= targetPageIndex)
-                    {
-                        diagram.Pages.Add(new Page());
-                    }
-                    targetPage = diagram.Pages[targetPageIndex];
+                    // Create a new page and add it to the diagram
+                    targetPage = new Page();
+                    diagram.Pages.Add(targetPage);
                 }
 
-                // Add a new shape on the target page using the same master and geometry
-                // The fourth parameter (isCalculate) must be a bool; false means no automatic size calculation
-                long newShapeId = targetPage.AddShape(pinX, pinY, width, height, masterName, false);
-                Shape clonedShape = targetPage.Shapes.GetShape(newShapeId);
+                // Add the cloned shape to the target page
+                targetPage.Shapes.Add(clonedShape);
 
-                // Modify the width of the cloned shape (example: increase by 20%)
-                double newWidth = width * 1.20;
-                clonedShape.XForm.Width.Value = newWidth;
-
-                // Save the modified diagram to the specified output path in VSDX format
+                // Save the modified diagram
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                Console.WriteLine($"Diagram saved successfully to {outputPath}");
             }
         }
         catch (Exception ex)

@@ -7,59 +7,52 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdm>");
-            return;
-        }
+        // Input and output file paths (provided via command line or defaults)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.vsdm";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard against missing input file.
+        // Guard: ensure the source diagram exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required.
+            // Load the diagram inside a using block as required by the API
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram contains a VBA project; if not, report and exit.
+                // Ensure the diagram already contains a VBA project; cannot create a new one
                 if (diagram.VbaProject == null)
                 {
-                    Console.Error.WriteLine("The diagram does not contain a VBA project. Cannot add macro.");
+                    Console.Error.WriteLine("Error: The diagram does not contain a VBA project. Cannot add macro.");
                     return;
                 }
 
-                // Add a new procedural VBA module to the project.
-                // VbaModuleType.Procedural indicates a standard code module.
-                int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "TimestampModule");
-
-                // Retrieve the newly added module.
-                VbaModule timestampModule = diagram.VbaProject.Modules[moduleIndex];
-
-                // VBA code that adds a timestamp paragraph to every newly added shape.
-                timestampModule.Codes = @"
-Public Sub Document_ShapeAdded(ByVal Shape As Visio.Shape)
-    Dim para As Visio.Paragraph
-    Set para = Shape.Characters.Paragraphs.Add
-    para.Text = ""Created: "" & Format(Now, ""yyyy-mm-dd hh:nn:ss"")
+                // VBA macro that adds a timestamp paragraph to every new shape
+                string macroCode = @"
+Public Sub Document_ShapeAdded(ByVal Shape As IVShape)
+    Dim ts As String
+    ts = ""Timestamp: "" & Now
+    Shape.Text = ts
 End Sub
 ";
 
-                // Save the modified diagram in a macro‑enabled format.
+                // Add a new procedural VBA module and set its code
+                int moduleIndex = diagram.VbaProject.Modules.Add(VbaModuleType.Procedural, "TimestampModule");
+                VbaModule module = diagram.VbaProject.Modules[moduleIndex];
+                module.Codes = macroCode;
+
+                // Save the modified diagram with the macro embedded in a macro-enabled format
                 diagram.Save(outputPath, SaveFileFormat.Vsdm);
             }
 
-            Console.WriteLine("Macro added and diagram saved successfully.");
+            Console.WriteLine($"Diagram saved with timestamp macro: {outputPath}");
         }
         catch (Exception ex)
         {
+            // Report any errors that occur during processing
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

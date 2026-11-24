@@ -2,22 +2,17 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using Aspose.Diagram;
+using Aspose.Diagram.Manipulation;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
-            return;
-        }
+        // Input diagram path (first argument) and output path (second argument)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output_cleaned.vsdx";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: ensure input file exists
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -39,41 +34,42 @@ class Program
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Process connection points if there are multiple connections
-                    if (shape.Connections != null && shape.Connections.Count > 1)
+                    // Collection of connections for the current shape
+                    ConnectionCollection connections = shape.Connections;
+
+                    // Track unique connection points using a hash set
+                    HashSet<string> uniquePoints = new HashSet<string>();
+                    List<int> duplicateIndices = new List<int>();
+
+                    // Identify duplicate connection points
+                    for (int i = 0; i < connections.Count; i++)
                     {
-                        // Track unique connection point signatures
-                        HashSet<string> uniqueConnections = new HashSet<string>();
-
-                        // Iterate backwards to safely remove duplicates
-                        for (int i = shape.Connections.Count - 1; i >= 0; i--)
+                        Connection conn = connections[i];
+                        // Build a key based on the X and Y formulas of the connection point
+                        string key = $"{conn.X.Ufe.F}|{conn.Y.Ufe.F}";
+                        if (!uniquePoints.Add(key))
                         {
-                            Connection conn = shape.Connections[i];
-
-                            // Build a key based on X and Y values
-                            string key = $"{conn.X}|{conn.Y}";
-
-                            // If this connection point already exists, remove the duplicate
-                            if (uniqueConnections.Contains(key))
-                            {
-                                shape.Connections.RemoveAt(i);
-                            }
-                            else
-                            {
-                                uniqueConnections.Add(key);
-                            }
+                            // Duplicate found; remember its index for removal
+                            duplicateIndices.Add(i);
                         }
+                    }
+
+                    // Remove duplicates in reverse order to keep indices valid
+                    for (int i = duplicateIndices.Count - 1; i >= 0; i--)
+                    {
+                        connections.RemoveAt(duplicateIndices[i]);
                     }
                 }
             }
 
-            // Save the cleaned diagram using the required SaveFileFormat enum
+            // Save the cleaned diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            Console.WriteLine($"Diagram cleaned and saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

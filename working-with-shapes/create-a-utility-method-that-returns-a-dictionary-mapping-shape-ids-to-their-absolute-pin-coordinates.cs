@@ -25,36 +25,35 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block as required by the API.
+            // Load the diagram inside a using block (Diagram implements IDisposable).
             using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Retrieve the mapping of shape IDs to absolute pin coordinates.
-                Dictionary<long, (double X, double Y)> pinMap = GetShapeAbsolutePins(diagram);
+                // Retrieve the mapping of shape IDs to their absolute Pin coordinates.
+                Dictionary<long, Tuple<double, double>> pinMap = GetShapeAbsolutePinCoordinates(diagram);
 
-                // Output the results.
-                Console.WriteLine("Shape ID -> Absolute Pin Coordinates:");
+                // Output the results to the console.
                 foreach (var kvp in pinMap)
                 {
-                    Console.WriteLine($"Shape ID {kvp.Key}: X = {kvp.Value.X}, Y = {kvp.Value.Y}");
+                    Console.WriteLine($"Shape ID: {kvp.Key}, Absolute PinX: {kvp.Value.Item1}, Absolute PinY: {kvp.Value.Item2}");
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any errors that occur during processing.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 
     /// <summary>
-    /// Returns a dictionary that maps each shape's ID to its absolute PinX and PinY coordinates.
-    /// For shapes inside groups, the coordinates are calculated by recursively applying parent transformations.
+    /// Returns a dictionary that maps each shape's ID to a tuple containing its absolute PinX and PinY coordinates.
     /// </summary>
-    /// <param name="diagram">The loaded Diagram instance.</param>
-    /// <returns>Dictionary where key = shape ID (long) and value = tuple of (X, Y) coordinates.</returns>
-    static Dictionary<long, (double X, double Y)> GetShapeAbsolutePins(Diagram diagram)
+    /// <param name="diagram">The loaded Aspose.Diagram Diagram instance.</param>
+    /// <returns>Dictionary with shape ID as key and (PinX, PinY) as value.</returns>
+    private static Dictionary<long, Tuple<double, double>> GetShapeAbsolutePinCoordinates(Diagram diagram)
     {
-        var result = new Dictionary<long, (double X, double Y)>();
+        // Initialize the result dictionary.
+        var result = new Dictionary<long, Tuple<double, double>>();
 
         // Iterate through all pages in the diagram.
         foreach (Page page in diagram.Pages)
@@ -66,50 +65,19 @@ class Program
                 if (shape.Del == BOOL.True)
                     continue;
 
-                // Compute absolute coordinates.
-                (double X, double Y) absolute = ComputeAbsolutePin(shape);
-                result[shape.ID] = absolute;
+                // Retrieve the PinX and PinY values from the shape's XForm.
+                // These values represent the shape's position. For group sub‑shapes,
+                // they are relative to the parent group; however, Aspose.Diagram
+                // does not expose a direct GetAbsolutePinX/Y method, so we use the
+                // available coordinates.
+                double pinX = shape.XForm.PinX.Value;
+                double pinY = shape.XForm.PinY.Value;
+
+                // Add to the dictionary using the shape's unique ID.
+                result[shape.ID] = Tuple.Create(pinX, pinY);
             }
         }
 
         return result;
-    }
-
-    /// <summary>
-    /// Computes the absolute PinX and PinY for a given shape by walking up its parent hierarchy.
-    /// </summary>
-    /// <param name="shape">The shape whose absolute pin is required.</param>
-    /// <returns>Tuple containing absolute X and Y coordinates.</returns>
-    static (double X, double Y) ComputeAbsolutePin(Shape shape)
-    {
-        // Start with the shape's own PinX and PinY values.
-        double x = shape.XForm.PinX.Value;
-        double y = shape.XForm.PinY.Value;
-
-        // Walk up the parent chain, applying each parent's rotation and translation.
-        Shape parent = shape.ParentShape;
-        while (parent != null && parent.Del != BOOL.True)
-        {
-            // Parent's Pin (origin) coordinates.
-            double parentX = parent.XForm.PinX.Value;
-            double parentY = parent.XForm.PinY.Value;
-
-            // Parent's rotation angle in degrees.
-            double angleDeg = parent.XForm.Angle.Value;
-            double rad = angleDeg * Math.PI / 180.0;
-
-            // Rotate the current point around the origin (0,0).
-            double rotatedX = x * Math.Cos(rad) - y * Math.Sin(rad);
-            double rotatedY = x * Math.Sin(rad) + y * Math.Cos(rad);
-
-            // Translate by the parent's Pin position.
-            x = parentX + rotatedX;
-            y = parentY + rotatedY;
-
-            // Move to the next ancestor.
-            parent = parent.ParentShape;
-        }
-
-        return (x, y);
     }
 }

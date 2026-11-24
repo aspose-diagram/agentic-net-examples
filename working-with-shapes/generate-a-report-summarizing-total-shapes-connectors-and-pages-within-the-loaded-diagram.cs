@@ -6,62 +6,65 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate that a diagram file path was provided
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <diagram-file-path>");
+            Console.Error.WriteLine("Please provide the path to the Visio diagram file as the first argument.");
             return;
         }
 
         string diagramPath = args[0];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing file
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block (mandatory pattern).
+            // Load the diagram inside a using block to ensure proper disposal
             using (Diagram diagram = new Diagram(diagramPath))
             {
-                // Count total pages.
-                int pageCount = diagram.Pages.Count;
-
+                // Initialize counters
+                int totalPages = diagram.Pages.Count;
                 int totalShapes = 0;
                 int totalConnectors = 0;
 
-                // Iterate through each page and its shapes.
+                // Iterate through each page in the diagram
                 foreach (Page page in diagram.Pages)
                 {
+                    // Iterate through each shape on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip logically deleted shapes.
+                        // Skip shapes that are logically deleted
                         if (shape.Del == BOOL.True)
                             continue;
 
+                        // Count the shape
                         totalShapes++;
 
-                        // Identify connector shapes (1‑D shapes).
+                        // Identify connector shapes by checking the OneD property (1‑D shapes are connectors)
                         if (shape.OneD)
+                        {
                             totalConnectors++;
+                        }
                     }
                 }
 
-                // Output the summary report.
+                // Output the summary report
                 Console.WriteLine("Diagram Summary Report");
                 Console.WriteLine("----------------------");
-                Console.WriteLine($"Total Pages      : {pageCount}");
+                Console.WriteLine($"Total Pages      : {totalPages}");
                 Console.WriteLine($"Total Shapes     : {totalShapes}");
                 Console.WriteLine($"Total Connectors : {totalConnectors}");
             }
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

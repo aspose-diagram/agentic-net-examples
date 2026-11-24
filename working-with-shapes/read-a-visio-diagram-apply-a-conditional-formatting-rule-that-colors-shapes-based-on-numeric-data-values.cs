@@ -6,20 +6,26 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Determine input and output file paths (use command‑line arguments if provided)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Expect two arguments: input Visio file path and output Visio file path
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
+            return;
+        }
 
-        // Guard: ensure the input file exists before proceeding
+        string inputPath = args[0];
+        string outputPath = args[1];
+
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block (required by the API)
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
                 // Iterate through all pages in the diagram
@@ -32,50 +38,48 @@ class Program
                         if (shape.Del == BOOL.True)
                             continue;
 
+                        // Ensure the shape has a custom properties collection
+                        if (shape.Props == null)
+                            continue;
+
                         // Look for a custom property named "Score"
                         foreach (Prop prop in shape.Props)
                         {
-                            // Ensure the property label exists and matches "Score" (case‑insensitive)
-                            if (prop.Label != null && prop.Label.Value != null &&
-                                prop.Label.Value.Equals("Score", StringComparison.OrdinalIgnoreCase))
+                            // Compare the property label (case‑insensitive) to "Score"
+                            if (string.Equals(prop.Label?.Value, "Score", StringComparison.OrdinalIgnoreCase))
                             {
-                                // Retrieve the property value as a string
-                                string valStr = prop.Value?.Val;
-                                if (double.TryParse(valStr, out double numericValue))
+                                // Try to parse the property value as a double
+                                if (double.TryParse(prop.Value?.Val, out double numericValue))
                                 {
-                                    // Determine fill colour based on the numeric value
-                                    // Green for > 80, Yellow for > 50, Red otherwise
-                                    int rgb;
-                                    if (numericValue > 80)
-                                        rgb = 0x00FF00; // Green
-                                    else if (numericValue > 50)
-                                        rgb = 0xFFFF00; // Yellow
+                                    // Apply conditional fill color based on the numeric value
+                                    // Example rule: value >= 50 => red, otherwise green
+                                    if (numericValue >= 50)
+                                    {
+                                        // Red fill (hex string)
+                                        shape.Fill.FillForegnd.Value = "#FF0000";
+                                    }
                                     else
-                                        rgb = 0xFF0000; // Red
-
-                                    // Convert the integer RGB value to a hex string (e.g., "#FF0000")
-                                    string hexColor = $"#{rgb:X6}";
-
-                                    // Apply the fill colour to the shape (FillForegnd.Value expects a string)
-                                    shape.Fill.FillForegnd.Value = hexColor;
+                                    {
+                                        // Green fill (hex string)
+                                        shape.Fill.FillForegnd.Value = "#00FF00";
+                                    }
                                 }
 
-                                // Once the "Score" property has been processed, exit the inner loop
+                                // Once the "Score" property is processed, exit the inner loop
                                 break;
                             }
                         }
                     }
                 }
 
-                // Save the modified diagram using the correct overload and enum member
+                // Save the modified diagram to the specified output path
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Diagram saved successfully to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

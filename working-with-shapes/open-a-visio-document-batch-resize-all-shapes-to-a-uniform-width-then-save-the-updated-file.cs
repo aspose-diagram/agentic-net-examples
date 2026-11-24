@@ -1,45 +1,40 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Expect at least input and output file paths.
+        // Expect input and output file paths as command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> [uniformWidth]");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Optional uniform width argument; default to 2.0 if not provided or invalid.
-        double uniformWidth = 2.0;
-        if (args.Length >= 3 && double.TryParse(args[2], out double parsedWidth))
-        {
-            uniformWidth = parsedWidth;
-        }
-
-        // Guard: ensure the input file exists before proceeding.
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
+        // Define the uniform width (in inches) to apply to every shape.
+        double uniformWidth = 2.0;
+
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block to ensure proper disposal.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over every page in the diagram.
+                // Iterate over all pages in the diagram.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate over every shape on the current page.
+                    // Iterate over all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
                         // Skip shapes that are marked as deleted.
@@ -51,16 +46,14 @@ class Program
                     }
                 }
 
-                // Save the modified diagram to the specified output path in VSDX format.
+                // Save the modified diagram to the specified output path using VSDX format.
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-
-            Console.WriteLine("Diagram resized and saved successfully.");
         }
         catch (Exception ex)
         {
-            // Write any errors encountered during processing to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any errors that occur during processing to the error stream.
+            Console.Error.WriteLine($"Error processing Visio file: {ex.Message}");
         }
     }
 }

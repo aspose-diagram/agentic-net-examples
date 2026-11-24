@@ -7,63 +7,68 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect three arguments: input Visio file, shape name to export, output HTML file path.
-        if (args.Length < 3)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <inputVisioPath> <shapeName> <outputHtmlPath>");
+            Console.Error.WriteLine("Usage: Program <VisioFilePath> <ShapeId>");
             return;
         }
 
-        string inputPath = args[0];
-        string shapeName = args[1];
-        string outputPath = args[2];
+        string diagramPath = args[0];
+        string shapeIdText = args[1];
 
-        // Guard: ensure the input Visio file exists.
-        if (!File.Exists(inputPath))
+        // Guard: ensure the Visio file exists.
+        if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            return;
+        }
+
+        // Guard: parse the shape identifier.
+        if (!long.TryParse(shapeIdText, out long shapeId))
+        {
+            Console.Error.WriteLine($"Error: Invalid shape ID '{shapeIdText}'.");
             return;
         }
 
         try
         {
             // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            Diagram diagram = new Diagram(diagramPath);
 
-            // Use the active page (or you could select a specific page by index).
-            Page page = diagram.ActivePage;
-
-            // Locate the shape with the specified NameU.
+            // Locate the shape across all pages.
             Shape targetShape = null;
-            foreach (Shape shape in page.Shapes)
+            foreach (Page page in diagram.Pages)
             {
-                // NameU holds the universal name of the shape.
-                if (shape.NameU != null && shape.NameU.Equals(shapeName, StringComparison.OrdinalIgnoreCase))
+                // GetShape returns null if the shape ID is not present on this page.
+                Shape shape = page.Shapes.GetShape(shapeId);
+                if (shape != null)
                 {
                     targetShape = shape;
                     break;
                 }
             }
 
-            // If the shape was not found, report and exit.
             if (targetShape == null)
             {
-                Console.Error.WriteLine($"Shape \"{shapeName}\" not found in the diagram.");
+                Console.Error.WriteLine($"Error: Shape with ID {shapeId} not found in the diagram.");
                 return;
             }
 
-            // Prepare HTML save options (default options preserve geometry and style).
-            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
+            // Prepare output HTML file path.
+            string outputDirectory = Path.GetDirectoryName(diagramPath) ?? Directory.GetCurrentDirectory();
+            string outputPath = Path.Combine(outputDirectory, $"shape_{shapeId}.html");
 
-            // Export the selected shape to HTML.
+            // Export the selected shape to HTML, preserving geometry and style.
+            HTMLSaveOptions htmlOptions = new HTMLSaveOptions();
             targetShape.ToHTML(outputPath, htmlOptions);
 
-            Console.WriteLine($"Shape \"{shapeName}\" successfully exported to HTML: {outputPath}");
+            Console.WriteLine($"Shape {shapeId} exported successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error console.
-            Console.Error.WriteLine($"Error during export: {ex.Message}");
+            // Write any Aspose or runtime errors to the error stream.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

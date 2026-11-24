@@ -6,7 +6,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect two arguments: input Visio file path and output CSV file path
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputCsvPath>");
@@ -16,44 +16,59 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: verify input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            return;
+        }
+
+        // Guard: ensure the directory for the output file exists
+        string outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+        {
+            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            return;
+        }
+
+        Diagram diagram = null;
+        try
+        {
+            // Load the Visio diagram
+            diagram = new Diagram(inputPath);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Prepare the CSV writer.
+            // Open a StreamWriter for the CSV output
             using (StreamWriter writer = new StreamWriter(outputPath))
             {
-                // Write CSV header.
+                // Write CSV header
                 writer.WriteLine("ShapeID,ShapeType,AreaSqMm");
 
-                // Iterate through all pages.
+                // Iterate through each page and each shape
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page.
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Retrieve shape ID.
+                        // Retrieve shape ID
                         long shapeId = shape.ID;
 
-                        // Retrieve shape type as string.
+                        // Retrieve shape type as string
                         string shapeType = shape.Type.ToString();
 
-                        // Retrieve width and height (in inches) and compute area in square millimetres.
+                        // Retrieve width and height (in inches) and compute area in square millimeters
                         double widthInches = shape.XForm.Width.Value;
                         double heightInches = shape.XForm.Height.Value;
-                        double areaInches = widthInches * heightInches;
-                        double mmPerInch = 25.4;
-                        double areaSqMm = areaInches * mmPerInch * mmPerInch;
+                        double areaSqInches = widthInches * heightInches;
+                        double areaSqMm = areaSqInches * 25.4 * 25.4;
 
-                        // Write CSV line (rounded to two decimal places for readability).
+                        // Write CSV line
                         writer.WriteLine($"{shapeId},{shapeType},{areaSqMm:F2}");
                     }
                 }
@@ -63,8 +78,12 @@ class Program
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during loading or processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            Console.Error.WriteLine($"Error while generating CSV: {ex.Message}");
+        }
+        finally
+        {
+            // Dispose diagram if needed
+            diagram?.Dispose();
         }
     }
 }

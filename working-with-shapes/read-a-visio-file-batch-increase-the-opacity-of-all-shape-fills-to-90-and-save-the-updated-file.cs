@@ -16,46 +16,44 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram from the specified file.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate over all pages.
+            // Iterate over all pages in the diagram.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate over all shapes on the page.
+                // Iterate over all shapes on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
                     // Skip logically deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Ensure the shape has a Fill object before modifying.
-                    if (shape.Fill != null)
+                    // Ensure the Fill and FillForegndTrans objects are present.
+                    if (shape.Fill != null && shape.Fill.FillForegndTrans != null)
                     {
-                        // Set fill pattern to solid color (value 1).
-                        shape.Fill.FillPattern.Value = 1;
-
-                        // Set fill foreground transparency to 0.10 (90% opacity).
+                        // Set fill opacity to 90% (10% transparent).
                         shape.Fill.FillForegndTrans.Value = 0.10;
                     }
                 }
             }
 
-            // Save the modified diagram in the same format as the input (VSDX is common).
+            // Save the modified diagram to the output path in VSDX format.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

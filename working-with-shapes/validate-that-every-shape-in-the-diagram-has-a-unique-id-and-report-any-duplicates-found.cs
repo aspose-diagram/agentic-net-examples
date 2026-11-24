@@ -8,7 +8,7 @@ class Program
     static void Main(string[] args)
     {
         // Validate command line arguments.
-        if (args.Length < 1)
+        if (args.Length == 0)
         {
             Console.Error.WriteLine("Usage: Program <input-diagram-path>");
             return;
@@ -28,35 +28,40 @@ class Program
             // Load the diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Dictionary to count occurrences of each shape ID.
-                Dictionary<long, int> idCounts = new Dictionary<long, int>();
+                // Dictionary to map shape IDs to the list of page names where they appear.
+                Dictionary<long, List<string>> idToPages = new Dictionary<long, List<string>>();
 
-                // Iterate through all pages in the diagram.
+                // Iterate through all pages and their shapes.
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page.
+                    // Ensure the page name is not null.
+                    string pageName = page.Name ?? "UnnamedPage";
+
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip deleted shapes.
-                        if (shape.Del == BOOL.True)
-                            continue;
-
                         long shapeId = shape.ID;
 
-                        // Increment count for this ID.
-                        if (idCounts.ContainsKey(shapeId))
-                            idCounts[shapeId]++;
+                        if (!idToPages.ContainsKey(shapeId))
+                        {
+                            // First occurrence of this ID.
+                            idToPages[shapeId] = new List<string> { pageName };
+                        }
                         else
-                            idCounts[shapeId] = 1;
+                        {
+                            // Duplicate occurrence; add the page name to the list.
+                            idToPages[shapeId].Add(pageName);
+                        }
                     }
                 }
 
                 // Collect duplicate IDs.
                 List<long> duplicateIds = new List<long>();
-                foreach (KeyValuePair<long, int> kvp in idCounts)
+                foreach (KeyValuePair<long, List<string>> kvp in idToPages)
                 {
-                    if (kvp.Value > 1)
+                    if (kvp.Value.Count > 1)
+                    {
                         duplicateIds.Add(kvp.Key);
+                    }
                 }
 
                 // Report results.
@@ -69,14 +74,15 @@ class Program
                     Console.WriteLine("Duplicate shape IDs detected:");
                     foreach (long dupId in duplicateIds)
                     {
-                        Console.WriteLine($"- Shape ID: {dupId} (occurs {idCounts[dupId]} times)");
+                        List<string> pages = idToPages[dupId];
+                        Console.WriteLine($"- Shape ID {dupId} appears on pages: {string.Join(", ", pages)}");
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            // Write any unexpected errors to the error stream.
+            // Write any errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

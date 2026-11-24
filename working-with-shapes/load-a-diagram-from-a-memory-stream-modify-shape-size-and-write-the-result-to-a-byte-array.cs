@@ -6,14 +6,13 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
-        if (args.Length == 0)
+        // Input Visio file path (replace with actual path or pass as argument)
+        string inputPath = "input.vsdx";
+        if (!System.IO.File.Exists(inputPath))
         {
-            Console.Error.WriteLine("Please provide the input Visio file path as the first argument.");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
-
-        string inputPath = args[0];
 
         // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
@@ -22,106 +21,68 @@ class Program
             return;
         }
 
-        // Load the file into a memory stream
-        byte[] inputBytes;
+        // Load the diagram from a memory stream
+        Diagram diagram;
         try
         {
-            inputBytes = File.ReadAllBytes(inputPath);
+            // Read all bytes into a memory stream
+            byte[] fileBytes = File.ReadAllBytes(inputPath);
+            using (MemoryStream inputStream = new MemoryStream(fileBytes))
+            {
+                diagram = new Diagram(inputStream);
+            }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Failed to read input file: {ex.Message}");
+            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
             return;
         }
 
-        using (MemoryStream inputStream = new MemoryStream(inputBytes))
+        // Modify the size of the first shape on the first page
+        try
         {
-            // Aspose.Diagram cannot load directly from a stream, so write to a temporary file first
-            string tempFilePath = Path.GetTempFileName();
-            try
+            // Ensure there is at least one page and one shape
+            if (diagram.Pages.Count == 0 || diagram.Pages[0].Shapes.Count == 0)
             {
-                // Write the memory stream content to the temporary file
-                using (FileStream tempFile = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write))
-                {
-                    inputStream.Position = 0;
-                    inputStream.CopyTo(tempFile);
-                }
-
-                Diagram diagram;
-                try
-                {
-                    // Load the diagram from the temporary file
-                    diagram = new Diagram(tempFilePath);
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Failed to load diagram: {ex.Message}");
-                    return;
-                }
-
-                // Ensure the diagram has at least one page and one shape
-                if (diagram.Pages.Count == 0)
-                {
-                    Console.Error.WriteLine("The diagram contains no pages.");
-                    return;
-                }
-
-                Page firstPage = diagram.Pages[0];
-                if (firstPage.Shapes.Count == 0)
-                {
-                    Console.Error.WriteLine("The first page contains no shapes.");
-                    return;
-                }
-
-                // Retrieve the first shape on the first page
-                Shape shape = firstPage.Shapes[0];
-
-                // Modify shape size (example: set width to 2.0 and height to 1.0)
-                try
-                {
-                    shape.XForm.Width.Value = 2.0;
-                    shape.XForm.Height.Value = 1.0;
-                }
-                catch (Exception ex)
-                {
-                    Console.Error.WriteLine($"Failed to modify shape size: {ex.Message}");
-                    return;
-                }
-
-                // Save the modified diagram to a memory stream as VSDX
-                byte[] outputBytes;
-                using (MemoryStream outputStream = new MemoryStream())
-                {
-                    try
-                    {
-                        diagram.Save(outputStream, SaveFileFormat.Vsdx);
-                        outputBytes = outputStream.ToArray();
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.Error.WriteLine($"Failed to save diagram to memory stream: {ex.Message}");
-                        return;
-                    }
-                }
-
-                // Example usage of the resulting byte array: write its length to console
-                Console.WriteLine($"Modified diagram saved to byte array. Size: {outputBytes.Length} bytes.");
+                Console.Error.WriteLine("Diagram does not contain any pages or shapes to modify.");
+                return;
             }
-            finally
+
+            // Retrieve the shape
+            Shape shape = diagram.Pages[0].Shapes[0];
+
+            // Set new width and height (example values)
+            double newWidth = 4.0;   // inches or Visio units
+            double newHeight = 2.5;  // inches or Visio units
+
+            shape.XForm.Width.Value = newWidth;
+            shape.XForm.Height.Value = newHeight;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error modifying shape size: {ex.Message}");
+            return;
+        }
+
+        // Save the modified diagram to a byte array
+        byte[] resultBytes;
+        try
+        {
+            using (MemoryStream outputStream = new MemoryStream())
             {
-                // Clean up the temporary file
-                try
-                {
-                    if (File.Exists(tempFilePath))
-                    {
-                        File.Delete(tempFilePath);
-                    }
-                }
-                catch
-                {
-                    // Suppress any exceptions during cleanup
-                }
+                // Save to the stream in VSDX format
+                diagram.Save(outputStream, SaveFileFormat.Vsdx);
+                resultBytes = outputStream.ToArray();
             }
         }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error saving diagram to byte array: {ex.Message}");
+            return;
+        }
+
+        // Output result information (e.g., size of the resulting byte array)
+        Console.WriteLine($"Diagram saved to byte array. Size: {resultBytes.Length} bytes.");
+        // The byte array 'resultBytes' can now be used as needed.
     }
 }

@@ -10,7 +10,7 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
             return;
         }
 
@@ -20,7 +20,7 @@ class Program
         // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -29,91 +29,52 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram has at least one page.
+            // For demonstration, we will attempt to glue the first two shapes on the first page.
+            // In a real scenario, shape IDs could be discovered dynamically.
             if (diagram.Pages.Count == 0)
             {
                 Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
-            // Work with the first page.
             Page page = diagram.Pages[0];
 
-            // -----------------------------------------------------------------
-            // Retrieve two non‑connector shapes to be linked.
-            // -----------------------------------------------------------------
-            long firstShapeId = -1;
-            long secondShapeId = -1;
-
-            foreach (Shape shape in page.Shapes)
+            // Ensure there are at least two shapes to work with.
+            if (page.Shapes.Count < 2)
             {
-                // Skip connector shapes (OneD == true).
-                if (shape.OneD == true)
-                    continue;
-
-                if (firstShapeId == -1)
-                    firstShapeId = shape.ID;
-                else if (secondShapeId == -1)
-                {
-                    secondShapeId = shape.ID;
-                    break;
-                }
+                Console.Error.WriteLine("The page does not contain enough shapes to perform gluing.");
+                return;
             }
 
-            // If not enough shapes exist, create them.
-            if (firstShapeId == -1)
-            {
-                long id = page.AddShape(2, 2, "Rectangle", false);
-                firstShapeId = id;
-            }
+            // Retrieve the first two shape IDs.
+            long shapeId1 = page.Shapes[0].ID;
+            long shapeId2 = page.Shapes[1].ID;
 
-            if (secondShapeId == -1)
-            {
-                long id = page.AddShape(5, 5, "Rectangle", false);
-                secondShapeId = id;
-            }
-
-            // -----------------------------------------------------------------
-            // Add a dynamic connector shape that will be used to connect the two shapes.
-            // -----------------------------------------------------------------
-            long connectorId = page.AddShape(0, 0, "Dynamic connector", false);
-
-            // -----------------------------------------------------------------
-            // Attempt to attach the connector. If gluing is disabled, the operation
-            // will throw an exception which we catch and report.
-            // -----------------------------------------------------------------
+            // Attempt to glue shape1 to shape2 at the Center connection point.
+            // If gluing is disabled for the document/window, Aspose.Diagram will throw an exception.
             try
             {
-                // Connect the first shape's Bottom to the second shape's Top using the connector.
-                page.ConnectShapesViaConnector(
-                    firstShapeId,
-                    ConnectionPointPlace.Bottom,
-                    secondShapeId,
-                    ConnectionPointPlace.Top,
-                    connectorId);
-
-                Console.WriteLine("Connector attached successfully.");
+                page.GlueShapes(shapeId1, ConnectionPointPlace.Center, shapeId2);
+                Console.WriteLine($"Successfully glued shape {shapeId1} to shape {shapeId2}.");
             }
-            catch (Exception attachEx)
+            catch (Exception glueEx)
             {
-                // Handle errors that arise due to gluing being disabled or other issues.
-                Console.Error.WriteLine("Failed to attach connector. Possible cause: gluing is disabled for the target shapes.");
-                Console.Error.WriteLine($"Error details: {attachEx.Message}");
-                // Optionally, remove the connector shape to keep the diagram clean.
-                // Note: Deleting a shape is done by setting its Delete flag.
-                Shape connectorShape = page.Shapes.GetShape(connectorId);
-                connectorShape.Del = BOOL.True;
+                // Handle the specific case where gluing is disabled.
+                Console.Error.WriteLine($"Error: Unable to glue shapes {shapeId1} and {shapeId2}. " +
+                                         "Gluing may be disabled for this diagram or the shapes involved.");
+                Console.Error.WriteLine($"Exception details: {glueEx.Message}");
+                // Optionally, you could decide to continue without gluing or abort.
+                // Here we choose to abort further processing.
+                return;
             }
 
-            // -----------------------------------------------------------------
             // Save the modified diagram.
-            // -----------------------------------------------------------------
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to: {outputPath}");
+            Console.WriteLine($"Diagram saved successfully to {outputPath}.");
         }
         catch (Exception ex)
         {
-            // General error handling for loading, saving, or unexpected failures.
+            // General error handling for any Aspose.Diagram operation.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

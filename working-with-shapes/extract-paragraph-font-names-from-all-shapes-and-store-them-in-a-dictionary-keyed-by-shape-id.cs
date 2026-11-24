@@ -7,80 +7,77 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the Visio file path as the first argument.
+        // Validate input arguments
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Please provide the path to a Visio file as an argument.");
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
             return;
         }
 
         string filePath = args[0];
 
-        // Guard: ensure the input file exists.
+        // Guard: ensure the file exists
         if (!File.Exists(filePath))
         {
             Console.Error.WriteLine($"File not found: {filePath}");
             return;
         }
 
-        // Dictionary to hold shape ID -> list of font names used in that shape.
-        Dictionary<long, List<string>> shapeFonts = new Dictionary<long, List<string>>();
-
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(filePath);
 
-            // Iterate through all pages in the diagram.
+            // Dictionary to hold shape ID -> set of font IDs used in that shape
+            Dictionary<long, HashSet<int>> shapeFontIds = new Dictionary<long, HashSet<int>>();
+
+            // Iterate through all pages
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page.
+                // Iterate through all shapes on the page
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip logically deleted shapes.
+                    // Skip logically deleted shapes
                     if (shape.Del == BOOL.True)
                         continue;
 
-                    // Use a HashSet to avoid duplicate font names per shape.
-                    HashSet<string> fontsInShape = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    // Ensure the shape has character runs
+                    if (shape.Chars == null || shape.Chars.Count == 0)
+                        continue;
 
-                    // Iterate over character runs to collect font information.
-                    for (int c = 0; c < shape.Chars.Count; c++)
+                    // Initialize set for this shape if not already present
+                    if (!shapeFontIds.ContainsKey(shape.ID))
+                        shapeFontIds[shape.ID] = new HashSet<int>();
+
+                    // Iterate over each character run to collect font IDs
+                    for (int i = 0; i < shape.Chars.Count; i++)
                     {
-                        var charRun = shape.Chars[c];
-
-                        // The Font property holds an index into the diagram's font collection.
-                        int fontIdx = charRun.Font.Value;
-
-                        // Validate the index before accessing the font collection.
-                        if (fontIdx >= 0 && fontIdx < diagram.Fonts.Count)
-                        {
-                            var font = diagram.Fonts[fontIdx];
-                            // Font.Name provides the font's display name.
-                            string fontName = font.Name;
-                            if (!string.IsNullOrEmpty(fontName))
-                                fontsInShape.Add(fontName);
-                        }
-                    }
-
-                    // If any fonts were found, store them in the result dictionary.
-                    if (fontsInShape.Count > 0)
-                    {
-                        shapeFonts[shape.ID] = new List<string>(fontsInShape);
+                        // Font property holds a reference to a font defined in the document
+                        // The Value is an integer font ID
+                        int fontId = (int)shape.Chars[i].Font.Value;
+                        shapeFontIds[shape.ID].Add(fontId);
                     }
                 }
             }
 
-            // Output the collected font information.
-            Console.WriteLine("Shape ID -> Font Names");
-            foreach (var kvp in shapeFonts)
+            // Convert the collected font IDs to a readable dictionary (shape ID -> comma‑separated font IDs)
+            Dictionary<long, string> shapeFontNames = new Dictionary<long, string>();
+            foreach (var kvp in shapeFontIds)
             {
-                Console.WriteLine($"{kvp.Key} -> {string.Join(", ", kvp.Value)}");
+                string fontsCsv = string.Join(",", kvp.Value);
+                shapeFontNames[kvp.Key] = fontsCsv;
+            }
+
+            // Output the results
+            Console.WriteLine("ShapeID -> FontIDs");
+            foreach (var kvp in shapeFontNames)
+            {
+                Console.WriteLine($"{kvp.Key} -> {kvp.Value}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
+            // Write any errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

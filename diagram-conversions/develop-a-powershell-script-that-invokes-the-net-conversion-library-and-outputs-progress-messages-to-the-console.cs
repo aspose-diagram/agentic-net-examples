@@ -7,59 +7,64 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input and output file paths as arguments.
-        if (args.Length < 2)
+        // Expect at least the input Visio file path.
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: DiagramConvert <inputVisioPath> <outputPdfPath>");
+            Console.Error.WriteLine("Usage: DiagramConverter <inputVisioPath> [outputPdfPath]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
+
+        // Determine output path; default to same folder with .pdf extension.
+        string outputPath = args.Length >= 2 ? args[1] : Path.ChangeExtension(inputPath, ".pdf");
 
         try
         {
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Prepare PDF save options and assign the custom page-saving callback.
+            // Prepare PDF save options and attach the page‑saving callback.
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
             pdfOptions.PageSavingCallback = new ProgressCallback();
 
-            // Save the diagram to PDF while tracking progress.
+            // Save the diagram to PDF while progress is reported via the callback.
             diagram.Save(outputPath, pdfOptions);
 
-            Console.WriteLine($"Conversion completed successfully. Output saved to \"{outputPath}\".");
+            Console.WriteLine($"Conversion completed successfully. Output saved to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during processing.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error stream.
+            Console.Error.WriteLine($"An error occurred during conversion: {ex.Message}");
         }
     }
-}
 
-// Custom callback to report page saving progress.
-class ProgressCallback : IPageSavingCallback
-{
-    // Called before a page starts saving.
-    public void PageStartSaving(PageStartSavingArgs args)
+    // Implementation of IPageSavingCallback to report progress.
+    private class ProgressCallback : IPageSavingCallback
     {
-        Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}...");
-    }
+        // Called before a page starts saving.
+        public void PageStartSaving(PageStartSavingArgs args)
+        {
+            Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}...");
+        }
 
-    // Called after a page has been saved.
-    public void PageEndSaving(PageEndSavingArgs args)
-    {
-        Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
-        // Example: stop further processing after the first page (optional).
-        // args.HasMorePages = false;
+        // Called after a page has been saved.
+        public void PageEndSaving(PageEndSavingArgs args)
+        {
+            Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
+
+            // Example: stop after the first page (uncomment to use).
+            // if (args.PageIndex == 0)
+            // {
+            //     args.HasMorePages = false;
+            // }
+        }
     }
 }

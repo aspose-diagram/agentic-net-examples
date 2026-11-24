@@ -6,20 +6,20 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputCsvPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputCsvFile>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: check input file existence.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
@@ -28,39 +28,80 @@ class Program
             // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Prepare CSV writer.
+                // Ensure the output directory exists.
+                string outputDir = Path.GetDirectoryName(outputPath);
+                if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
+                {
+                    Directory.CreateDirectory(outputDir);
+                }
+
+                // Open a StreamWriter for the CSV output.
                 using (StreamWriter writer = new StreamWriter(outputPath))
                 {
                     // Write CSV header.
-                    writer.WriteLine("PageIndex,ShapeID,Text");
+                    writer.WriteLine("PageNumber,ShapeID,ParagraphText");
 
-                    int pageIndex = 0;
-
-                    // Iterate over each page in the diagram.
-                    foreach (Page page in diagram.Pages)
+                    // Iterate through pages using an index loop (avoid var in foreach over diagram.Pages).
+                    for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
                     {
-                        // Iterate over each shape on the current page.
+                        // Retrieve the page.
+                        Page page = diagram.Pages[pageIndex];
+                        int pageNumber = pageIndex + 1; // Human‑readable page number.
+
+                        // Iterate over all shapes on the current page.
                         foreach (Shape shape in page.Shapes)
                         {
-                            // Retrieve the plain text of the shape.
-                            string shapeText = shape.Text?.Value?.Text ?? string.Empty;
+                            // Combine all text runs (Txt objects) belonging to the shape.
+                            string combinedText = string.Empty;
 
-                            // Escape double quotes for CSV compliance.
-                            string escapedText = shapeText.Replace("\"", "\"\"");
+                            if (shape.Text != null && shape.Text.Value != null)
+                            {
+                                foreach (FormatTxt fmt in shape.Text.Value)
+                                {
+                                    // Cast to Txt to access the actual text string.
+                                    if (fmt is Txt txt)
+                                    {
+                                        combinedText += txt.Text;
+                                    }
+                                }
+                            }
+
+                            // Escape CSV fields to handle commas, quotes, and newlines.
+                            string escapedText = EscapeCsv(combinedText);
+                            string escapedShapeId = EscapeCsv(shape.ID.ToString());
+                            string escapedPageNumber = EscapeCsv(pageNumber.ToString());
 
                             // Write a CSV line for the current shape.
-                            writer.WriteLine($"{pageIndex},{shape.ID},\"{escapedText}\"");
+                            writer.WriteLine($"{escapedPageNumber},{escapedShapeId},{escapedText}");
                         }
-
-                        pageIndex++;
                     }
                 }
             }
+
+            Console.WriteLine($"Paragraph texts exported successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Report any errors that occur during processing.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose.Diagram or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+        }
+    }
+
+    // Helper method to escape CSV fields according to RFC 4180.
+    private static string EscapeCsv(string field)
+    {
+        if (field == null)
+            return string.Empty;
+
+        bool mustQuote = field.Contains("\"") || field.Contains(",") || field.Contains("\n") || field.Contains("\r");
+        if (mustQuote)
+        {
+            string escaped = field.Replace("\"", "\"\"");
+            return $"\"{escaped}\"";
+        }
+        else
+        {
+            return field;
         }
     }
 }

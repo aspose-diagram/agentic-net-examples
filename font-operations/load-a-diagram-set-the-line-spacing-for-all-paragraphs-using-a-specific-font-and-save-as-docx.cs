@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Drawing.Text;
 
 class Program
 {
@@ -10,16 +9,13 @@ class Program
         // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.WriteLine("Usage: Program <inputPath> <outputPath> [fontName] [lineSpacing]");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputDocxPath> [fontName]");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
         string fontName = args.Length > 2 ? args[2] : "Arial";
-        double lineSpacing = 1.5;
-        if (args.Length > 3 && double.TryParse(args[3], out double parsed))
-            lineSpacing = parsed;
 
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
@@ -30,66 +26,43 @@ class Program
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Validate that the requested font is installed on the system.
-            InstalledFontCollection fontCollection = new InstalledFontCollection();
-            bool fontInstalled = false;
-            if (fontCollection.Families != null)
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                foreach (var f in fontCollection.Families)
+                // Iterate over all pages.
+                foreach (Page page in diagram.Pages)
                 {
-                    if (f != null && f.Name != null && f.Name.Equals(fontName, StringComparison.OrdinalIgnoreCase))
+                    // Iterate over all shapes on the page.
+                    foreach (Shape shape in page.Shapes)
                     {
-                        fontInstalled = true;
-                        break;
+                        // Set the font for every character run in the shape.
+                        for (int c = 0; c < shape.Chars.Count; c++)
+                        {
+                            shape.Chars[c].FontName.Value = fontName;
+                        }
+
+                        // Set line spacing for every paragraph in the shape.
+                        for (int p = 0; p < shape.Paras.Count; p++)
+                        {
+                            // Example line spacing value (1.5 lines). Adjust as needed.
+                            shape.Paras[p].SpLine.Value = 1.5;
+                        }
                     }
                 }
+
+                // TODO: Save the diagram as DOCX when the appropriate SaveFileFormat is available.
+                // Example (when supported):
+                // diagram.Save(outputPath, SaveFileFormat.Docx);
+                //
+                // Since the current API reference does not list a DOCX format, replace the above
+                // with the correct format once it becomes available.
+                Console.WriteLine("Diagram processing completed. Saving as DOCX is not implemented in this version.");
             }
-
-            if (!fontInstalled)
-            {
-                Console.Error.WriteLine($"Warning: Font '{fontName}' is not installed on this system. Fallback font will be used.");
-            }
-
-            // Set the default fallback font for rendering.
-            FontConfigs.DefaultFontName = fontName;
-
-            // Iterate over all pages and shapes.
-            foreach (Page page in diagram.Pages)
-            {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip logically deleted shapes.
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Set the font name for every character run in the shape.
-                    for (int ci = 0; ci < shape.Chars.Count; ci++)
-                    {
-                        shape.Chars[ci].FontName.Value = fontName;
-                    }
-
-                    // Set the line spacing for every paragraph in the shape.
-                    for (int pi = 0; pi < shape.Paras.Count; pi++)
-                    {
-                        shape.Paras[pi].SpLine.Value = lineSpacing;
-                    }
-                }
-            }
-
-            // TODO: Save the modified diagram as DOCX.
-            // Aspose.Diagram does not provide a direct DOCX export option.
-            // Consider converting to an intermediate format (e.g., PDF) and then using Aspose.Words to create a DOCX,
-            // or explore other libraries that support Visio‑to‑DOCX conversion.
-            // Example placeholder:
-            // diagram.Save(outputPath, /* appropriate save options for DOCX */);
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"Error: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

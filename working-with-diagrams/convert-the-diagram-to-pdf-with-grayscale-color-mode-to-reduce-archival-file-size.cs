@@ -7,51 +7,54 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate arguments
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: DiagramToPdf <inputVisioPath> <outputPdfPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the Visio diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Configure PDF save options.
+                // Configure PDF save options
                 PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-                // Set the default font to ensure consistent rendering.
+                // Set default font to ensure proper text rendering
                 pdfOptions.DefaultFont = "Arial";
 
-                // Explicitly set the save format tracker.
+                // Export hidden pages is not needed for archival PDF
+                pdfOptions.ExportHiddenPage = false;
+
+                // Explicitly set the save format (required by Aspose.Diagram)
                 pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-                // NOTE: Aspose.Diagram does not provide a direct grayscale export option.
-                // The PDF will be saved in full color. To achieve grayscale, a post‑processing
-                // step with a PDF library would be required, which is beyond the scope here.
+                // NOTE: Aspose.Diagram does not provide a direct grayscale mode for PDF export.
+                // The closest alternative is to export the diagram as PDF using default options.
+                // If grayscale conversion is essential, it would need to be performed in a
+                // post‑processing step using a PDF library that supports color space conversion.
 
-                // Save the diagram as PDF using the configured options.
+                // Save the diagram as PDF with the configured options
                 diagram.Save(outputPath, pdfOptions);
+                Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
             }
-
-            Console.WriteLine($"Diagram successfully converted to PDF: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors to the error console
+            Console.Error.WriteLine($"Error during conversion: {ex.Message}");
         }
     }
 }

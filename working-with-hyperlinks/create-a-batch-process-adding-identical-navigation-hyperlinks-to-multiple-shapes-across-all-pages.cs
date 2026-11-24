@@ -7,16 +7,14 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 3)
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputFolder> <outputFolder> <hyperlinkAddress> [shapeName]");
+            Console.Error.WriteLine("Usage: Program <inputFolder> <outputFolder>");
             return;
         }
 
         string inputFolder = args[0];
         string outputFolder = args[1];
-        string hyperlinkAddress = args[2];
-        string targetShapeName = args.Length >= 4 ? args[3] : null;
 
         // Verify input folder exists.
         if (!Directory.Exists(inputFolder))
@@ -25,7 +23,7 @@ class Program
             return;
         }
 
-        // Verify (or create) output folder.
+        // Create output folder if it does not exist.
         if (!Directory.Exists(outputFolder))
         {
             try
@@ -39,72 +37,60 @@ class Program
             }
         }
 
-        // Get all Visio files in the input folder (common extensions).
-        string[] visioFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
-        foreach (string filePath in visioFiles)
+        // Get all Visio VSDX files in the input folder.
+        string[] visioFiles = Directory.GetFiles(inputFolder, "*.vsdx", SearchOption.TopDirectoryOnly);
+
+        foreach (string inputPath in visioFiles)
         {
-            string extension = Path.GetExtension(filePath).ToLowerInvariant();
-            if (extension != ".vsdx" && extension != ".vsd" && extension != ".vdx" && extension != ".vssx" && extension != ".vstx")
+            // Guard against missing file (should not happen after GetFiles, but required by rules).
+            if (!File.Exists(inputPath))
             {
-                // Skip non‑Visio files.
+                Console.Error.WriteLine($"File not found: {inputPath}");
                 continue;
             }
 
-            // Guard against missing file (should not happen after GetFiles, but keep per rules).
-            if (!File.Exists(filePath))
-            {
-                Console.Error.WriteLine($"File not found: {filePath}");
-                continue;
-            }
+            // Build output file path (same name with suffix "_updated").
+            string fileName = Path.GetFileNameWithoutExtension(inputPath);
+            string outputPath = Path.Combine(outputFolder, $"{fileName}_updated.vsdx");
 
             try
             {
                 // Load the diagram inside a using block as required.
-                using (Diagram diagram = new Diagram(filePath))
+                using (Diagram diagram = new Diagram(inputPath))
                 {
                     // Iterate through all pages.
                     foreach (Page page in diagram.Pages)
                     {
-                        // Iterate through all shapes on the page.
+                        // Iterate through all shapes on the current page.
                         foreach (Shape shape in page.Shapes)
                         {
                             // Skip deleted shapes.
                             if (shape.Del == BOOL.True)
                                 continue;
 
-                            // If a specific shape name is provided, filter by NameU.
-                            if (!string.IsNullOrEmpty(targetShapeName))
-                            {
-                                if (shape.NameU == null || !shape.NameU.Equals(targetShapeName, StringComparison.OrdinalIgnoreCase))
-                                    continue;
-                            }
-
                             // Create a new hyperlink instance.
                             Hyperlink link = new Hyperlink();
 
-                            // Set hyperlink properties using the cell‑based .Value accessors.
-                            link.Description.Value = "Navigation Link";
-                            link.Address.Value = hyperlinkAddress;
-                            link.NewWindow.Value = BOOL.True;
+                            // Set hyperlink properties – identical for all shapes.
+                            link.Address.Value = "https://example.com";
+                            link.Description.Value = "Example site";
+                            link.NewWindow.Value = BOOL.True; // Open in a new window.
 
                             // Add the hyperlink to the shape's collection.
                             shape.Hyperlinks.Add(link);
                         }
                     }
 
-                    // Prepare output file path.
-                    string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
-
-                    // Save the modified diagram preserving the original format.
+                    // Save the modified diagram to the output path using VSDX format.
                     diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 }
 
-                Console.WriteLine($"Processed and saved: {Path.GetFileName(filePath)}");
+                Console.WriteLine($"Processed and saved: {outputPath}");
             }
             catch (Exception ex)
             {
                 // Report any errors that occur during processing.
-                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                Console.Error.WriteLine($"Error processing file '{inputPath}': {ex.Message}");
             }
         }
     }

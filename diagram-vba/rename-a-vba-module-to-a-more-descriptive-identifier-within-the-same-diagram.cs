@@ -7,64 +7,68 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 3)
+        // Expect three arguments: input diagram path, current module name, new module name
+        if (args.Length != 3)
         {
-            Console.Error.WriteLine("Usage: <inputVisioFile> <existingModuleName> <newModuleName>");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <oldModuleName> <newModuleName>");
             return;
         }
 
         string inputPath = args[0];
-        string existingModuleName = args[1];
+        string oldModuleName = args[1];
         string newModuleName = args[2];
 
-        // Guard against missing input file.
+        // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found – {inputPath}");
+            Console.Error.WriteLine($"Error: File not found - {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Locate the VBA module with the specified existing name.
-            int targetIndex = -1;
-            for (int i = 0; i < diagram.VbaProject.Modules.Count; i++)
+            // Load the Visio diagram inside a using block to ensure proper disposal
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                VbaModule module = diagram.VbaProject.Modules[i];
-                if (module.Name.Equals(existingModuleName, StringComparison.OrdinalIgnoreCase))
+                // Access the VBA project
+                VbaProject vbaProject = diagram.VbaProject;
+
+                // Find the index of the module with the specified old name
+                int moduleIndex = -1;
+                for (int i = 0; i < vbaProject.Modules.Count; i++)
                 {
-                    targetIndex = i;
-                    break;
+                    VbaModule module = vbaProject.Modules[i];
+                    if (module.Name.Equals(oldModuleName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        moduleIndex = i;
+                        break;
+                    }
                 }
+
+                if (moduleIndex == -1)
+                {
+                    Console.Error.WriteLine($"Error: VBA module \"{oldModuleName}\" not found.");
+                    return;
+                }
+
+                // Rename the module
+                VbaModule targetModule = vbaProject.Modules[moduleIndex];
+                targetModule.Name = newModuleName;
+
+                // Prepare output path (same folder, suffix "_renamed")
+                string directory = Path.GetDirectoryName(inputPath);
+                string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+                string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_renamed.vsdm");
+
+                // Save the diagram in a macro‑enabled format to preserve VBA code
+                diagram.Save(outputPath, SaveFileFormat.Vsdm);
+
+                Console.WriteLine($"Module renamed successfully. Saved to: {outputPath}");
             }
-
-            if (targetIndex == -1)
-            {
-                Console.Error.WriteLine($"Error: VBA module \"{existingModuleName}\" not found.");
-                return;
-            }
-
-            // Rename the module.
-            VbaModule targetModule = diagram.VbaProject.Modules[targetIndex];
-            targetModule.Name = newModuleName;
-            Console.WriteLine($"Module \"{existingModuleName}\" renamed to \"{newModuleName}\".");
-
-            // Prepare output path – same directory with a suffix to preserve the original file.
-            string directory = Path.GetDirectoryName(inputPath);
-            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
-            string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}_renamed.vsdm");
-
-            // Save the diagram in a macro‑enabled format to retain VBA code.
-            diagram.Save(outputPath, SaveFileFormat.Vsdm);
-            Console.WriteLine($"Diagram saved to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Report any Aspose or I/O errors.
+            // Write any Aspose or IO errors to the error stream
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

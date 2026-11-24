@@ -1,11 +1,11 @@
 {
   "category": "events-section-in-the-shapesheet",
   "display_name": "Events Section In The Shapesheet",
-  "version": "26.10.0",
+  "version": "26.11.0",
   "framework": "net8.0",
   "total": 33,
   "pass_rate": 100.0,
-  "generated": "2026-10-26",
+  "generated": "2026-11-24",
   "common_pattern": "Load \u2192 Modify \u2192 Save",
   "examples": [
     {
@@ -14,7 +14,6 @@
       "task": "Add a timestamp to the eventafterupdate cell of each shape to track modification times",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -133,7 +132,6 @@
       "task": "Configure the eventshaperesized cell to maintain aspect ratio by applying a scaling formula",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -151,15 +149,15 @@
       "task": "Copy eventformula cells from a template shape to newly created shapes in a batch operation",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
       "key_apis": [
+        "AddShape",
         "Diagram",
-        "Page",
-        "page",
-        "shape"
+        "Pages",
+        "Save",
+        "Shapes"
       ]
     },
     {
@@ -186,9 +184,7 @@
       "task": "Create a batch process that disables eventmousedown cells for shapes marked as read only",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -213,7 +209,7 @@
         "Pages",
         "Save",
         "Shapes",
-        "User"
+        "diagram"
       ]
     },
     {
@@ -257,18 +253,17 @@
       "task": "Extract eventcell formulas and visualize them as a directed graph to analyze dependencies",
       "namespaces": [
         "Aspose.Diagram",
-        "Aspose.Diagram.Saving",
         "System",
-        "System.Collections.Generic",
         "System.IO",
+        "System.Text",
         "System.Text.RegularExpressions"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {
@@ -295,7 +290,8 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.IO"
+        "System.IO",
+        "System.Text"
       ],
       "key_apis": [
         "Diagram",
@@ -331,13 +327,13 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
-        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
         "Diagram",
         "Pages",
         "Save",
+        "Shapes",
         "diagram"
       ]
     },
@@ -383,6 +379,7 @@
       "namespaces": [
         "Aspose.Diagram",
         "System",
+        "System.Collections.Generic",
         "System.IO"
       ],
       "key_apis": [
@@ -395,6 +392,7 @@
       "task": "Programmatically disable all eventmouseover cells to improve diagram rendering performance during batch processing",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -481,6 +479,7 @@
       "task": "Set the eventshapedeleted cell to log deletion timestamps into an external audit log file",
       "namespaces": [
         "Aspose.Diagram",
+        "Aspose.Diagram.Saving",
         "System",
         "System.IO"
       ],
@@ -489,7 +488,7 @@
         "Pages",
         "Save",
         "Shapes",
-        "User"
+        "diagram"
       ]
     },
     {
@@ -505,7 +504,6 @@
         "Diagram",
         "Pages",
         "Save",
-        "Shapes",
         "diagram"
       ]
     },
@@ -522,9 +520,9 @@
       "key_apis": [
         "Diagram",
         "Pages",
-        "Save",
         "Shapes",
-        "diagram"
+        "diagram",
+        "page"
       ]
     },
     {

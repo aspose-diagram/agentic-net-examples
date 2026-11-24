@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using Aspose.Diagram;
 
 class Program
@@ -7,96 +8,86 @@ class Program
     static void Main(string[] args)
     {
         // Validate input arguments
-        if (args.Length == 0)
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Error: No diagram file path provided.");
+            Console.Error.WriteLine("Usage: Program <inputDiagramPath> [outputReportPath]");
             return;
         }
 
-        string diagramPath = args[0];
+        string inputPath = args[0];
+        string outputPath = args.Length > 1 ? args[1] : "EventSectionReport.txt";
 
-        // Guard: ensure the file exists before proceeding
-        if (!File.Exists(diagramPath))
+        // Guard against missing input file
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Iterate through each page in the diagram
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through each shape on the current page
-                foreach (Shape shape in page.Shapes)
+                var reportBuilder = new StringBuilder();
+                reportBuilder.AppendLine("=== EventSection Configuration Report ===");
+                reportBuilder.AppendLine($"Diagram: {Path.GetFileName(inputPath)}");
+                reportBuilder.AppendLine($"Generated on: {DateTime.Now}");
+                reportBuilder.AppendLine();
+
+                // Iterate through all pages
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Access the Event section of the shape
-                    Event eventSection = shape.Event;
-
-                    // Prepare a flag to determine if any custom event is present
-                    bool hasCustomEvent = false;
-
-                    // Collect event formulas
-                    string eventDropFormula = eventSection.EventDrop?.Ufe?.F ?? string.Empty;
-                    string eventDblClickFormula = eventSection.EventDblClick?.Ufe?.F ?? string.Empty;
-                    string eventXFModFormula = eventSection.EventXFMod?.Ufe?.F ?? string.Empty;
-                    string eventMultiDropFormula = eventSection.EventMultiDrop?.Ufe?.F ?? string.Empty;
-                    string theTextFormula = eventSection.TheText?.Ufe?.F ?? string.Empty;
-                    string theDataFormula = eventSection.TheData?.Ufe?.F ?? string.Empty;
-
-                    // Determine if any of the event formulas are non‑empty
-                    if (!string.IsNullOrWhiteSpace(eventDropFormula) ||
-                        !string.IsNullOrWhiteSpace(eventDblClickFormula) ||
-                        !string.IsNullOrWhiteSpace(eventXFModFormula) ||
-                        !string.IsNullOrWhiteSpace(eventMultiDropFormula) ||
-                        !string.IsNullOrWhiteSpace(theTextFormula) ||
-                        !string.IsNullOrWhiteSpace(theDataFormula))
+                    // Iterate through all shapes on the page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        hasCustomEvent = true;
-                    }
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // If the shape has custom event configurations, output them
-                    if (hasCustomEvent)
-                    {
-                        Console.WriteLine("--------------------------------------------------");
-                        Console.WriteLine($"Page: {page.NameU} (ID: {page.ID})");
-                        Console.WriteLine($"Shape ID: {shape.ID}, NameU: {shape.NameU}");
+                        // Collect event formulas
+                        var events = new StringBuilder();
 
-                        if (!string.IsNullOrWhiteSpace(eventDropFormula))
-                            Console.WriteLine($"  EventDrop Formula   : {eventDropFormula}");
+                        // EventDrop
+                        string dropFormula = shape.Event?.EventDrop?.Ufe?.F;
+                        if (!string.IsNullOrWhiteSpace(dropFormula))
+                            events.AppendLine($"  EventDrop: {dropFormula}");
 
-                        if (!string.IsNullOrWhiteSpace(eventDblClickFormula))
-                            Console.WriteLine($"  EventDblClick Formula: {eventDblClickFormula}");
+                        // EventDblClick
+                        string dblClickFormula = shape.Event?.EventDblClick?.Ufe?.F;
+                        if (!string.IsNullOrWhiteSpace(dblClickFormula))
+                            events.AppendLine($"  EventDblClick: {dblClickFormula}");
 
-                        if (!string.IsNullOrWhiteSpace(eventXFModFormula))
-                            Console.WriteLine($"  EventXFMod Formula   : {eventXFModFormula}");
+                        // EventXFMod
+                        string xfModFormula = shape.Event?.EventXFMod?.Ufe?.F;
+                        if (!string.IsNullOrWhiteSpace(xfModFormula))
+                            events.AppendLine($"  EventXFMod: {xfModFormula}");
 
-                        if (!string.IsNullOrWhiteSpace(eventMultiDropFormula))
-                            Console.WriteLine($"  EventMultiDrop Formula: {eventMultiDropFormula}");
+                        // EventMultiDrop
+                        string multiDropFormula = shape.Event?.EventMultiDrop?.Ufe?.F;
+                        if (!string.IsNullOrWhiteSpace(multiDropFormula))
+                            events.AppendLine($"  EventMultiDrop: {multiDropFormula}");
 
-                        if (!string.IsNullOrWhiteSpace(theTextFormula))
-                            Console.WriteLine($"  TheText Formula      : {theTextFormula}");
-
-                        if (!string.IsNullOrWhiteSpace(theDataFormula))
-                            Console.WriteLine($"  TheData Formula      : {theDataFormula}");
+                        // If any custom event is defined, add shape info to the report
+                        if (events.Length > 0)
+                        {
+                            reportBuilder.AppendLine($"Page: {page.NameU} (ID: {page.ID})");
+                            reportBuilder.AppendLine($"  Shape ID: {shape.ID}, NameU: {shape.NameU}");
+                            reportBuilder.Append(events.ToString());
+                            reportBuilder.AppendLine();
+                        }
                     }
                 }
-            }
 
-            // Dispose the diagram to release resources
-            diagram.Dispose();
+                // Write the report to the specified output file
+                File.WriteAllText(outputPath, reportBuilder.ToString());
+                Console.WriteLine($"EventSection report generated successfully at: {outputPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Log any exceptions that occur during processing
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Log any errors that occur during processing
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

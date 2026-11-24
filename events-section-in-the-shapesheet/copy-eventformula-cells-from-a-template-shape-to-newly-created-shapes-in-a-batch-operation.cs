@@ -1,105 +1,93 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Path to the template diagram that contains the source shape with Event formulas.
+        // Input and output file paths
         string templatePath = "template.vsdx";
         if (!System.IO.File.Exists(templatePath))
         {
             Console.Error.WriteLine($"File not found: {templatePath}");
             return;
         }
+        string outputPath = "output.vsdx";
+
+        // Guard: ensure the template file exists
         if (!File.Exists(templatePath))
         {
             Console.Error.WriteLine($"Template file not found: {templatePath}");
             return;
         }
 
-        // Path where the resulting diagram will be saved.
-        string outputPath = "output.vsdx";
-
         try
         {
-            // Load the template diagram.
-            Diagram templateDiagram = new Diagram(templatePath);
+            // Load the source diagram containing the template shape
+            Diagram diagram = new Diagram(templatePath);
 
-            // Validate that the template has at least one page and one shape.
-            if (templateDiagram.Pages.Count == 0)
+            // Assume the first page contains the template shape
+            if (diagram.Pages.Count == 0)
             {
-                Console.Error.WriteLine("Template diagram contains no pages.");
+                Console.Error.WriteLine("The diagram contains no pages.");
+                return;
+            }
+            Page page = diagram.Pages[0];
+
+            // Guard: ensure the page has at least one shape to use as a template
+            if (page.Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("The page contains no shapes to use as a template.");
                 return;
             }
 
-            if (templateDiagram.Pages[0].Shapes.Count == 0)
-            {
-                Console.Error.WriteLine("Template diagram's first page contains no shapes.");
-                return;
-            }
+            // Retrieve the template shape (first shape on the page)
+            Shape templateShape = page.Shapes[0];
 
-            // Retrieve the first shape on the first page as the source for Event formulas.
-            Shape templateShape = templateDiagram.Pages[0].Shapes[0];
-
-            // Store the Event formulas from the template shape.
+            // Store event formulas from the template shape
             string eventDropFormula = templateShape.Event.EventDrop.Ufe.F;
             string eventDblClickFormula = templateShape.Event.EventDblClick.Ufe.F;
             string eventXFModFormula = templateShape.Event.EventXFMod.Ufe.F;
             string eventMultiDropFormula = templateShape.Event.EventMultiDrop.Ufe.F;
             string theTextFormula = templateShape.Event.TheText.Ufe.F;
-            string theDataFormula = templateShape.Event.TheData.Ufe.F;
 
-            // Determine the master name of the template shape (used when creating new shapes).
+            // Determine the master name to use for new shapes (use the same master as the template)
             string masterName = templateShape.Master != null ? templateShape.Master.Name : "Rectangle";
 
-            // Create a new empty diagram.
-            Diagram newDiagram = new Diagram();
+            // Batch create new shapes and copy event formulas
+            int numberOfNewShapes = 5; // Example: create 5 new shapes
+            double startX = 2.0; // Starting X coordinate
+            double startY = 2.0; // Starting Y coordinate
+            double offsetX = 2.0; // Horizontal offset between shapes
 
-            // Add a new page to the diagram.
-            Page newPage = new Page();
-            newDiagram.Pages.Add(newPage);
-
-            // Parameters for batch shape creation.
-            int shapeCount = 5;               // Number of shapes to create.
-            double startX = 1.0;              // Starting X coordinate.
-            double startY = 1.0;              // Starting Y coordinate.
-            double offsetX = 2.0;             // Horizontal offset between shapes.
-            double shapeWidth = 1.0;          // Width of each new shape.
-            double shapeHeight = 1.0;         // Height of each new shape.
-
-            // Loop to create shapes and copy Event formulas.
-            for (int i = 0; i < shapeCount; i++)
+            for (int i = 0; i < numberOfNewShapes; i++)
             {
-                // Calculate position for the new shape.
+                // Calculate position for the new shape
                 double pinX = startX + i * offsetX;
                 double pinY = startY;
 
-                // Add a new shape using the identified master.
-                // The overload returns a long shape ID.
-                long shapeId = newPage.AddShape(pinX, pinY, shapeWidth, shapeHeight, masterName, false);
+                // Add a new shape to the page using the determined master
+                long newShapeId = page.AddShape(pinX, pinY, masterName);
 
-                // Retrieve the shape instance using the returned ID.
-                Shape newShape = newPage.Shapes.GetShape(shapeId);
+                // Retrieve the newly added shape instance
+                Shape newShape = page.Shapes.GetShape(newShapeId);
 
-                // Copy each Event formula from the template shape to the new shape.
+                // Copy event formulas from the template shape to the new shape
                 newShape.Event.EventDrop.Ufe.F = eventDropFormula;
                 newShape.Event.EventDblClick.Ufe.F = eventDblClickFormula;
                 newShape.Event.EventXFMod.Ufe.F = eventXFModFormula;
                 newShape.Event.EventMultiDrop.Ufe.F = eventMultiDropFormula;
                 newShape.Event.TheText.Ufe.F = theTextFormula;
-                newShape.Event.TheData.Ufe.F = theDataFormula;
             }
 
-            // Save the newly created diagram.
-            newDiagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+            // Save the modified diagram to the output file in VSDX format
+            diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Diagram saved successfully to {outputPath}");
         }
         catch (Exception ex)
         {
-            // Output any errors that occur during processing.
+            // Write any errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

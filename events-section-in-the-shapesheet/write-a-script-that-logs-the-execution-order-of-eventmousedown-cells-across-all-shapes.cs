@@ -14,41 +14,42 @@ class Program
             return;
         }
 
-        string diagramPath = args[0];
+        string inputPath = args[0];
 
-        // Guard against missing file
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the input file exists
+        if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Iterate through all pages
-            int pageIndex = 0;
-            foreach (Page page in diagram.Pages)
+            // Load the diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all shapes on the current page
-                foreach (Shape shape in page.Shapes)
+                // Iterate through all pages in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    // Skip logically deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
+                    // Iterate through all shapes on the current page
+                    foreach (Shape shape in page.Shapes)
+                    {
+                        // Skip logically deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
 
-                    // Retrieve the formula for the EventMouseDown cell.
-                    // Aspose.Diagram does not expose EventMouseDown directly,
-                    // so we use the closest available cell: EventDrop.
-                    string eventFormula = shape.Event.EventDrop.Ufe.F;
+                        // Access the closest substitute for EventMouseDown.
+                        // According to the API, EventMouseDown does not exist, so we use EventDrop as the nearest equivalent.
+                        string eventFormula = shape.Event?.EventDrop?.Ufe?.F;
 
-                    // Log the execution order (page index, shape ID, formula)
-                    Console.WriteLine($"Page {pageIndex}, Shape ID {shape.ID}, EventMouseDown formula: {eventFormula}");
+                        // If the formula is not empty, log the shape ID and the formula.
+                        if (!string.IsNullOrEmpty(eventFormula))
+                        {
+                            // Shape.ID provides the identifier of the shape.
+                            Console.WriteLine($"Shape ID: {shape.ID}, EventMouseDown (substituted) formula: {eventFormula}");
+                        }
+                    }
                 }
-
-                pageIndex++;
             }
         }
         catch (Exception ex)

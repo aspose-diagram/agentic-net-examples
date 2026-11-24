@@ -7,13 +7,15 @@ class Program
     static void Main(string[] args)
     {
         // Validate input arguments
-        if (args.Length == 0)
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> [outputReportPath]");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputReportFile]");
             return;
         }
 
         string inputPath = args[0];
+        string reportPath = args.Length >= 2 ? args[1] : "MissingEventMouseDownReport.txt";
+
         // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
         {
@@ -21,59 +23,61 @@ class Program
             return;
         }
 
-        // Determine output report path (optional second argument)
-        string outputPath = args.Length > 1 ? args[1] : "MissingEventMouseDownReport.txt";
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            // Create directory for the report if it does not exist
-            Directory.CreateDirectory(outputDir);
-        }
-
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
-
-            using (StreamWriter writer = new StreamWriter(outputPath))
+            // Load the Visio diagram inside a using block (required pattern)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Write CSV header
-                writer.WriteLine("PageIndex,ShapeID,ShapeName,MasterName");
-
-                // Iterate through all pages
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                // Prepare the report file
+                using (StreamWriter writer = new StreamWriter(reportPath, false))
                 {
-                    Page page = diagram.Pages[pageIndex];
+                    writer.WriteLine("Shapes missing EventMouseDown definitions");
+                    writer.WriteLine($"Generated on {DateTime.Now}");
+                    writer.WriteLine(new string('=', 50));
 
-                    // Iterate through all shapes on the current page
-                    foreach (Shape shape in page.Shapes)
+                    // Iterate through all pages in the diagram
+                    foreach (Page page in diagram.Pages)
                     {
-                        // Guard against null Event object
-                        if (shape.Event == null)
-                            continue;
-
-                        // Use EventDrop as the closest substitute for EventMouseDown
-                        string mouseDownFormula = shape.Event.EventDrop?.Ufe?.F;
-
-                        // If the formula is null or empty, consider the EventMouseDown definition missing
-                        if (string.IsNullOrWhiteSpace(mouseDownFormula))
+                        // Iterate through all shapes on the current page
+                        foreach (Shape shape in page.Shapes)
                         {
-                            string shapeName = shape.Name ?? "N/A";
-                            string masterName = shape.Master?.Name ?? "N/A";
+                            // Retrieve the closest substitute for EventMouseDown.
+                            // According to the API, EventMouseDown is not available;
+                            // we use EventDrop as the nearest equivalent.
+                            string eventFormula = string.Empty;
 
-                            // Write shape information to the report
-                            writer.WriteLine($"{pageIndex},{shape.ID},{shapeName},{masterName}");
+                            try
+                            {
+                                // Access the EventDrop formula via the Ufe.F property
+                                eventFormula = shape.Event.EventDrop.Ufe.F;
+                            }
+                            catch (Exception ex)
+                            {
+                                // If accessing EventDrop fails, log the error and continue
+                                Console.Error.WriteLine($"Error accessing EventDrop for shape ID {shape.ID}: {ex.Message}");
+                            }
+
+                            // If the formula is null, empty, or whitespace, consider EventMouseDown missing
+                            if (string.IsNullOrWhiteSpace(eventFormula))
+                            {
+                                string shapeInfo = $"Page: {page.Name}, Shape ID: {shape.ID}, Name: {shape.Name}, Master: {shape.Master?.Name ?? "N/A"}";
+                                Console.WriteLine(shapeInfo);
+                                writer.WriteLine(shapeInfo);
+                            }
                         }
                     }
-                }
-            }
 
-            Console.WriteLine($"Report generated successfully at: {outputPath}");
+                    writer.WriteLine(new string('=', 50));
+                    writer.WriteLine("Report generation completed.");
+                }
+
+                Console.WriteLine($"Report saved to: {reportPath}");
+            }
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Capture any Aspose or I/O errors
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

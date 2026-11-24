@@ -6,101 +6,83 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate arguments
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputCsvFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputCsvPath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input Visio file exists.
+        // Guard: check input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Prepare the CSV writer.
-            using (StreamWriter writer = new StreamWriter(outputPath))
+            // Load the Visio diagram inside a using block (Diagram implements IDisposable)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Write CSV header.
-                writer.WriteLine("PageIndex,ShapeId,ShapeNameU,EventDrop,EventDblClick,EventXFMod,EventMultiDrop,TheText,TheData");
-
-                // Iterate through all pages.
-                for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                // Prepare CSV writer
+                using (StreamWriter writer = new StreamWriter(outputPath, false))
                 {
-                    Page page = diagram.Pages[pageIndex];
+                    // Write CSV header
+                    writer.WriteLine("PageIndex,ShapeID,ShapeName,EventDrop,EventDblClick,EventXFMod,EventMultiDrop,TheText,TheData");
 
-                    // Iterate through all shapes on the current page.
-                    foreach (Shape shape in page.Shapes)
+                    // Helper to escape CSV fields
+                    string Escape(string s)
                     {
-                        // Retrieve shape identifiers.
-                        long shapeId = shape.ID;
-                        string shapeNameU = shape.NameU ?? string.Empty;
-
-                        // Retrieve event formulas, guarding against null references.
-                        string eventDrop = string.Empty;
-                        string eventDblClick = string.Empty;
-                        string eventXFMod = string.Empty;
-                        string eventMultiDrop = string.Empty;
-                        string theText = string.Empty;
-                        string theData = string.Empty;
-
-                        if (shape.Event != null)
+                        if (s.Contains(",") || s.Contains("\"") || s.Contains("\n"))
                         {
-                            eventDrop = shape.Event.EventDrop?.Ufe?.F ?? string.Empty;
-                            eventDblClick = shape.Event.EventDblClick?.Ufe?.F ?? string.Empty;
-                            eventXFMod = shape.Event.EventXFMod?.Ufe?.F ?? string.Empty;
-                            eventMultiDrop = shape.Event.EventMultiDrop?.Ufe?.F ?? string.Empty;
-                            theText = shape.Event.TheText?.Ufe?.F ?? string.Empty;
-                            theData = shape.Event.TheData?.Ufe?.F ?? string.Empty;
+                            s = s.Replace("\"", "\"\"");
+                            return $"\"{s}\"";
                         }
+                        return s;
+                    }
 
-                        // Escape fields for CSV compliance.
-                        shapeNameU = EscapeCsv(shapeNameU);
-                        eventDrop = EscapeCsv(eventDrop);
-                        eventDblClick = EscapeCsv(eventDblClick);
-                        eventXFMod = EscapeCsv(eventXFMod);
-                        eventMultiDrop = EscapeCsv(eventMultiDrop);
-                        theText = EscapeCsv(theText);
-                        theData = EscapeCsv(theData);
+                    // Iterate through all pages
+                    for (int pageIndex = 0; pageIndex < diagram.Pages.Count; pageIndex++)
+                    {
+                        Page page = diagram.Pages[pageIndex];
 
-                        // Write a CSV line for the current shape.
-                        writer.WriteLine($"{pageIndex},{shapeId},\"{shapeNameU}\",\"{eventDrop}\",\"{eventDblClick}\",\"{eventXFMod}\",\"{eventMultiDrop}\",\"{theText}\",\"{theData}\"");
+                        // Iterate through all shapes on the page
+                        for (int shapeIndex = 0; shapeIndex < page.Shapes.Count; shapeIndex++)
+                        {
+                            Shape shape = page.Shapes[shapeIndex];
+
+                            // Skip deleted shapes
+                            if (shape.Del == BOOL.True)
+                                continue;
+
+                            // Retrieve shape identifier and name
+                            long shapeId = shape.ID;
+                            string shapeName = shape.NameU ?? string.Empty;
+
+                            // Retrieve event cell formulas, handling possible nulls
+                            string eventDrop = shape.Event?.EventDrop?.Ufe?.F ?? string.Empty;
+                            string eventDblClick = shape.Event?.EventDblClick?.Ufe?.F ?? string.Empty;
+                            string eventXFMod = shape.Event?.EventXFMod?.Ufe?.F ?? string.Empty;
+                            string eventMultiDrop = shape.Event?.EventMultiDrop?.Ufe?.F ?? string.Empty;
+                            string theText = shape.Event?.TheText?.Ufe?.F ?? string.Empty;
+                            string theData = shape.Event?.TheData?.Ufe?.F ?? string.Empty;
+
+                            // Write CSV line
+                            writer.WriteLine($"{pageIndex},{shapeId},{Escape(shapeName)},{Escape(eventDrop)},{Escape(eventDblClick)},{Escape(eventXFMod)},{Escape(eventMultiDrop)},{Escape(theText)},{Escape(theData)}");
+                        }
                     }
                 }
             }
 
-            Console.WriteLine($"Event cell data exported successfully to \"{outputPath}\".");
+            Console.WriteLine($"Event cell values exported successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Capture any Aspose.Diagram or I/O errors.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
-    }
-
-    // Helper method to escape CSV fields containing double quotes, commas, or newlines.
-    private static string EscapeCsv(string field)
-    {
-        if (field.Contains("\""))
-        {
-            field = field.Replace("\"", "\"\"");
-        }
-
-        if (field.Contains(",") || field.Contains("\n") || field.Contains("\r"))
-        {
-            field = $"\"{field}\"";
-        }
-
-        return field;
     }
 }

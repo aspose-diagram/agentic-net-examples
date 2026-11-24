@@ -1,23 +1,22 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Validate arguments
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <input.vsdx> <output.vsdx>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,44 +25,43 @@ class Program
 
         try
         {
-            // Load the Visio diagram
+            // Load the diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure there is at least one page and one shape
+            // Ensure there is at least one page
             if (diagram.Pages.Count == 0)
             {
                 Console.Error.WriteLine("The diagram contains no pages.");
                 return;
             }
 
+            // Work with the first page
             Page page = diagram.Pages[0];
-            if (page.Shapes.Count == 0)
+
+            // Find the first non-deleted shape to configure the event
+            Shape targetShape = null;
+            foreach (Shape shape in page.Shapes)
             {
-                Console.Error.WriteLine("The first page contains no shapes.");
+                if (shape.Del == BOOL.False)
+                {
+                    targetShape = shape;
+                    break;
+                }
+            }
+
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine("No non-deleted shape found on the first page.");
                 return;
             }
 
-            // Retrieve the first shape (as an example)
-            Shape shape = page.Shapes.GetShape(page.Shapes[0].ID);
-
-            // -----------------------------------------------------------------
-            // Configure the event that fires when the shape is resized.
-            // Aspose.Diagram does not expose a dedicated EventShapeResized cell.
-            // The closest available event cell is EventXFMod, which is triggered
-            // on shape modifications (including resize). We assign a formula
-            // that maintains the aspect ratio by scaling Width based on Height.
-            // -----------------------------------------------------------------
-            // Formula explanation:
-            //   GUARD(SETF(Width, Height * 1.5))
-            //   - GUARD prevents recursive evaluation.
-            //   - SETF updates the Width cell to keep a 1.5:1 aspect ratio.
-            // Adjust the multiplier (1.5) as needed for your aspect ratio.
-            // -----------------------------------------------------------------
-            shape.Event.EventXFMod.Ufe.F = "GUARD(SETF(Width, Height*1.5))";
+            // Configure the event to maintain aspect ratio.
+            // Aspose.Diagram does not expose EventShapeResized directly, so we use EventXFMod as the closest substitute.
+            // The formula forces width and height to stay equal, effectively preserving the aspect ratio.
+            targetShape.Event.EventXFMod.Ufe.F = "IF(Width<>Height, Width=Height, )";
 
             // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {

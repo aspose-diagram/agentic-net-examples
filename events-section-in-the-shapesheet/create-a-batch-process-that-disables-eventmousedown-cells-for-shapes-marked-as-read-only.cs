@@ -1,14 +1,12 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: expect input folder path, optional output folder path.
+        // Validate arguments: first argument is the input folder, second optional is the output folder.
         if (args.Length == 0)
         {
             Console.Error.WriteLine("Usage: Program <inputFolder> [outputFolder]");
@@ -25,83 +23,77 @@ class Program
         string outputFolder = args.Length > 1 ? args[1] : Path.Combine(inputFolder, "Modified");
         if (!Directory.Exists(outputFolder))
         {
-            Directory.CreateDirectory(outputFolder);
-        }
-
-        // Define supported Visio file extensions (lowercase for case‑insensitive comparison).
-        var visioExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-        {
-            ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx",
-            ".vssx", ".vstx", ".vss", ".vst", ".vsdm",
-            ".vssm", ".vstm", ".vdw"
-        };
-
-        // Process each file in the input folder (non‑recursive).
-        foreach (string filePath in Directory.GetFiles(inputFolder))
-        {
-            // Guard: ensure the file exists (redundant after GetFiles, but required by rules).
-            if (!File.Exists(filePath))
-            {
-                Console.Error.WriteLine($"File not found: {filePath}");
-                continue;
-            }
-
-            // Skip files that do not have a supported Visio extension.
-            string ext = Path.GetExtension(filePath);
-            if (!visioExtensions.Contains(ext))
-            {
-                continue;
-            }
-
             try
             {
-                // Load the Visio diagram.
-                Diagram diagram = new Diagram(filePath);
-
-                // Iterate through all pages.
-                foreach (Page page in diagram.Pages)
-                {
-                    // Iterate through all shapes on the current page.
-                    foreach (Shape shape in page.Shapes)
-                    {
-                        bool isReadOnly = false;
-
-                        // Examine user‑defined cells for a "ReadOnly" flag.
-                        foreach (User userCell in shape.Users)
-                        {
-                            if (userCell.NameU != null &&
-                                userCell.NameU.Equals("ReadOnly", StringComparison.OrdinalIgnoreCase) &&
-                                userCell.Value != null &&
-                                userCell.Value.Val != null &&
-                                userCell.Value.Val.Equals("TRUE", StringComparison.OrdinalIgnoreCase))
-                            {
-                                isReadOnly = true;
-                                break;
-                            }
-                        }
-
-                        if (isReadOnly)
-                        {
-                            // Disable the closest available event cells (EventMouseDown is not exposed).
-                            // Clear EventDrop formula.
-                            shape.Event.EventDrop.Ufe.F = string.Empty;
-                            // Clear EventXFMod formula as an additional safeguard.
-                            shape.Event.EventXFMod.Ufe.F = string.Empty;
-                        }
-                    }
-                }
-
-                // Prepare the output file path (same file name in the output folder).
-                string outputPath = Path.Combine(outputFolder, Path.GetFileName(filePath));
-
-                // Save the modified diagram in VSDX format.
-                diagram.Save(outputPath, SaveFileFormat.Vsdx);
-                Console.WriteLine($"Processed and saved: {outputPath}");
+                Directory.CreateDirectory(outputFolder);
             }
             catch (Exception ex)
             {
-                // Write any errors to the error stream.
-                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                Console.Error.WriteLine($"Failed to create output folder: {outputFolder}. Error: {ex.Message}");
+                return;
+            }
+        }
+
+        // Process each Visio file in the input folder (common extensions).
+        string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vssx", ".vss", ".vstx", ".vst", ".vtx" };
+        foreach (string ext in extensions)
+        {
+            foreach (string filePath in Directory.GetFiles(inputFolder, "*" + ext, SearchOption.TopDirectoryOnly))
+            {
+                // Guard: ensure the file exists.
+                if (!File.Exists(filePath))
+                {
+                    Console.Error.WriteLine($"File not found: {filePath}");
+                    continue;
+                }
+
+                try
+                {
+                    // Load the diagram inside a using block as required.
+                    using (Diagram diagram = new Diagram(filePath))
+                    {
+                        // Iterate all pages.
+                        foreach (Page page in diagram.Pages)
+                        {
+                            // Iterate all shapes on the page.
+                            foreach (Shape shape in page.Shapes)
+                            {
+                                // Determine if the shape is marked as read‑only via a user‑defined cell named "ReadOnly".
+                                bool isReadOnly = false;
+                                foreach (User userCell in shape.Users)
+                                {
+                                    if (string.Equals(userCell.NameU, "ReadOnly", StringComparison.OrdinalIgnoreCase) &&
+                                        string.Equals(userCell.Value.Val, "TRUE", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        isReadOnly = true;
+                                        break;
+                                    }
+                                }
+
+                                if (isReadOnly)
+                                {
+                                    // Disable the EventMouseDown cell. In Aspose.Diagram the closest equivalent is EventDrop.
+                                    if (shape.Event != null && shape.Event.EventDrop != null && shape.Event.EventDrop.Ufe != null)
+                                    {
+                                        shape.Event.EventDrop.Ufe.F = string.Empty; // Clear the formula to disable the event.
+                                    }
+                                }
+                            }
+                        }
+
+                        // Prepare output file path.
+                        string fileName = Path.GetFileNameWithoutExtension(filePath);
+                        string outputPath = Path.Combine(outputFolder, fileName + "_modified.vsdx");
+
+                        // Save the modified diagram as VSDX.
+                        diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                        Console.WriteLine($"Processed and saved: {outputPath}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                }
             }
         }
     }

@@ -6,36 +6,43 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments: input file, shape NameU, output file
-        if (args.Length < 3)
+        // Validate command‑line arguments.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: <program> <inputVisioFile> <shapeNameU> <outputVisioFile>");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <shapeId> [outputVisioPath]");
             return;
         }
 
         string inputPath = args[0];
-        string targetShapeNameU = args[1];
-        string outputPath = args[2];
+        string shapeIdArg = args[1];
+        string outputPath = args.Length >= 3 ? args[2] : "output_unprotected.vsdx";
 
-        // Guard against missing input file
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            return;
+        }
+
+        // Parse the shape ID.
+        if (!long.TryParse(shapeIdArg, out long targetShapeId))
+        {
+            Console.Error.WriteLine($"Error: Shape ID \"{shapeIdArg}\" is not a valid integer.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Locate the shape with the specified NameU across all pages
+            // Locate the shape with the specified ID.
             Shape targetShape = null;
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    if (shape.NameU == targetShapeNameU)
+                    if (shape.ID == targetShapeId)
                     {
                         targetShape = shape;
                         break;
@@ -46,12 +53,18 @@ class Program
 
             if (targetShape == null)
             {
-                Console.Error.WriteLine($"Shape with NameU \"{targetShapeNameU}\" not found.");
+                Console.Error.WriteLine($"Error: No shape with ID {targetShapeId} was found in the diagram.");
                 return;
             }
 
-            // Remove protection by setting all lock properties to FALSE
-            // Note: Each lock property is a BoolValue; assign via .Value
+            // Ensure the Protection object exists.
+            if (targetShape.Protection == null)
+            {
+                Console.Error.WriteLine("Error: The target shape does not have a Protection object.");
+                return;
+            }
+
+            // Remove protection by setting all lock properties to FALSE.
             targetShape.Protection.LockAspect.Value = BOOL.False;
             targetShape.Protection.LockBegin.Value = BOOL.False;
             targetShape.Protection.LockCalcWH.Value = BOOL.False;
@@ -73,13 +86,14 @@ class Program
             targetShape.Protection.LockVtxEdit.Value = BOOL.False;
             targetShape.Protection.LockWidth.Value = BOOL.False;
 
-            // Save the modified diagram to the specified output path
+            // Save the modified diagram.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Protection removed from shape \"{targetShapeNameU}\" and diagram saved to \"{outputPath}\".");
+            Console.WriteLine($"Shape protection removed. Diagram saved to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Capture any Aspose.Diagram or I/O errors.
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

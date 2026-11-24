@@ -6,58 +6,53 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
-        if (args.Length < 2)
+        // Validate arguments
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        string outputPath = args.Length >= 2 ? args[1] : inputPath;
 
-        // Guard against missing input file.
+        // Guard: ensure input file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram.
+            // Load the Visio diagram
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages to update margins based on page size.
+            // Iterate through all pages and update margins based on page dimensions
             foreach (Page page in diagram.Pages)
             {
-                // Retrieve page width and height (in inches).
+                // Retrieve page width and height (in inches)
                 double pageWidth = page.PageSheet.PageProps.PageWidth.Value;
                 double pageHeight = page.PageSheet.PageProps.PageHeight.Value;
 
-                // Calculate margins as 5% of the respective dimensions.
-                double leftMargin = pageWidth * 0.05;
-                double rightMargin = pageWidth * 0.05;
-                double topMargin = pageHeight * 0.05;
-                double bottomMargin = pageHeight * 0.05;
+                // Calculate margins as 5% of respective dimensions
+                double leftRightMargin = pageWidth * 0.05;
+                double topBottomMargin = pageHeight * 0.05;
 
-                // Ensure custom margins are used.
-                page.PageSheet.PrintProps.OnPage.Value = BOOL.True;
-
-                // Apply the calculated margins.
-                page.PageSheet.PrintProps.PageLeftMargin.Value = leftMargin;
-                page.PageSheet.PrintProps.PageRightMargin.Value = rightMargin;
-                page.PageSheet.PrintProps.PageTopMargin.Value = topMargin;
-                page.PageSheet.PrintProps.PageBottomMargin.Value = bottomMargin;
+                // Update print margins (values are in inches)
+                page.PageSheet.PrintProps.PageLeftMargin.Value = leftRightMargin;
+                page.PageSheet.PrintProps.PageRightMargin.Value = leftRightMargin;
+                page.PageSheet.PrintProps.PageTopMargin.Value = topBottomMargin;
+                page.PageSheet.PrintProps.PageBottomMargin.Value = topBottomMargin;
             }
 
-            // Save the updated diagram to the specified output path.
+            // Save the updated diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+            Console.WriteLine($"Successfully updated page margins and saved to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any Aspose.Diagram errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

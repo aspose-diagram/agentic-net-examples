@@ -7,50 +7,49 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect input Visio file path and output PDF file path as arguments.
-        if (args.Length < 2)
-        {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
-            return;
-        }
+        // Determine input and output file paths (use defaults if not provided)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
+        string outputPath = args.Length > 1 ? args[1] : "output.pdf";
 
-        string inputPath = args[0];
-        string outputPath = args[1];
-
-        // Guard: verify input file exists.
+        // Guard: ensure the input Visio file exists
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram inside a using block as required.
+            // Load the diagram inside a using block to ensure proper disposal
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate over all pages.
+                // Iterate over all pages in the diagram
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate over all shapes on the current page.
+                    // Iterate over all shapes on the current page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Apply a 10-degree rotation around the Z axis.
-                        // The RotationZAngle cell expects a value in degrees.
+                        // Apply a 10-degree rotation around the Z axis
+                        // The RotationZAngle cell holds the rotation value in degrees
                         shape.ThreeDFormat.RotationZAngle.Value = 10.0;
                     }
                 }
 
-                // Export the modified diagram to PDF.
-                diagram.Save(outputPath, SaveFileFormat.Pdf);
+                // Configure PDF save options
+                PdfSaveOptions pdfOptions = new PdfSaveOptions();
+                // Explicitly set the format tracker (required by the rules)
+                pdfOptions.SaveFormat = SaveFileFormat.Pdf;
+
+                // Save the modified diagram as PDF
+                diagram.Save(outputPath, pdfOptions);
             }
 
-            Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
+            Console.WriteLine($"Diagram successfully saved to \"{outputPath}\".");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error stream.
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream
+            Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }
 }

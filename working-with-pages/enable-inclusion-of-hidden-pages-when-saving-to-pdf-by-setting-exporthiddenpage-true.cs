@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Expect two arguments: input Visio file path and output PDF file path.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
@@ -17,10 +17,10 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input Visio file exists.
+        // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
@@ -29,20 +29,24 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Create PDF save options and enable export of hidden pages.
+            // Initialize PDF save options.
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
-            pdfOptions.ExportHiddenPage = true;               // Include hidden pages in the PDF.
-            pdfOptions.SaveFormat = SaveFileFormat.Pdf;       // Explicitly set the format tracker.
+
+            // Enable inclusion of hidden pages in the exported PDF.
+            pdfOptions.ExportHiddenPage = true;
+
+            // Explicitly set the save format for the options.
+            pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
             // Save the diagram as PDF using the configured options.
             diagram.Save(outputPath, pdfOptions);
 
-            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\" with hidden pages included.");
+            Console.WriteLine($"Diagram saved successfully to PDF: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

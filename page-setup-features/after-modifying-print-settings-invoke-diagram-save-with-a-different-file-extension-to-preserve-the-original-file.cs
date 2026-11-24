@@ -7,14 +7,8 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Expect the input Visio file path as the first command‑line argument
-        if (args.Length == 0)
-        {
-            Console.Error.WriteLine("Please provide the path to the Visio file as an argument.");
-            return;
-        }
-
-        string inputPath = args[0];
+        // Determine the input file path (first argument or default)
+        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
 
         // Guard: ensure the input file exists
         if (!File.Exists(inputPath))
@@ -23,21 +17,18 @@ class Program
             return;
         }
 
-        // Define an output path with a different extension (e.g., PDF) to preserve the original file
+        // Define an output path with a different extension to preserve the original file
         string outputPath = Path.ChangeExtension(inputPath, ".pdf");
 
         try
         {
-            // Load the Visio diagram from the specified file
-            Diagram diagram = new Diagram(inputPath);
-
-            // Ensure the diagram contains at least one page before modifying print settings
-            if (diagram.Pages.Count > 0)
+            // Load the Visio diagram inside a using block (ensures proper disposal)
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Access the first page (index 0)
+                // Access the first page (index 0) to modify its print settings
                 Page page = diagram.Pages[0];
 
-                // Retrieve the PrintProps object for page setup
+                // Retrieve the print properties collection
                 PrintProps printProps = page.PageSheet.PrintProps;
 
                 // Set page orientation to Landscape
@@ -47,35 +38,27 @@ class Program
                 printProps.ScaleX.Value = 0.75;
                 printProps.ScaleY.Value = 0.75;
 
-                // Enable fit‑to‑sheet and define pages across/down
+                // Enable fit-to-sheet and define pages across/down
                 printProps.OnPage.Value = BOOL.True;
                 printProps.PagesX.Value = 1;
                 printProps.PagesY.Value = 1;
 
-                // Set page margins (values are in inches)
+                // Define page margins in inches
                 printProps.PageTopMargin.Value = 0.5;
                 printProps.PageBottomMargin.Value = 0.5;
                 printProps.PageLeftMargin.Value = 0.5;
                 printProps.PageRightMargin.Value = 0.5;
-            }
-            else
-            {
-                Console.Error.WriteLine("The diagram contains no pages to modify.");
-                return;
-            }
 
-            // Save the modified diagram to a different format (PDF) while preserving the original file
-            diagram.Save(outputPath, SaveFileFormat.Pdf);
-
-            // Dispose the diagram to free resources
-            diagram.Dispose();
+                // Save the modified diagram to a new file with a different format (PDF)
+                diagram.Save(outputPath, SaveFileFormat.Pdf);
+            }
 
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Output any errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

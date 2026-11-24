@@ -6,81 +6,86 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input Visio diagram path
-        string diagramPath = "input.vsdx";
-        if (!System.IO.File.Exists(diagramPath))
+        // Validate arguments count
+        if (args.Length < 5)
         {
-            Console.Error.WriteLine($"File not found: {diagramPath}");
+            Console.Error.WriteLine("Usage: <program> <diagramPath> <wordFilePath> <outputPath> <pinX> <pinY>");
             return;
         }
-        // Word document to embed as OLE object
-        string wordPath = "document.docx";
-        // Output Visio diagram path
-        string outputPath = "output.vsdx";
 
-        // Guard: ensure the input Visio file exists
+        string diagramPath = args[0];
+        string wordFilePath = args[1];
+        string outputPath = args[2];
+        string pinXStr = args[3];
+        string pinYStr = args[4];
+
+        // Guard: check diagram file existence
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: Diagram file not found at '{diagramPath}'.");
+            Console.Error.WriteLine($"Diagram file not found: {diagramPath}");
             return;
         }
 
-        // Guard: ensure the Word document exists
-        if (!File.Exists(wordPath))
+        // Guard: check Word file existence
+        if (!File.Exists(wordFilePath))
         {
-            Console.Error.WriteLine($"Error: Word document not found at '{wordPath}'.");
+            Console.Error.WriteLine($"Word file not found: {wordFilePath}");
+            return;
+        }
+
+        // Parse coordinates
+        if (!double.TryParse(pinXStr, out double pinX) || !double.TryParse(pinYStr, out double pinY))
+        {
+            Console.Error.WriteLine("Invalid pinX or pinY values. They must be numeric.");
             return;
         }
 
         try
         {
-            // Load the existing Visio diagram
-            Diagram diagram = new Diagram(diagramPath);
-
-            // Choose the target page (first page in this example)
-            int targetPageIndex = 0;
-            if (targetPageIndex < 0 || targetPageIndex >= diagram.Pages.Count)
+            // Load the Visio diagram using a using block as required
+            using (Diagram diagram = new Diagram(diagramPath))
             {
-                Console.Error.WriteLine("Error: Specified page index is out of range.");
-                return;
+                // Use the first page (index 0) for inserting the OLE object
+                if (diagram.Pages.Count == 0)
+                {
+                    Console.Error.WriteLine("The diagram does not contain any pages.");
+                    return;
+                }
+
+                // Get the first page
+                Page page = diagram.Pages[0];
+
+                // Master name for OLE objects in Visio is typically "OLE Object"
+                // Add a new shape at the specified location
+                long shapeId = page.AddShape(pinX, pinY, "OLE Object");
+
+                // Retrieve the newly added shape
+                Shape oleShape = page.Shapes.GetShape(shapeId);
+                if (oleShape == null)
+                {
+                    Console.Error.WriteLine("Failed to retrieve the newly added OLE shape.");
+                    return;
+                }
+
+                // Load the Word document bytes
+                byte[] wordBytes = File.ReadAllBytes(wordFilePath);
+
+                // Assign OLE data to the shape's ForeignData
+                oleShape.ForeignData.ObjectData = wordBytes;
+                // Set the source full name (optional, helps identify the linked file)
+                oleShape.ForeignData.ObjectSourceFullName = Path.GetFileName(wordFilePath);
+
+                // Set a caption for the OLE icon shape
+                oleShape.Text.Value.Clear();
+                oleShape.Text.Value.Add(new Txt("Word Document"));
+
+                // Save the modified diagram to the specified output path
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"OLE object linked successfully. Diagram saved to: {outputPath}");
             }
-
-            // Retrieve the target page
-            Page page = diagram.Pages[targetPageIndex];
-
-            // Define the location where the OLE object will be placed (in inches)
-            double pinX = 2.0; // X coordinate
-            double pinY = 2.0; // Y coordinate
-
-            // Add a shape based on the "OLE Object" master from the default stencil
-            // The AddShape method returns the shape ID (long)
-            long shapeId = page.AddShape(pinX, pinY, "OLE Object");
-
-            // Retrieve the newly added shape using its ID
-            Shape oleShape = page.Shapes.GetShape(shapeId);
-
-            // Load the Word document bytes
-            byte[] oleData = File.ReadAllBytes(wordPath);
-
-            // Assign the OLE data to the shape's ForeignData
-            oleShape.ForeignData.ObjectData = oleData;
-            // Set the source full name (optional, helps identify the embedded file)
-            oleShape.ForeignData.ObjectSourceFullName = wordPath;
-            // Mark the object type as an embedded object
-            oleShape.ForeignData.ObjectType = ObjectType.EmbeddedObject;
-
-            // Optionally set a caption for the OLE icon shape
-            oleShape.Text.Value.Clear();
-            oleShape.Text.Value.Add(new Txt("Embedded Word Document"));
-
-            // Save the modified diagram to the output file in VSDX format
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-
-            Console.WriteLine($"Successfully added OLE object and saved diagram to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

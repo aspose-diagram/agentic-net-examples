@@ -10,7 +10,7 @@ class Program
         // Validate input arguments
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <diagram-file-path>");
+            Console.Error.WriteLine("Please provide the path to the Visio file as the first argument.");
             return;
         }
 
@@ -19,91 +19,77 @@ class Program
         // Guard against missing file
         if (!File.Exists(diagramPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            Console.Error.WriteLine($"File not found: {diagramPath}");
             return;
         }
 
-        Diagram diagram;
         try
         {
-            // Load the Visio diagram
-            diagram = new Diagram(diagramPath);
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Error loading diagram: {ex.Message}");
-            return;
-        }
+            // Load the diagram
+            Diagram diagram = new Diagram(diagramPath);
 
-        // Build a dependency graph where each master points to masters it references via its shapes
-        var masterGraph = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            // Build a graph of master references: master name -> list of referenced master names
+            var masterGraph = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
-        try
-        {
+            // Populate graph nodes
             foreach (Master master in diagram.Masters)
             {
-                string masterName = master.Name ?? string.Empty;
-                var dependencies = new List<string>();
+                // Ensure entry exists even if there are no outgoing edges
+                if (!masterGraph.ContainsKey(master.Name))
+                    masterGraph[master.Name] = new List<string>();
 
-                // Iterate shapes inside the master to find referenced masters
+                // Examine each shape inside the master for references to other masters
                 foreach (Shape shape in master.Shapes)
                 {
-                    // If the shape itself is based on another master, record the dependency
-                    if (shape.Master != null)
+                    // Some shapes may reference another master via the Master property
+                    // Guard against null (shape may be a primitive shape without a master)
+                    if (shape.Master != null && !string.IsNullOrEmpty(shape.Master.Name))
                     {
-                        string referencedName = shape.Master.Name ?? string.Empty;
-                        if (!string.IsNullOrEmpty(referencedName) && !referencedName.Equals(masterName, StringComparison.OrdinalIgnoreCase))
-                        {
-                            dependencies.Add(referencedName);
-                        }
-                        else if (referencedName.Equals(masterName, StringComparison.OrdinalIgnoreCase))
-                        {
-                            // Self‑reference is also a circular reference
-                            dependencies.Add(referencedName);
-                        }
+                        string targetMasterName = shape.Master.Name;
+
+                        // Add edge from current master to the referenced master
+                        if (!masterGraph[master.Name].Contains(targetMasterName))
+                            masterGraph[master.Name].Add(targetMasterName);
                     }
                 }
+            }
 
-                masterGraph[masterName] = dependencies;
+            // Detect cycles using depth‑first search
+            var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var recursionStack = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var cycles = new List<List<string>>();
+
+            foreach (var node in masterGraph.Keys)
+            {
+                if (!visited.Contains(node))
+                {
+                    DetectCyclesDFS(node, masterGraph, visited, recursionStack, new List<string>(), cycles);
+                }
+            }
+
+            // Report results
+            if (cycles.Count == 0)
+            {
+                Console.WriteLine("No circular master references found.");
+            }
+            else
+            {
+                Console.WriteLine("Circular master references detected:");
+                int count = 1;
+                foreach (var cycle in cycles)
+                {
+                    Console.WriteLine($"{count}: {string.Join(" -> ", cycle)} -> {cycle[0]}");
+                    count++;
+                }
             }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Error while building master dependency graph: {ex.Message}");
-            return;
-        }
-
-        // Detect cycles in the master dependency graph using DFS
-        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var recursionStack = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var cycles = new List<List<string>>();
-
-        foreach (var node in masterGraph.Keys)
-        {
-            if (!visited.Contains(node))
-            {
-                DetectCyclesDFS(node, masterGraph, visited, recursionStack, new List<string>(), cycles);
-            }
-        }
-
-        // Report results
-        if (cycles.Count == 0)
-        {
-            Console.WriteLine("No circular master references detected.");
-        }
-        else
-        {
-            Console.WriteLine("Circular master references found:");
-            int cycleIndex = 1;
-            foreach (var cycle in cycles)
-            {
-                Console.WriteLine($"Cycle {cycleIndex}: {string.Join(" -> ", cycle)}");
-                cycleIndex++;
-            }
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 
-    // Recursive DFS to find cycles; records each distinct cycle found
+    // Recursive DFS helper to find cycles
     private static void DetectCyclesDFS(
         string current,
         Dictionary<string, List<string>> graph,
@@ -126,16 +112,11 @@ class Program
                 }
                 else if (recursionStack.Contains(neighbour))
                 {
-                    // Cycle detected: extract the sub‑path forming the cycle
-                    int startIdx = path.IndexOf(neighbour);
-                    if (startIdx >= 0)
+                    // Cycle detected – extract the cycle path
+                    int startIndex = path.IndexOf(neighbour);
+                    if (startIndex >= 0)
                     {
-                        var cycle = new List<string>();
-                        for (int i = startIdx; i < path.Count; i++)
-                        {
-                            cycle.Add(path[i]);
-                        }
-                        cycle.Add(neighbour); // close the loop
+                        var cycle = path.GetRange(startIndex, path.Count - startIndex);
                         cycles.Add(cycle);
                     }
                 }

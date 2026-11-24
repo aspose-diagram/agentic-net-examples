@@ -7,17 +7,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate command line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFile.vsdx> <outputGroup.svg>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> <outputSvgFilePath>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard: ensure the input Visio file exists.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,38 +26,38 @@ class Program
 
         try
         {
-            // Load the existing Visio diagram.
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block as required.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Access the first page of the diagram.
+                Page page = diagram.Pages[0];
 
-            // Work with the first page of the diagram.
-            Page page = diagram.Pages[0];
+                // Draw a circle (ellipse with equal width and height).
+                // Parameters: pinX, pinY, width, height.
+                long circleId = page.DrawEllipse(1.0, 1.0, 2.0, 2.0);
 
-            // Draw a circle (ellipse with equal width and height).
-            long circleId = page.DrawEllipse(1.0, 1.0, 2.0, 2.0);
+                // Draw an oval (ellipse with different width and height).
+                long ovalId = page.DrawEllipse(4.0, 1.0, 3.0, 1.5);
 
-            // Draw an oval (ellipse with different width and height).
-            long ovalId = page.DrawEllipse(4.0, 1.0, 3.0, 2.0);
+                // Retrieve the Shape objects for the drawn ellipses.
+                Shape circleShape = page.Shapes.GetShape(circleId);
+                Shape ovalShape = page.Shapes.GetShape(ovalId);
 
-            // Retrieve the Shape objects for the drawn ellipse and oval.
-            Shape circleShape = page.Shapes.GetShape(circleId);
-            Shape ovalShape = page.Shapes.GetShape(ovalId);
+                // Group the circle and oval together.
+                // The Group method returns the new group as a Shape.
+                Shape groupShape = page.Shapes.Group(new Shape[] { circleShape, ovalShape });
 
-            // Group the circle and oval together.
-            Shape[] shapesToGroup = new Shape[] { circleShape, ovalShape };
-            Shape groupShape = page.Shapes.Group(shapesToGroup);
+                // Export the group as a single SVG file.
+                SVGSaveOptions svgOptions = new SVGSaveOptions();
+                groupShape.ToSvg(outputPath, svgOptions);
+            }
 
-            // Prepare SVG export options (default configuration).
-            SVGSaveOptions svgOptions = new SVGSaveOptions();
-
-            // Export the group as a single SVG file.
-            groupShape.ToSvg(outputPath, svgOptions);
-
-            Console.WriteLine($"Group exported successfully to: {outputPath}");
+            Console.WriteLine($"Group exported successfully to SVG: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or runtime errors to the error console.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

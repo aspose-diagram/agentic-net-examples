@@ -16,14 +16,14 @@ class Program
 
         string inputPath = args[0];
 
-        // Guard: ensure the input file exists
+        // Guard against missing file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"File not found: {inputPath}");
             return;
         }
 
-        // List to hold collected paragraph texts
+        // List to hold all paragraph texts from shapes
         List<string> paragraphTexts = new List<string>();
 
         try
@@ -31,34 +31,29 @@ class Program
             // Load the diagram inside a using block as required
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Ensure the diagram contains at least one page
-                if (diagram.Pages.Count == 0)
+                // Iterate through each page in the diagram
+                foreach (Page page in diagram.Pages)
                 {
-                    Console.Error.WriteLine("The diagram does not contain any pages.");
-                    return;
-                }
-
-                // Process the first page (index 0)
-                Page page = diagram.Pages[0];
-
-                // Iterate through all shapes on the page
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Skip logically deleted shapes
-                    if (shape.Del == BOOL.True)
-                        continue;
-
-                    // Iterate through the text runs (paragraphs) of the shape
-                    // shape.Text.Value is a collection of FormatTxt objects
-                    for (int i = 0; i < shape.Text.Value.Count; i++)
+                    // Iterate through each shape on the current page
+                    foreach (Shape shape in page.Shapes)
                     {
-                        FormatTxt fmt = shape.Text.Value[i];
-                        // Cast to Txt to access the actual text string
-                        Txt txt = fmt as Txt;
-                        if (txt != null)
+                        // Skip deleted shapes
+                        if (shape.Del == BOOL.True)
+                            continue;
+
+                        // Retrieve the plain text of the shape (concatenated paragraphs)
+                        string shapeText = shape.Text.Value.Text;
+
+                        // If the shape has text, add it to the collection
+                        if (!string.IsNullOrWhiteSpace(shapeText))
                         {
-                            // Add the text to the result list
-                            paragraphTexts.Add(txt.Text);
+                            // Split the text into paragraphs based on line breaks
+                            string[] paragraphs = shapeText.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
+                            foreach (string para in paragraphs)
+                            {
+                                if (!string.IsNullOrWhiteSpace(para))
+                                    paragraphTexts.Add(para);
+                            }
                         }
                     }
                 }
@@ -66,9 +61,9 @@ class Program
 
             // Reporting: output collected paragraph texts
             Console.WriteLine("Collected Paragraph Texts:");
-            foreach (string text in paragraphTexts)
+            foreach (string txt in paragraphTexts)
             {
-                Console.WriteLine(text);
+                Console.WriteLine(txt);
             }
         }
         catch (Exception ex)

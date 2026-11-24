@@ -7,7 +7,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputPdfPath>");
@@ -17,7 +17,7 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -26,45 +26,54 @@ class Program
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Create PDF save options
+            // Configure PDF save options.
             PdfSaveOptions pdfOptions = new PdfSaveOptions();
 
-            // Set the format tracker explicitly
+            // Set the format tracker explicitly as required.
             pdfOptions.SaveFormat = SaveFileFormat.Pdf;
 
-            // Assign custom page saving callback
-            pdfOptions.PageSavingCallback = new MyPageSavingCallback();
+            // Assign the custom page‑saving callback.
+            pdfOptions.PageSavingCallback = new CustomPageSavingCallback();
 
-            // Save the diagram as PDF using the configured options
+            // Save the diagram to PDF using the configured options.
             diagram.Save(outputPath, pdfOptions);
+
             Console.WriteLine($"Diagram successfully saved to PDF: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Log any errors that occur during processing
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }
 
-// Custom implementation of IPageSavingCallback to handle page save events
-class MyPageSavingCallback : IPageSavingCallback
+/// <summary>
+/// Custom implementation of IPageSavingCallback to receive page‑saving events during PDF export.
+/// </summary>
+class CustomPageSavingCallback : IPageSavingCallback
 {
-    // Called before a page starts saving
+    /// <summary>
+    /// Called before a page starts saving.
+    /// </summary>
+    /// <param name="args">Event arguments containing page information.</param>
     public void PageStartSaving(PageStartSavingArgs args)
     {
         Console.WriteLine($"Starting to save page {args.PageIndex + 1} of {args.PageCount}.");
-        // Example: you could modify args here if needed
+        // Additional per‑page initialization logic can be placed here.
     }
 
-    // Called after a page has finished saving
+    /// <summary>
+    /// Called after a page has been saved.
+    /// </summary>
+    /// <param name="args">Event arguments containing page information.</param>
     public void PageEndSaving(PageEndSavingArgs args)
     {
         Console.WriteLine($"Finished saving page {args.PageIndex + 1} of {args.PageCount}.");
-        // To stop further page processing, you could set:
-        // args.HasMorePages = false;
+        // To stop further page processing, uncomment the following line:
+        // args.HasMorePages = BOOL.False;
     }
 }

@@ -1,65 +1,70 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioFilePath> <outputVisioFilePath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputPreviewImage>");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
+        string previewPath = args[1];
 
-        // Guard: check if input file exists
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
-            return;
-        }
-
-        // Guard: ensure output directory exists
-        string outputDir = Path.GetDirectoryName(outputPath);
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Console.Error.WriteLine($"Output directory does not exist: {outputDir}");
+            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
             return;
         }
 
         try
         {
-            // Load the Visio diagram
-            Diagram diagram = new Diagram(inputPath);
+            // Load the Visio diagram inside a using block to ensure proper disposal.
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // -----------------------------------------------------------------
+                // Set the footer margin to 0.3 centimeters.
+                // Visio stores margins in inches; 0.3 cm = 0.11811 inches.
+                // -----------------------------------------------------------------
+                diagram.HeaderFooter.FooterMargin.Value = 0.11811;
 
-            // Convert 0.3 centimeters to inches (1 cm = 0.393701 inches)
-            double centimeters = 0.3;
-            double inches = centimeters * 0.393701;
+                // Verify the change by writing the new margin value to the console.
+                Console.WriteLine($"Footer margin set to {diagram.HeaderFooter.FooterMargin.Value} inches (≈0.3 cm).");
 
-            // Set the global footer margin (in inches)
-            diagram.HeaderFooter.FooterMargin.Value = inches;
+                // -----------------------------------------------------------------
+                // Generate a preview image of the first page to visually verify the
+                // footer margin. Export the first page as a PNG image using ImageSaveOptions.
+                // -----------------------------------------------------------------
+                ImageSaveOptions previewOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                {
+                    // Export only the first page.
+                    PageIndex = 0,
+                    PageCount = 1
+                };
+                diagram.Save(previewPath, previewOptions);
+                Console.WriteLine($"Print preview image saved to \"{previewPath}\".");
 
-            // Verify the change by reading back the value
-            double verifiedMargin = diagram.HeaderFooter.FooterMargin.Value;
-            Console.WriteLine($"Footer margin set to {verifiedMargin} inches (expected ~{inches} inches).");
+                // -----------------------------------------------------------------
+                // Optionally, save the modified diagram to a new file.
+                // -----------------------------------------------------------------
+                string outputPath = Path.Combine(
+                    Path.GetDirectoryName(inputPath) ?? string.Empty,
+                    Path.GetFileNameWithoutExtension(inputPath) + "_Modified.vsdx");
 
-            // TODO: Implement Print Preview verification using Aspose.Diagram.Printing APIs when available.
-            // Example (placeholder):
-            // using Aspose.Diagram.Printing;
-            // PrintPreview preview = new PrintPreview(diagram);
-            // preview.Show();
-
-            // Save the modified diagram to the specified output path
-            diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
+                diagram.Save(outputPath, SaveFileFormat.Vsdx);
+                Console.WriteLine($"Modified diagram saved to \"{outputPath}\".");
+            }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

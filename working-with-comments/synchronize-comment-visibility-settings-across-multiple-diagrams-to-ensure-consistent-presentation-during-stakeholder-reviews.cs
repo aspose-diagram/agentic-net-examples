@@ -7,75 +7,66 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments: first argument should be "show" or "hide", second argument is the folder path containing diagrams.
-        if (args.Length != 2)
+        // Validate arguments: first argument should be "hide" or "show", followed by at least one diagram file path.
+        if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <show|hide> <diagrams_folder_path>");
+            Console.Error.WriteLine("Usage: Program <hide|show> <diagramPath1> [<diagramPath2> ...]");
             return;
         }
 
-        string visibilityArg = args[0].Trim().ToLowerInvariant();
-        string folderPath = args[1];
-
-        // Determine whether comments should be exported.
+        // Determine desired comment visibility based on the first argument.
         bool exportComments;
-        if (visibilityArg == "show")
-            exportComments = true;
-        else if (visibilityArg == "hide")
+        if (args[0].Equals("hide", StringComparison.OrdinalIgnoreCase))
+        {
             exportComments = false;
+        }
+        else if (args[0].Equals("show", StringComparison.OrdinalIgnoreCase))
+        {
+            exportComments = true;
+        }
         else
         {
-            Console.Error.WriteLine("First argument must be 'show' or 'hide'.");
+            Console.Error.WriteLine("First argument must be either 'hide' or 'show' to set comment visibility.");
             return;
         }
 
-        // Verify the folder exists.
-        if (!Directory.Exists(folderPath))
+        // Process each diagram file supplied after the visibility flag.
+        for (int i = 1; i < args.Length; i++)
         {
-            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
-            return;
-        }
+            string diagramPath = args[i];
 
-        // Get all Visio diagram files in the folder (common extensions).
-        string[] diagramFiles = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
-        foreach (string filePath in diagramFiles)
-        {
-            string ext = Path.GetExtension(filePath).ToLowerInvariant();
-            if (ext != ".vsdx" && ext != ".vsd" && ext != ".vdx" && ext != ".vssx" && ext != ".vss" && ext != ".vstx" && ext != ".vst")
-                continue; // Skip non-diagram files.
-
-            // Guard: ensure the file exists.
-            if (!File.Exists(filePath))
+            // Guard: ensure the file exists before attempting to load.
+            if (!File.Exists(diagramPath))
             {
-                Console.Error.WriteLine($"File not found: {filePath}");
+                Console.Error.WriteLine($"File not found: {diagramPath}");
                 continue;
             }
 
             try
             {
-                // Load the diagram inside a using block as required.
-                using (Diagram diagram = new Diagram(filePath))
+                // Load the diagram inside a using block as required by the API.
+                using (Diagram diagram = new Diagram(diagramPath))
                 {
-                    // Prepare image export options with the desired comment visibility.
+                    // Configure export options to apply the desired comment visibility.
                     ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
                     saveOptions.IsExportComments = exportComments;
 
-                    // Build output file name (same name with _export.png suffix).
-                    string outputFileName = Path.GetFileNameWithoutExtension(filePath) + "_export.png";
-                    string outputPath = Path.Combine(folderPath, outputFileName);
+                    // Build output file name (same folder, suffix indicating visibility).
+                    string directory = Path.GetDirectoryName(diagramPath) ?? string.Empty;
+                    string fileNameWithoutExt = Path.GetFileNameWithoutExtension(diagramPath);
+                    string suffix = exportComments ? "_withComments" : "_noComments";
+                    string outputPath = Path.Combine(directory, $"{fileNameWithoutExt}{suffix}.png");
 
-                    // Save the diagram as PNG with the configured options.
+                    // Save the diagram as PNG with the specified options.
                     diagram.Save(outputPath, saveOptions);
 
-                    // Prepare a readable status message.
-                    string commentStatus = exportComments ? "shown" : "hidden";
-                    Console.WriteLine($"Processed '{Path.GetFileName(filePath)}' -> '{outputFileName}' (Comments {commentStatus})");
+                    Console.WriteLine($"Exported diagram with comment visibility '{(exportComments ? "shown" : "hidden")}': {outputPath}");
                 }
             }
             catch (Exception ex)
             {
-                // Log any errors that occur during processing.
-                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+                // Log any errors that occur during processing of the current diagram.
+                Console.Error.WriteLine($"Error processing '{diagramPath}': {ex.Message}");
             }
         }
     }

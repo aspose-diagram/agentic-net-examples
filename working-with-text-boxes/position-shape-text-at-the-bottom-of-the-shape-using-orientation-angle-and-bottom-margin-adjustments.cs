@@ -1,16 +1,24 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
+using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths (can be passed as command‑line arguments)
-        string inputPath = args.Length > 0 ? args[0] : "input.vsdx";
-        string outputPath = args.Length > 1 ? args[1] : "output.vsdx";
+        // Validate command‑line arguments.
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> [shapeId]");
+            return;
+        }
 
-        // Guard: ensure the source Visio file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+        long shapeId = args.Length >= 3 && long.TryParse(args[2], out long id) ? id : 0;
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -19,51 +27,61 @@ class Program
 
         try
         {
-            // Load the diagram inside a using block (required pattern)
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // ------------------------------------------------------------
-                // Retrieve a shape to modify.
-                // Here we use shape ID 1 on the first page as an example.
-                // Adjust the ID or selection logic as needed for your diagram.
-                // ------------------------------------------------------------
-                long shapeId = 1;
-                Shape shape = diagram.Pages[0].Shapes.GetShape((int)shapeId);
-                if (shape == null)
+                // Retrieve the first page (assumes at least one page exists).
+                Page page = diagram.Pages[0];
+
+                // Determine which shape to modify.
+                Shape shape;
+                if (shapeId != 0)
                 {
-                    Console.Error.WriteLine($"Shape with ID {shapeId} not found.");
-                    return;
+                    // Attempt to get shape by the provided ID.
+                    shape = page.Shapes.GetShape((int)shapeId);
+                    if (shape == null)
+                    {
+                        Console.Error.WriteLine($"Shape with ID {shapeId} not found on page 0.");
+                        return;
+                    }
+                }
+                else
+                {
+                    // Fallback: use the first shape on the page.
+                    if (page.Shapes.Count == 0)
+                    {
+                        Console.Error.WriteLine("No shapes found on the first page.");
+                        return;
+                    }
+                    shape = page.Shapes[0];
                 }
 
                 // ------------------------------------------------------------
-                // Set text orientation angle (in radians).
-                // Example: 0 degrees (no rotation). Change angleDeg as required.
+                // Set bottom margin for the text block (example: 4 points).
                 // ------------------------------------------------------------
-                double angleDeg = 0.0;
-                double angleRad = (Math.PI / 180.0) * angleDeg;
-                shape.TextXForm.TxtAngle.Value = angleRad;
+                DoubleValue bottomMargin = new DoubleValue(4, MeasureConst.PT);
+                shape.TextBlock.BottomMargin = bottomMargin;
 
                 // ------------------------------------------------------------
                 // Position the text at the bottom of the shape.
-                // TxtLocPinY is set to the text block height,
-                // TxtPinY is set to 0 (origin at bottom).
+                // TxtLocPinY defines the local Y‑pin of the text block.
+                // TxtPinY defines the Y‑pin of the shape where the text block is anchored.
                 // ------------------------------------------------------------
-                shape.TextXForm.TxtLocPinY.Value = shape.TextXForm.TxtHeight.Value;
-                shape.TextXForm.TxtPinY.Value = 0.0;
+                shape.TextXForm.TxtLocPinY.Value = shape.TextXForm.TxtHeight.Value; // Align local pin to text height.
+                shape.TextXForm.TxtPinY.Value = 0; // Anchor at the bottom of the shape.
 
                 // ------------------------------------------------------------
-                // Adjust bottom margin of the text block (optional).
-                // Here we set a 4‑point bottom margin.
+                // Set text orientation angle (example: 0 degrees = no rotation).
+                // The angle is expressed in radians.
                 // ------------------------------------------------------------
-                shape.TextBlock.BottomMargin = new DoubleValue(4.0, MeasureConst.PT);
+                double angleDeg = 0; // Change this value as needed.
+                shape.TextXForm.TxtAngle.Value = (Math.PI / 180) * angleDeg;
 
-                // ------------------------------------------------------------
-                // Refresh shape data so that changes take effect.
-                // ------------------------------------------------------------
+                // Refresh shape data to apply changes.
                 shape.RefreshData();
 
                 // ------------------------------------------------------------
-                // Save the modified diagram to the output file.
+                // Save the modified diagram.
                 // ------------------------------------------------------------
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
                 Console.WriteLine($"Diagram saved successfully to: {outputPath}");
@@ -71,8 +89,8 @@ class Program
         }
         catch (Exception ex)
         {
-            // Write any Aspose or runtime errors to the error stream
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

@@ -6,16 +6,19 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input and output file paths
-        string inputPath = "input.vsdx";
-        if (!System.IO.File.Exists(inputPath))
+        // Validate command‑line arguments.
+        if (args.Length < 4)
         {
-            Console.Error.WriteLine($"File not found: {inputPath}");
+            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath> <shapeName> <fieldText>");
             return;
         }
-        string outputPath = "output.vsdx";
 
-        // Guard: ensure the input file exists
+        string inputPath = args[0];
+        string outputPath = args[1];
+        string targetShapeName = args[2];
+        string fieldText = args[3];
+
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -24,39 +27,36 @@ class Program
 
         try
         {
-            // Load the Visio diagram
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Target shape name (NameU) to which the field will be added
-            string targetShapeName = "TargetShape";
-
-            // Flag to indicate whether the shape was found
+            // Flag to indicate whether the shape was found.
             bool shapeFound = false;
 
-            // Iterate through all pages and shapes to locate the shape by its NameU
+            // Iterate through all pages and shapes to locate the shape by its Name property.
             foreach (Page page in diagram.Pages)
             {
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Compare the shape's NameU with the target name (case-sensitive)
-                    if (shape.NameU == targetShapeName)
+                    // Compare the shape's Name (case‑sensitive) with the target name.
+                    if (shape.Name == targetShapeName)
                     {
                         shapeFound = true;
 
-                        // Create a new field
-                        Field field = new Field();
+                        // Create a new field.
+                        Field newField = new Field();
 
-                        // Set the field's display value (static text)
-                        field.Value.Val = "Inserted Field Text";
+                        // Set the field's displayed value.
+                        newField.Value.Val = fieldText;
 
-                        // Optionally, set the field type to Undefined (default)
-                        // field.Type.Value = (int)TypeFieldValue.Undefined; // Uncomment if needed
+                        // Ensure the field is not marked as deleted.
+                        newField.Del = BOOL.False;
 
-                        // Add the field to the shape's Fields collection
-                        shape.Fields.Add(field);
+                        // Insert the field into the shape's Fields collection.
+                        shape.Fields.Add(newField);
 
                         Console.WriteLine($"Field inserted into shape '{targetShapeName}' on page {page.Name}.");
-                        // Break out of loops after insertion
+                        // Break out of loops after insertion.
                         break;
                     }
                 }
@@ -67,17 +67,17 @@ class Program
 
             if (!shapeFound)
             {
-                Console.Error.WriteLine($"Shape with NameU '{targetShapeName}' not found in the diagram.");
+                Console.Error.WriteLine($"Shape with name '{targetShapeName}' was not found in the diagram.");
                 return;
             }
 
-            // Save the modified diagram
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved to '{outputPath}'.");
+            Console.WriteLine($"Diagram saved successfully to '{outputPath}'.");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or IO errors to the error console
+            // Write any Aspose or I/O errors to the error stream.
             Console.Error.WriteLine($"An error occurred: {ex.Message}");
         }
     }

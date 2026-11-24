@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 using Aspose.Diagram.Manipulation;
@@ -8,85 +9,101 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate arguments
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputImagePath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputImageFile>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the diagram inside a using block as required
+            // Load the Visio diagram inside a using block as required.
             using (Diagram diagram = new Diagram(inputPath))
             {
-                // Work with the first page (index 0)
-                Page page = diagram.Pages[0];
+                // Build a lookup of shape universal names to their IDs for quick hyperlink target resolution.
+                Dictionary<string, long> nameToId = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
 
-                // Create a hub shape that will serve as the central node for hyperlink connections
-                // Coordinates (5,5) are arbitrary; adjust as needed
-                long hubId = page.AddShape(5.0, 5.0, "Rectangle");
-                Shape hubShape = page.Shapes.GetShape(hubId);
-
-                // Set a visible label on the hub shape
-                hubShape.Text.Value.Clear();
-                hubShape.Text.Value.Add(new Txt("Hyperlink Hub"));
-
-                // Iterate over all shapes on the page
-                for (int i = 0; i < page.Shapes.Count; i++)
+                foreach (Page page in diagram.Pages)
                 {
-                    Shape shape = page.Shapes[i];
-
-                    // Skip the hub shape itself
-                    if (shape.ID == hubId)
-                        continue;
-
-                    // Check if the shape contains any hyperlinks
-                    if (shape.Hyperlinks != null && shape.Hyperlinks.Count > 0)
+                    foreach (Shape shape in page.Shapes)
                     {
-                        // Create a connector shape (Dynamic connector master)
-                        long connectorId = page.AddShape(0.0, 0.0, "Dynamic connector");
-                        Shape connector = page.Shapes.GetShape(connectorId);
-
-                        // Connect the shape to the hub using the connector
-                        page.ConnectShapesViaConnector(
-                            shape.ID,                     // source shape ID
-                            ConnectionPointPlace.Bottom, // source connection point
-                            hubId,                       // target shape ID (hub)
-                            ConnectionPointPlace.Top,    // target connection point
-                            connectorId);                // connector shape ID
-
-                        // Set arrowheads for better visual indication
-                        connector.Line.BeginArrow.Value = 4; // Arrow style
-                        connector.Line.EndArrow.Value = 4;   // Arrow style
+                        // Shape.NameU is a plain string (not a cell), so use it directly.
+                        string shapeName = shape.NameU;
+                        if (!string.IsNullOrEmpty(shapeName))
+                        {
+                            // If duplicate names exist, the last one wins – acceptable for this simple map.
+                            nameToId[shapeName] = shape.ID;
+                        }
                     }
                 }
 
-                // Prepare image save options for PNG export
-                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png);
-                saveOptions.PageIndex = 0;   // Export first page
-                saveOptions.PageCount = 1;   // Single page
-                saveOptions.Resolution = 300f; // Optional: higher resolution
+                // Iterate again to create visual connectors for each hyperlink.
+                foreach (Page page in diagram.Pages)
+                {
+                    // Process each shape on the page.
+                    foreach (Shape sourceShape in page.Shapes)
+                    {
+                        // Ensure the shape has a hyperlink collection.
+                        if (sourceShape.Hyperlinks == null) continue;
 
-                // Save the visual map as an image file
+                        // Enumerate hyperlinks using an explicit index‑based loop.
+                        for (int h = 0; h < sourceShape.Hyperlinks.Count; h++)
+                        {
+                            Hyperlink hyperlink = sourceShape.Hyperlinks[h];
+
+                            // Resolve the hyperlink address; treat it as a shape universal name.
+                            string targetName = hyperlink.Address.Value;
+                            if (string.IsNullOrEmpty(targetName)) continue;
+
+                            // Find the target shape ID using the previously built dictionary.
+                            if (!nameToId.TryGetValue(targetName, out long targetId)) continue;
+
+                            // Add a connector shape of master "Dynamic connector".
+                            // The AddShape overload returns the new shape ID.
+                            long connectorId = diagram.AddShape(new Shape(), "Dynamic connector", page.ID);
+
+                            // Connect the source shape to the target shape via the connector.
+                            // Use the right side of the source and the left side of the target as default connection points.
+                            page.ConnectShapesViaConnector(
+                                sourceShape.ID,
+                                ConnectionPointPlace.Right,
+                                targetId,
+                                ConnectionPointPlace.Left,
+                                connectorId);
+                        }
+                    }
+                }
+
+                // Prepare image export options (PNG format).
+                ImageSaveOptions saveOptions = new ImageSaveOptions(SaveFileFormat.Png)
+                {
+                    // Export the first page only; adjust if multi‑page export is required.
+                    PageIndex = 0,
+                    PageCount = 1,
+                    // Optional: set a reasonable resolution.
+                    Resolution = 300f
+                };
+
+                // Save the diagram as an image.
                 diagram.Save(outputPath, saveOptions);
-                Console.WriteLine($"Hyperlink connection map saved to: {outputPath}");
+                Console.WriteLine($"Hyperlink map image saved to: {outputPath}");
             }
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console
-            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
+            // Report any errors that occur during processing.
+            Console.Error.WriteLine($"Error: {ex.Message}");
         }
     }
 }

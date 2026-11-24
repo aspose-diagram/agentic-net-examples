@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Collections.Generic;
 using Aspose.Diagram;
 using Aspose.Diagram.Saving;
 
@@ -8,18 +7,14 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Prompt for input diagram path if not provided as argument
-        string inputPath = args.Length > 0 ? args[0] : "";
-        if (string.IsNullOrWhiteSpace(inputPath))
-        {
-            Console.Write("Enter the path to the Visio diagram file: ");
-            inputPath = Console.ReadLine()?.Trim() ?? "";
-        }
+        // Prompt user for the Visio diagram file path
+        Console.Write("Enter the path to the Visio diagram file: ");
+        string inputPath = Console.ReadLine();
 
         // Guard: ensure the file exists
-        if (!File.Exists(inputPath))
+        if (string.IsNullOrWhiteSpace(inputPath) || !File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {inputPath}");
+            Console.Error.WriteLine("Error: The specified file does not exist.");
             return;
         }
 
@@ -35,109 +30,112 @@ class Program
             return;
         }
 
-        // Build a flat list of all shapes with their page reference for easy selection
-        var shapeEntries = new List<(Page page, Shape shape)>();
-        foreach (Page page in diagram.Pages)
+        bool continueEditing = true;
+        while (continueEditing)
         {
-            foreach (Shape shape in page.Shapes)
+            // List all pages and shapes with their IDs
+            Console.WriteLine("\nAvailable Shapes:");
+            foreach (Page page in diagram.Pages)
             {
-                shapeEntries.Add((page, shape));
-            }
-        }
-
-        if (shapeEntries.Count == 0)
-        {
-            Console.WriteLine("The diagram contains no shapes.");
-            return;
-        }
-
-        while (true)
-        {
-            Console.WriteLine("\n--- Shape Selection ---");
-            // List shapes with an index
-            for (int i = 0; i < shapeEntries.Count; i++)
-            {
-                var entry = shapeEntries[i];
-                Console.WriteLine($"{i + 1}. Page: {entry.page.Name}, Shape ID: {entry.shape.ID}, Name: {entry.shape.Name}");
-            }
-            Console.WriteLine("0. Exit");
-
-            Console.Write("Select a shape by number: ");
-            if (!int.TryParse(Console.ReadLine(), out int shapeChoice) || shapeChoice < 0 || shapeChoice > shapeEntries.Count)
-            {
-                Console.WriteLine("Invalid selection. Try again.");
-                continue;
-            }
-
-            if (shapeChoice == 0)
-                break; // Exit the program
-
-            var selectedEntry = shapeEntries[shapeChoice - 1];
-            Shape selectedShape = selectedEntry.shape;
-
-            // List user-defined cells for the selected shape
-            Console.WriteLine($"\nUser-defined cells for Shape ID {selectedShape.ID}:");
-            if (selectedShape.Users.Count == 0)
-            {
-                Console.WriteLine("  (No user-defined cells)");
-            }
-            else
-            {
-                for (int u = 0; u < selectedShape.Users.Count; u++)
+                foreach (Shape shape in page.Shapes)
                 {
-                    User user = selectedShape.Users[u];
-                    Console.WriteLine($"{u + 1}. Name: {user.Name}, NameU: {user.NameU}, Value: {user.Value.Val}, Prompt: {user.Prompt.Value}");
+                    Console.WriteLine($"Page: {page.Name}, Shape ID: {shape.ID}, Shape Name: {shape.Name}");
                 }
             }
 
-            Console.WriteLine("0. Return to shape list");
-            Console.Write("Enter the number of the user-defined cell to edit (or 0 to go back): ");
-            if (!int.TryParse(Console.ReadLine(), out int userChoice) || userChoice < 0 || userChoice > selectedShape.Users.Count)
+            // Prompt for shape ID
+            Console.Write("\nEnter the Shape ID you want to edit (or press Enter to finish): ");
+            string shapeIdInput = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(shapeIdInput))
             {
-                Console.WriteLine("Invalid selection. Returning to shape list.");
+                // User chose to finish editing
+                break;
+            }
+
+            if (!long.TryParse(shapeIdInput, out long targetShapeId))
+            {
+                Console.Error.WriteLine("Invalid Shape ID. Please enter a numeric value.");
                 continue;
             }
 
-            if (userChoice == 0)
-                continue; // Back to shape selection
+            // Locate the shape across all pages
+            Shape targetShape = null;
+            foreach (Page page in diagram.Pages)
+            {
+                foreach (Shape shape in page.Shapes)
+                {
+                    if (shape.ID == targetShapeId)
+                    {
+                        targetShape = shape;
+                        break;
+                    }
+                }
+                if (targetShape != null) break;
+            }
 
-            // Edit the selected user-defined cell
-            User targetUser = selectedShape.Users[userChoice - 1];
-            Console.WriteLine($"Current value of '{targetUser.Name}' is: {targetUser.Value.Val}");
-            Console.Write("Enter new value: ");
-            string newValue = Console.ReadLine() ?? "";
-            targetUser.Value.Val = newValue;
-            Console.WriteLine("Value updated.");
+            if (targetShape == null)
+            {
+                Console.Error.WriteLine("Shape not found. Please verify the Shape ID.");
+                continue;
+            }
 
-            // Ask if the user wants to continue editing or save and exit
-            Console.Write("\nDo you want to edit another cell? (y/n): ");
-            string continueChoice = Console.ReadLine()?.Trim().ToLower() ?? "n";
-            if (continueChoice != "y")
-                break;
+            // List user-defined cells for the selected shape
+            if (targetShape.Users.Count == 0)
+            {
+                Console.WriteLine("The selected shape has no user-defined cells.");
+                continue;
+            }
+
+            Console.WriteLine("\nUser-defined Cells:");
+            int index = 1;
+            foreach (User userCell in targetShape.Users)
+            {
+                Console.WriteLine($"{index}. NameU: {userCell.NameU}, Value: {userCell.Value.Val}, Prompt: {userCell.Prompt.Value}");
+                index++;
+            }
+
+            // Prompt for which cell to edit
+            Console.Write("\nEnter the number of the cell you want to edit (or press Enter to skip): ");
+            string cellIndexInput = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(cellIndexInput))
+            {
+                // Skip editing this shape
+                continue;
+            }
+
+            if (!int.TryParse(cellIndexInput, out int cellNumber) || cellNumber < 1 || cellNumber > targetShape.Users.Count)
+            {
+                Console.Error.WriteLine("Invalid cell number.");
+                continue;
+            }
+
+            // Retrieve the selected User object
+            User selectedUser = targetShape.Users[cellNumber - 1];
+
+            // Prompt for new value
+            Console.Write($"Enter new value for cell '{selectedUser.NameU}': ");
+            string newValue = Console.ReadLine();
+
+            // Update the cell value
+            selectedUser.Value.Val = newValue;
+            Console.WriteLine("Cell value updated successfully.");
+
+            // Ask if the user wants to edit another shape
+            Console.Write("\nDo you want to edit another shape? (y/n): ");
+            string continueResponse = Console.ReadLine();
+            continueEditing = continueResponse?.Trim().ToLower() == "y";
         }
 
-        // Prompt for output path
-        Console.Write("\nEnter the path to save the modified diagram (e.g., output.vsdx): ");
-        string outputPath = Console.ReadLine()?.Trim() ?? "";
-        if (string.IsNullOrWhiteSpace(outputPath))
-        {
-            Console.Error.WriteLine("No output path provided. Exiting without saving.");
-            return;
-        }
-
-        // Ensure the directory exists
-        string outputDir = Path.GetDirectoryName(outputPath) ?? "";
-        if (!string.IsNullOrEmpty(outputDir) && !Directory.Exists(outputDir))
-        {
-            Console.Error.WriteLine($"Error: Output directory does not exist - {outputDir}");
-            return;
-        }
+        // Determine output file path
+        string directory = Path.GetDirectoryName(inputPath);
+        string filenameWithoutExt = Path.GetFileNameWithoutExtension(inputPath);
+        string outputPath = Path.Combine(directory, $"{filenameWithoutExt}_edited.vsdx");
 
         try
         {
-            // Save the diagram in VSDX format
+            // Save the modified diagram
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to {outputPath}");
+            Console.WriteLine($"\nDiagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {

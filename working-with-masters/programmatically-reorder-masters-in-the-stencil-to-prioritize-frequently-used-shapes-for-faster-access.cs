@@ -7,85 +7,83 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Input stencil file path
-        string stencilPath = "inputStencil.vssx";
-        if (!System.IO.File.Exists(stencilPath))
+        // Input stencil file path (source)
+        string sourceStencilPath = "source.vssx";
+        if (!System.IO.File.Exists(sourceStencilPath))
         {
-            Console.Error.WriteLine($"File not found: {stencilPath}");
+            Console.Error.WriteLine($"File not found: {sourceStencilPath}");
             return;
         }
-        if (!File.Exists(stencilPath))
+        // Output stencil file path (reordered)
+        string outputStencilPath = "reordered.vssx";
+
+        // Guard: ensure source stencil exists
+        if (!File.Exists(sourceStencilPath))
         {
-            Console.Error.WriteLine($"Error: Stencil file not found at '{stencilPath}'.");
+            Console.Error.WriteLine($"Source stencil file not found: {sourceStencilPath}");
             return;
         }
 
-        // Output reordered stencil file path
-        string outputStencilPath = "reorderedStencil.vssx";
-
-        // List of master names that should appear first (most frequently used)
-        List<string> prioritizedMasters = new List<string>
+        // Define the priority order of master names (most frequently used first)
+        // Adjust this list according to your usage statistics
+        List<string> priorityMasters = new List<string>
         {
             "Rectangle",
             "Dynamic connector",
             "Star 7"
-            // Add more master names as needed
         };
 
         try
         {
-            // Load the existing stencil diagram inside a using block (mandatory)
-            using (Diagram sourceStencil = new Diagram(stencilPath))
+            // Load the source stencil diagram
+            Diagram sourceDiagram = new Diagram(sourceStencilPath);
+
+            // Create a new empty diagram that will hold the reordered masters
+            Diagram reorderedDiagram = new Diagram();
+
+            // Keep track of masters that have already been added to avoid duplicates
+            HashSet<string> addedMasterNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            // First, add masters in the priority order if they exist in the source stencil
+            foreach (string masterName in priorityMasters)
             {
-                // Create a new empty diagram to hold reordered masters
-                using (Diagram reorderedStencil = new Diagram())
+                if (sourceDiagram.Masters.IsExist(masterName))
                 {
-                    // Keep track of masters already added to avoid duplicates
-                    HashSet<string> addedMasterNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    // Retrieve the master to obtain its ID
+                    Master srcMaster = sourceDiagram.Masters.GetMasterByName(masterName);
+                    int masterId = srcMaster.ID;
 
-                    // First, add prioritized masters in the specified order
-                    foreach (string masterName in prioritizedMasters)
-                    {
-                        if (sourceStencil.Masters.IsExist(masterName))
-                        {
-                            // Retrieve the master from the source stencil
-                            Master srcMaster = sourceStencil.Masters.GetMasterByName(masterName);
-                            // Clone the master to avoid reference issues
-                            Master clonedMaster = (Master)srcMaster.Clone();
-                            // Add the cloned master to the new stencil
-                            reorderedStencil.Masters.Add(clonedMaster);
-                            addedMasterNames.Add(masterName);
-                        }
-                        else
-                        {
-                            Console.Error.WriteLine($"Warning: Master '{masterName}' not found in source stencil.");
-                        }
-                    }
+                    // Import the master into the new diagram using the same stencil file
+                    reorderedDiagram.AddMaster(sourceStencilPath, masterId);
 
-                    // Then, add the remaining masters preserving their original order
-                    foreach (Master master in sourceStencil.Masters)
-                    {
-                        string name = master.Name;
-                        if (string.IsNullOrEmpty(name))
-                            continue;
-
-                        if (!addedMasterNames.Contains(name))
-                        {
-                            Master clonedMaster = (Master)master.Clone();
-                            reorderedStencil.Masters.Add(clonedMaster);
-                            addedMasterNames.Add(name);
-                        }
-                    }
-
-                    // Save the reordered stencil to the specified output path
-                    reorderedStencil.Save(outputStencilPath, SaveFileFormat.Vssx);
-                    Console.WriteLine($"Reordered stencil saved to '{outputStencilPath}'.");
+                    addedMasterNames.Add(masterName);
+                }
+                else
+                {
+                    Console.WriteLine($"Priority master not found in source stencil: {masterName}");
                 }
             }
+
+            // Next, add all remaining masters preserving their original order
+            foreach (Master srcMaster in sourceDiagram.Masters)
+            {
+                string name = srcMaster.Name;
+                if (!addedMasterNames.Contains(name))
+                {
+                    int masterId = srcMaster.ID;
+                    reorderedDiagram.AddMaster(sourceStencilPath, masterId);
+                    addedMasterNames.Add(name);
+                }
+            }
+
+            // Save the reordered stencil
+            reorderedDiagram.Save(outputStencilPath, SaveFileFormat.Vssx);
+            Console.WriteLine($"Reordered stencil saved to: {outputStencilPath}");
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or IO errors to the error console
+            Console.Error.WriteLine($"Error processing stencil: {ex.Message}");
         }
     }
 }

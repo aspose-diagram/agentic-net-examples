@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
@@ -29,48 +28,47 @@ class Program
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Flag to indicate whether we have processed a shape.
-            bool shapeProcessed = false;
-
-            // Iterate through pages and shapes to find the first shape.
-            foreach (Page page in diagram.Pages)
+            // Ensure the diagram contains at least one page.
+            if (diagram.Pages.Count == 0)
             {
-                foreach (Shape shape in page.Shapes)
-                {
-                    // Create a new user‑defined cell.
-                    User userCell = new User();
-                    userCell.Name = "MyReadOnlyCell";          // Row name.
-                    userCell.Value.Val = "12345";              // Cell value.
-                    userCell.Prompt.Value = "Read‑only value"; // Optional description.
-
-                    // Add the user‑defined cell to the shape.
-                    shape.Users.Add(userCell);
-
-                    // Lock custom properties (user‑defined cells) for this shape.
-                    // This makes the cell read‑only during runtime.
-                    shape.Protection.LockCustProp.Value = BOOL.True;
-
-                    shapeProcessed = true;
-                    break; // Process only the first shape for demonstration.
-                }
-
-                if (shapeProcessed)
-                    break;
-            }
-
-            if (!shapeProcessed)
-            {
-                Console.Error.WriteLine("No shapes found in the diagram to modify.");
+                Console.Error.WriteLine("The diagram does not contain any pages.");
                 return;
             }
 
+            // Get the first page.
+            Page page = diagram.Pages[0];
+
+            // Ensure the page contains at least one shape.
+            if (page.Shapes.Count == 0)
+            {
+                Console.Error.WriteLine("The first page does not contain any shapes.");
+                return;
+            }
+
+            // Get the first shape on the page.
+            Shape shape = page.Shapes[0];
+
+            // Create a new user‑defined cell.
+            User userCell = new User();
+            userCell.Name = "ReadOnlyCell";          // Row name.
+            userCell.Value.Val = "800";              // Cell value as string.
+            userCell.Prompt.Value = "Read‑only value"; // Optional description.
+
+            // Add the user‑defined cell to the shape.
+            shape.Users.Add(userCell);
+
+            // Set the shape's protection to lock custom properties (user‑defined cells).
+            // This makes the user‑defined cell read‑only at runtime.
+            shape.Protection.LockCustProp.Value = BOOL.True;
+
             // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
+
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any Aspose or I/O errors to the error stream.
+            // Write any Aspose or IO errors to the error stream.
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

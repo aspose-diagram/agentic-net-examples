@@ -7,62 +7,74 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments.
+        // Validate arguments.
         if (args.Length == 0)
         {
-            Console.Error.WriteLine("Usage: Program <diagram-file-path>");
+            Console.Error.WriteLine("Please provide a folder path containing diagram files as the first argument.");
             return;
         }
 
-        string diagramPath = args[0];
+        string folderPath = args[0];
 
-        // Guard: ensure the file exists before proceeding.
-        if (!File.Exists(diagramPath))
+        // Guard: ensure the folder exists.
+        if (!Directory.Exists(folderPath))
         {
-            Console.Error.WriteLine($"Error: File not found - {diagramPath}");
+            Console.Error.WriteLine($"Folder does not exist: {folderPath}");
             return;
         }
 
-        try
+        // Get diagram files with common extensions.
+        string[] extensions = new[] { ".vsdx", ".vsd", ".vdx", ".vsx", ".vtx", ".vssx", ".vstx", ".mmd", ".html" };
+        string[] files = Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly);
+        var diagramFiles = Array.FindAll(files, f => Array.Exists(extensions, e => f.EndsWith(e, StringComparison.OrdinalIgnoreCase)));
+
+        if (diagramFiles.Length == 0)
         {
-            // Force a full garbage collection to get a clean baseline memory measurement.
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
+            Console.WriteLine("No diagram files found in the specified folder.");
+            return;
+        }
 
-            // Record memory usage before loading the diagram.
-            long memoryBefore = GC.GetTotalMemory(true);
-            Console.WriteLine($"Memory before loading: {memoryBefore / 1024.0 / 1024.0:F2} MB");
-
-            // Optional: measure load time.
-            Stopwatch sw = Stopwatch.StartNew();
-
-            // Load the diagram from the specified file.
-            using (Diagram diagram = new Diagram(diagramPath))
+        // Process each diagram file.
+        foreach (string filePath in diagramFiles)
+        {
+            // Guard: ensure the file exists (redundant after GetFiles, but required by rules).
+            if (!File.Exists(filePath))
             {
-                sw.Stop();
-                Console.WriteLine($"Diagram loaded in {sw.ElapsedMilliseconds} ms");
-
-                // Output information about each window in the diagram.
-                Console.WriteLine($"Total windows: {diagram.Windows.Count}");
-                foreach (Window window in diagram.Windows)
-                {
-                    Console.WriteLine($"Window ID: {window.ID}, Type: {window.WindowType}, Width: {window.WindowWidth}, Height: {window.WindowHeight}, State: {window.WindowState}");
-                }
+                Console.Error.WriteLine($"File does not exist: {filePath}");
+                continue;
             }
 
-            // Record memory usage after the diagram has been loaded and processed.
-            long memoryAfter = GC.GetTotalMemory(true);
-            Console.WriteLine($"Memory after loading: {memoryAfter / 1024.0 / 1024.0:F2} MB");
+            try
+            {
+                // Capture memory usage before loading.
+                long memoryBefore = Process.GetCurrentProcess().PrivateMemorySize64;
 
-            // Calculate and display the memory delta.
-            long memoryDelta = memoryAfter - memoryBefore;
-            Console.WriteLine($"Memory increase due to loading: {memoryDelta / 1024.0 / 1024.0:F2} MB");
-        }
-        catch (Exception ex)
-        {
-            // Capture any Aspose.Diagram or general exceptions and report them.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+                // Load the diagram.
+                using (Diagram diagram = new Diagram(filePath))
+                {
+                    // Capture memory usage after loading.
+                    long memoryAfter = Process.GetCurrentProcess().PrivateMemorySize64;
+
+                    // Calculate memory delta.
+                    long memoryDelta = memoryAfter - memoryBefore;
+
+                    // Count windows in the diagram.
+                    int windowCount = diagram.Windows.Count;
+
+                    // Output results.
+                    Console.WriteLine($"File: {Path.GetFileName(filePath)}");
+                    Console.WriteLine($"  Windows: {windowCount}");
+                    Console.WriteLine($"  Memory before load: {memoryBefore:N0} bytes");
+                    Console.WriteLine($"  Memory after load : {memoryAfter:N0} bytes");
+                    Console.WriteLine($"  Memory increase   : {memoryDelta:N0} bytes");
+                    Console.WriteLine();
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log any errors that occur during loading or processing.
+                Console.Error.WriteLine($"Error processing file '{filePath}': {ex.Message}");
+            }
         }
     }
 }

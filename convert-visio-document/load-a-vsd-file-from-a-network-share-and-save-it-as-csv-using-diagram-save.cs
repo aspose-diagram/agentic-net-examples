@@ -6,15 +6,17 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Path to the source VSD file on a network share.
-        // Adjust the UNC path as needed.
-        string inputPath = @"\\server\share\folder\diagram.vsd";
+        // Ensure the required arguments are provided: input VSD path and output CSV path
+        if (args.Length < 2)
+        {
+            Console.Error.WriteLine("Usage: Program <inputVsdPath> <outputCsvPath>");
+            return;
+        }
 
-        // Path where the CSV output will be saved.
-        // Adjust the local path as needed.
-        string outputPath = @"C:\Temp\diagram.csv";
+        string inputPath = args[0];
+        string outputPath = args[1];
 
-        // Verify that the input file exists before attempting to load it.
+        // Guard: verify that the input file exists on the network share
         if (!File.Exists(inputPath))
         {
             Console.Error.WriteLine($"Input file not found: {inputPath}");
@@ -23,17 +25,18 @@ class Program
 
         try
         {
-            // Load the Visio diagram from the specified file.
-            Diagram diagram = new Diagram(inputPath);
-
-            // Save the diagram in CSV format.
-            diagram.Save(outputPath, SaveFileFormat.Csv);
+            // Load the Visio diagram inside a using block as required by the API
+            using (Diagram diagram = new Diagram(inputPath))
+            {
+                // Save the diagram as CSV using the appropriate SaveFileFormat enum value
+                diagram.Save(outputPath, SaveFileFormat.Csv);
+            }
 
             Console.WriteLine($"Diagram successfully saved as CSV to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors that occur during loading or saving to the error stream.
+            // Output any errors that occur during loading or saving
             Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }

@@ -1,13 +1,13 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Aspose.Diagram;
-using Aspose.Diagram.Saving;
 
 class Program
 {
     static void Main(string[] args)
     {
-        // Validate command‑line arguments.
+        // Validate input arguments
         if (args.Length < 2)
         {
             Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
@@ -17,102 +17,94 @@ class Program
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard against missing input file.
+        // Guard against missing input file
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file not found: {inputPath}");
+            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
             return;
         }
 
-        // Load the Visio diagram inside a using block as required.
-        using (Diagram diagram = new Diagram(inputPath))
+        // Define gradient colors per layer index (customizable)
+        var layerGradients = new Dictionary<int, (string start, string end)>
         {
-            try
+            { 0, ("#FF0000", "#FFFF00") }, // Red to Yellow
+            { 1, ("#00FF00", "#00FFFF") }, // Green to Cyan
+            { 2, ("#0000FF", "#FF00FF") }, // Blue to Magenta
+            // Add more mappings as needed
+        };
+
+        try
+        {
+            // Load the Visio diagram inside a using block as required
+            using (Diagram diagram = new Diagram(inputPath))
             {
-                // Iterate through all pages in the diagram.
+                // Iterate through all pages
                 foreach (Page page in diagram.Pages)
                 {
-                    // Iterate through all shapes on the current page.
+                    // Iterate through all shapes on the page
                     foreach (Shape shape in page.Shapes)
                     {
-                        // Skip shapes that are marked as deleted.
+                        // Skip deleted shapes
                         if (shape.Del == BOOL.True)
                             continue;
 
-                        // Retrieve the layer membership string (semicolon‑separated indexes).
-                        string layerMember = shape.LayerMem.LayerMember.Value;
-                        if (string.IsNullOrEmpty(layerMember))
-                            continue; // Shape does not belong to any layer.
-
-                        // Use the first layer index for gradient selection.
-                        string[] layerIndices = layerMember.Split(';');
-                        if (layerIndices.Length == 0)
-                            continue;
-
-                        if (!int.TryParse(layerIndices[0], out int layerIdx))
-                            continue; // Invalid index.
-
-                        // Ensure the index is within the page's layer collection range.
-                        if (layerIdx < 0 || layerIdx >= page.PageSheet.Layers.Count)
-                            continue; // Index out of range.
-
-                        // Obtain the layer object and its name.
-                        Layer layer = page.PageSheet.Layers[layerIdx];
-                        string layerName = layer.Name.Value ?? string.Empty;
-
-                        // Determine gradient colors based on the layer name.
-                        string startColor;
-                        string endColor;
-
-                        if (layerName.IndexOf("Red", StringComparison.OrdinalIgnoreCase) >= 0)
+                        // Determine the first layer index the shape belongs to
+                        int layerIndex = -1;
+                        if (shape.LayerMem != null && shape.LayerMem.LayerMember != null)
                         {
-                            startColor = "#FFCCCC";
-                            endColor = "#FF0000";
-                        }
-                        else if (layerName.IndexOf("Green", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            startColor = "#CCFFCC";
-                            endColor = "#00FF00";
-                        }
-                        else if (layerName.IndexOf("Blue", StringComparison.OrdinalIgnoreCase) >= 0)
-                        {
-                            startColor = "#CCCCFF";
-                            endColor = "#0000FF";
-                        }
-                        else
-                        {
-                            // Default gradient.
-                            startColor = "#EEEEEE";
-                            endColor = "#555555";
+                            string layerMember = shape.LayerMem.LayerMember.Value;
+                            if (!string.IsNullOrEmpty(layerMember))
+                            {
+                                // Split semicolon‑separated list and take the first entry
+                                string[] parts = layerMember.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                                if (parts.Length > 0 && int.TryParse(parts[0], out int parsedIndex))
+                                {
+                                    layerIndex = parsedIndex;
+                                }
+                            }
                         }
 
-                        // Apply a linear gradient fill to the shape.
-                        shape.Fill.FillPattern.Value = 25; // Gradient fill pattern.
+                        // Retrieve gradient colors for the layer (fallback to default if not defined)
+                        (string start, string end) colors;
+                        if (!layerGradients.TryGetValue(layerIndex, out colors))
+                        {
+                            // Default gradient: light gray to dark gray
+                            colors = ("#CCCCCC", "#666666");
+                        }
+
+                        // Apply gradient fill to the shape
+                        // Set fill pattern to gradient (value 25)
+                        shape.Fill.FillPattern.Value = 25;
+
+                        // Enable gradient fill
                         shape.Fill.GradientFill.GradientEnabled.Value = BOOL.True;
-                        shape.Fill.GradientFill.GradientDir.Value = 0; // Left‑to‑right direction.
 
-                        // Clear any existing gradient stops.
+                        // Set gradient direction (0 = left‑to‑right)
+                        shape.Fill.GradientFill.GradientDir.Value = 0;
+
+                        // Clear any existing gradient stops
                         shape.Fill.GradientFill.GradientStops.Clear();
 
-                        // Add new gradient stops (position 0 and 1).
+                        // Add start color stop at position 0
                         shape.Fill.GradientFill.GradientStops.Add(
                             new DoubleValue(0, MeasureConst.NUM),
-                            new ColorValue(startColor, MeasureConst.Undefined));
+                            new ColorValue(colors.start, MeasureConst.Undefined));
 
+                        // Add end color stop at position 1
                         shape.Fill.GradientFill.GradientStops.Add(
                             new DoubleValue(1, MeasureConst.NUM),
-                            new ColorValue(endColor, MeasureConst.Undefined));
+                            new ColorValue(colors.end, MeasureConst.Undefined));
                     }
                 }
 
-                // Save the modified diagram to the specified output path.
+                // Save the modified diagram to the specified output path in VSDX format
                 diagram.Save(outputPath, SaveFileFormat.Vsdx);
             }
-            catch (Exception ex)
-            {
-                // Report any errors that occur during processing.
-                Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
-            }
+        }
+        catch (Exception ex)
+        {
+            // Write any Aspose or IO errors to the error stream
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

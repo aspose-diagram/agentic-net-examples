@@ -7,34 +7,37 @@ class Program
     static void Main(string[] args)
     {
         // Validate command‑line arguments.
-        if (args.Length < 2)
+        if (args.Length < 1)
         {
-            Console.Error.WriteLine("Usage: Program <inputVisioPath> <outputVisioPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> [outputVisioFile]");
             return;
         }
 
         string inputPath = args[0];
-        string outputPath = args[1];
-
         // Guard: ensure the input file exists.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Error: Input file \"{inputPath}\" does not exist.");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
+
+        // Determine output path. If not supplied, create a new file name with suffix "_modified".
+        string outputPath = args.Length >= 2 ? args[1] : Path.Combine(
+            Path.GetDirectoryName(inputPath) ?? "",
+            Path.GetFileNameWithoutExtension(inputPath) + "_modified.vsdx");
 
         try
         {
             // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Iterate through all pages in the diagram.
+            // Iterate through each page in the diagram.
             foreach (Page page in diagram.Pages)
             {
-                // Iterate through all shapes on the current page.
+                // Iterate through each shape on the current page.
                 foreach (Shape shape in page.Shapes)
                 {
-                    // Skip deleted shapes.
+                    // Skip logically deleted shapes.
                     if (shape.Del == BOOL.True)
                         continue;
 
@@ -42,25 +45,23 @@ class Program
                     if (shape.TextBlock == null)
                         continue;
 
-                    // Retrieve the current left margin (in points).
-                    double currentMargin = shape.TextBlock.LeftMargin?.Value ?? 0.0;
+                    // Ensure the LeftMargin cell exists.
+                    if (shape.TextBlock.LeftMargin == null)
+                        continue;
 
                     // Increase the left margin by 10 points.
-                    double newMargin = currentMargin + 10.0;
-
-                    // Assign the new margin using a DoubleValue with PT units.
-                    shape.TextBlock.LeftMargin = new DoubleValue(newMargin, MeasureConst.PT);
+                    shape.TextBlock.LeftMargin.Value += 10.0;
                 }
             }
 
-            // Save the modified diagram to the specified output path.
+            // Save the modified diagram to the specified output file.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
-            Console.WriteLine($"Diagram saved successfully to \"{outputPath}\".");
+            Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
             // Write any Aspose or I/O errors to the error stream.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }

@@ -6,74 +6,63 @@ class Program
 {
     static void Main(string[] args)
     {
-        // Validate input arguments: expect input diagram path and output diagram path.
+        // Validate command‑line arguments.
         if (args.Length < 2)
         {
-            Console.Error.WriteLine("Usage: Program <inputDiagramPath> <outputDiagramPath>");
+            Console.Error.WriteLine("Usage: Program <inputVisioFile> <outputVisioFile>");
             return;
         }
 
         string inputPath = args[0];
         string outputPath = args[1];
 
-        // Guard: ensure the input file exists.
+        // Guard against missing input file.
         if (!File.Exists(inputPath))
         {
-            Console.Error.WriteLine($"Input file does not exist: {inputPath}");
+            Console.Error.WriteLine($"Input file not found: {inputPath}");
             return;
         }
 
         try
         {
-            // Load the Visio diagram from the specified file.
+            // Load the Visio diagram.
             Diagram diagram = new Diagram(inputPath);
 
-            // Ensure the diagram has at least one page.
-            if (diagram.Pages.Count == 0)
+            // Iterate through all pages and shapes.
+            foreach (Page page in diagram.Pages)
             {
-                Console.Error.WriteLine("The diagram contains no pages.");
-                return;
+                // Iterate over the shape collection.
+                for (int i = 0; i < page.Shapes.Count; i++)
+                {
+                    Shape shape = page.Shapes[i];
+
+                    // Skip deleted shapes.
+                    if (shape.Del == BOOL.True)
+                        continue;
+
+                    // Ensure the shape has a TextXForm section (all shapes do).
+                    // Set text orientation angle to 0 (horizontal).
+                    shape.TextXForm.TxtAngle.Value = 0;
+
+                    // Align text to the left side of the shape.
+                    // TxtLocPinX defines the local pin (reference point) inside the text block.
+                    // Setting it to the text block width positions the text block's left edge at the shape's left edge.
+                    shape.TextXForm.TxtLocPinX.Value = shape.TextXForm.TxtWidth.Value;
+
+                    // TxtPinX defines the shape‑relative X coordinate of the text block origin.
+                    // Setting it to 0 places the text block at the shape's left boundary.
+                    shape.TextXForm.TxtPinX.Value = 0;
+                }
             }
 
-            // Work with the first page (index 0).
-            Page page = diagram.Pages[0];
-
-            // Define the shape ID to modify. Adjust as needed.
-            long shapeId = 1;
-
-            // Retrieve the shape by its ID.
-            Shape shape = page.Shapes.GetShape(shapeId);
-            if (shape == null)
-            {
-                Console.Error.WriteLine($"Shape with ID {shapeId} not found on page '{page.Name}'.");
-                return;
-            }
-
-            // Skip deleted shapes.
-            if (shape.Del == BOOL.True)
-            {
-                Console.Error.WriteLine($"Shape with ID {shapeId} is marked as deleted.");
-                return;
-            }
-
-            // Set text orientation angle to 0 degrees (horizontal).
-            shape.TextXForm.TxtAngle.Value = 0.0;
-
-            // Align text to the left side of the shape.
-            // According to Aspose.Diagram guidelines:
-            //   TxtLocPinX = TxtWidth (local pin at the right edge of the text block)
-            //   TxtPinX   = 0       (position the text block's left edge at the shape's left edge)
-            shape.TextXForm.TxtLocPinX.Value = shape.TextXForm.TxtWidth.Value;
-            shape.TextXForm.TxtPinX.Value = 0.0;
-
-            // Save the modified diagram to the output path in VSDX format.
+            // Save the modified diagram to the specified output path.
             diagram.Save(outputPath, SaveFileFormat.Vsdx);
             Console.WriteLine($"Diagram saved successfully to: {outputPath}");
         }
         catch (Exception ex)
         {
-            // Write any errors to the error console.
-            Console.Error.WriteLine($"An error occurred: {ex.Message}");
+            // Write any Aspose or I/O errors to the error stream.
+            Console.Error.WriteLine($"Error processing diagram: {ex.Message}");
         }
     }
 }
